@@ -16,7 +16,7 @@ export default function Home() {
     e.preventDefault();
     if (keyword.trim() || place.trim()) {
       console.log("Searching for:", keyword, "in", place);
-      // setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
+      setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
     }
   };
 
