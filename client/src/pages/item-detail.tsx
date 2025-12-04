@@ -42,7 +42,12 @@ const MOCK_RESULTS = [
         "Format Keyword": "Raster",
         "Format Type": "File",
         "Agent Extract": "h1999a1216a1"
-    }
+    },
+    relationships: [
+      { type: "Derived From", title: "Sentinel-2B L1C Source", id: "S2B_MSIL1C_20240315" },
+      { type: "Co-located", title: "Landsat 9 Scene (Same Date)", id: "LC09_L1TP_042036_20240315" },
+      { type: "Next Pass", title: "Sentinel-2A (5 days later)", id: "S2A_MSIL2A_20240320" }
+    ]
   },
   // ... (other items would need similar metadata structure, applying generic for now)
 ];
@@ -61,6 +66,11 @@ const getItem = (id: number | null) => {
             "Platform": item.platform,
             "Provider": item.provider
         } as any;
+    }
+    if (!item.relationships) {
+        item.relationships = [
+            { type: "Related", title: `Similar ${item.platform} Item`, id: `${item.platform}_REL_001` }
+        ] as any;
     }
     return item;
 }
@@ -204,8 +214,38 @@ export default function ItemDetail() {
                             </div>
                         </TabsContent>
                         <TabsContent value="relationships" className="mt-4">
-                            <div className="p-8 text-center text-muted-foreground border border-dashed border-white/10 rounded-lg">
-                                No relationships defined for this item.
+                            <div className="rounded-md border border-white/10 overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-white/5">
+                                            <TableHead className="w-[200px]">Relationship Type</TableHead>
+                                            <TableHead>Related Item</TableHead>
+                                            <TableHead className="w-[100px] text-right">Action</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {item.relationships?.map((rel: any, i: number) => (
+                                            <TableRow key={i}>
+                                                <TableCell className="font-medium text-muted-foreground">
+                                                    <Badge variant="outline" className="font-normal">
+                                                        {rel.type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium">{rel.title}</span>
+                                                        <span className="text-xs text-muted-foreground font-mono">{rel.id}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                        <ExternalLink className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
                             </div>
                         </TabsContent>
                     </Tabs>
