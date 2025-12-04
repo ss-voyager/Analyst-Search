@@ -321,88 +321,9 @@ export default function SearchResults() {
           )}
         </AnimatePresence>
 
-        {/* Results List ("Baseball Cards") */}
-        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${showMap ? 'md:w-1/2 lg:w-[500px] xl:w-[600px] md:flex-none' : 'w-full'}`}>
-           <ScrollArea className="flex-1">
-             <div className="p-4 space-y-4">
-               {isLoading ? (
-                 // Loading State
-                 Array.from({ length: 4 }).map((_, i) => (
-                   <div key={i} className="h-48 rounded-xl bg-white/5 animate-pulse border border-white/5" />
-                 ))
-               ) : (
-                 MOCK_RESULTS.map((result) => (
-                   <motion.div 
-                     key={result.id}
-                     layout
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     className="group flex flex-col sm:flex-row bg-card/40 border border-white/10 hover:border-primary/50 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:bg-card/60"
-                   >
-                      {/* Thumbnail */}
-                      <div className="sm:w-40 h-40 sm:h-auto bg-black/50 relative shrink-0">
-                        <img src={result.thumbnail} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="" />
-                        <Badge className="absolute top-2 left-2 bg-black/60 hover:bg-black/60 border-white/10 text-[10px] font-mono backdrop-blur-sm">
-                           {result.platform}
-                        </Badge>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 p-4 flex flex-col min-w-0">
-                         <div className="flex justify-between items-start gap-2">
-                           <h3 className="font-display font-semibold text-base text-foreground truncate leading-tight" title={result.title}>
-                             {result.title}
-                           </h3>
-                           <button className="text-muted-foreground hover:text-foreground shrink-0">
-                             <MoreVertical className="w-4 h-4" />
-                           </button>
-                         </div>
-
-                         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                               <Calendar className="w-3 h-3" />
-                               <span>{result.date}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                               <Layers className="w-3 h-3" />
-                               <span>{result.provider}</span>
-                            </div>
-                            {result.cloudCover !== "N/A" && (
-                              <div className="col-span-2 flex items-center gap-1.5">
-                                 <span className="text-sky-400">☁</span>
-                                 <span>{result.cloudCover} Cloud Cover</span>
-                              </div>
-                            )}
-                         </div>
-
-                         <div className="mt-auto pt-4 flex items-center justify-between gap-2">
-                            <a href="#" className="text-xs font-medium text-primary hover:underline flex items-center gap-1">
-                              View Details <ArrowLeft className="w-3 h-3 rotate-180" />
-                            </a>
-                            
-                            <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                               <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg border-white/10 hover:bg-white/10">
-                                  <MapPin className="w-3.5 h-3.5" />
-                               </Button>
-                               <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg border-white/10 hover:bg-white/10">
-                                  <Download className="w-3.5 h-3.5" />
-                               </Button>
-                            </div>
-                         </div>
-                      </div>
-                   </motion.div>
-                 ))
-               )}
-               
-               {/* End of results spacer */}
-               <div className="h-8" />
-             </div>
-           </ScrollArea>
-        </div>
-
-        {/* Map Panel (Hideable) */}
+        {/* Map Panel (Left - Movable) */}
         {showMap && (
-          <div className="flex-1 bg-black/20 relative hidden md:block border-l border-white/10">
+          <div className="w-full md:w-[400px] lg:w-[500px] bg-black/20 relative hidden md:block border-r border-white/10 shrink-0">
              <MapContainer 
                  center={[34.05, -118.25]} 
                  zoom={9} 
@@ -428,7 +349,7 @@ export default function SearchResults() {
              </MapContainer>
              
              {/* Map Controls Overlay */}
-             <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+             <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
                 <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
                   <button className="p-2 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors" title="Layers">
                     <Layers className="w-4 h-4" />
@@ -440,6 +361,75 @@ export default function SearchResults() {
              </div>
           </div>
         )}
+
+        {/* Results Grid (Right) */}
+        <div className="flex-1 flex flex-col min-w-0 bg-background/50">
+           <ScrollArea className="flex-1">
+             <div className="p-4">
+               {isLoading ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                   {Array.from({ length: 8 }).map((_, i) => (
+                     <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse border border-white/5" />
+                   ))}
+                 </div>
+               ) : (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                   {MOCK_RESULTS.map((result) => (
+                     <motion.div 
+                       key={result.id}
+                       layout
+                       initial={{ opacity: 0, scale: 0.95 }}
+                       animate={{ opacity: 1, scale: 1 }}
+                       className="group flex flex-col bg-card border border-white/10 hover:border-primary/50 rounded-sm overflow-hidden transition-all hover:shadow-xl hover:bg-card/80"
+                     >
+                        {/* Thumbnail Area - Square aspect ratio like reference */}
+                        <div className="aspect-square bg-black/50 relative group-hover:brightness-110 transition-all">
+                          <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
+                          
+                          {/* Selection Checkbox Overlay */}
+                          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="w-5 h-5 rounded border border-white/50 bg-black/50 flex items-center justify-center hover:bg-primary hover:border-primary cursor-pointer">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 p-3 flex flex-col min-w-0 bg-card">
+                           <h3 className="font-display font-semibold text-sm text-primary truncate mb-1" title={result.title}>
+                             {result.title}
+                           </h3>
+                           
+                           <div className="text-[10px] text-muted-foreground space-y-1 mb-4">
+                              <p>Format: <span className="text-foreground/80">GeoTIFF</span></p>
+                              <p>Date: <span className="text-foreground/80">{result.date}</span></p>
+                              <p>Provider: <span className="text-foreground/80">{result.platform}</span></p>
+                           </div>
+
+                           {/* Action Footer */}
+                           <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+                              <button className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
+                                <div className="w-3 h-3 rounded-full border border-current flex items-center justify-center">
+                                  <span className="text-[8px] leading-none">+</span>
+                                </div>
+                                Add to Cart
+                              </button>
+                              
+                              <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                                Tools
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                           </div>
+                        </div>
+                     </motion.div>
+                   ))}
+                 </div>
+               )}
+               
+               <div className="h-8" />
+             </div>
+           </ScrollArea>
+        </div>
 
       </div>
 
