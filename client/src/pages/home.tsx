@@ -121,7 +121,7 @@ export default function Home() {
               </div>
 
               {/* Location Input */}
-              <div className="flex items-center flex-1 w-full px-2 relative">
+              <div className="flex items-center flex-[1.5] w-full px-2 relative">
                 <div className="relative flex items-center mr-2">
                   <Select defaultValue="intersects">
                     <SelectTrigger className="h-8 w-[110px] text-xs bg-white/10 border-white/10 rounded-md mr-2 focus:ring-0 focus:ring-offset-0">
