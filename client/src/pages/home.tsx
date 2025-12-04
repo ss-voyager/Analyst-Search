@@ -5,6 +5,7 @@ import { Search, MapPin, Globe, Navigation, ArrowRight, Command } from "lucide-r
 import heroBg from "@assets/generated_images/dark_cinematic_view_of_earth_from_space_with_data_overlays.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -121,12 +122,23 @@ export default function Home() {
 
               {/* Location Input */}
               <div className="flex items-center flex-1 w-full px-2 relative">
+                <div className="relative flex items-center mr-2">
+                  <Select defaultValue="intersects">
+                    <SelectTrigger className="h-8 w-[110px] text-xs bg-white/10 border-white/10 rounded-md mr-2 focus:ring-0 focus:ring-offset-0">
+                      <SelectValue placeholder="Spatial Rel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="intersects">Intersects</SelectItem>
+                      <SelectItem value="within">Within</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                 <input
                   type="text"
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
-                  placeholder="Place, coords, or select AOI..."
+                  placeholder="Where is it located?"
                   className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
                   data-testid="input-search-location"
                 />

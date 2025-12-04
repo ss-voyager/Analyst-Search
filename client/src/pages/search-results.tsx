@@ -165,17 +165,28 @@ export default function SearchResults() {
               />
             </div>
             <div className="hidden md:flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors relative hover:bg-white/10">
-              <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
+              <div className="flex items-center mr-2 shrink-0">
+                <Select defaultValue="intersects">
+                  <SelectTrigger className="h-7 w-[100px] text-[10px] bg-white/5 border-white/10 rounded focus:ring-0 focus:ring-offset-0 px-2">
+                    <SelectValue placeholder="Rel" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="intersects">Intersects</SelectItem>
+                    <SelectItem value="within">Within</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <MapPin className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
               <input 
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
-                  className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50"
-                  placeholder="Filter by location..."
+                  className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 min-w-0"
+                  placeholder="Where is it located?"
               />
               <button 
                   type="button"
                   onClick={() => setIsPickerOpen(true)}
-                  className="ml-2 p-1 rounded hover:bg-white/10 text-primary text-xs font-mono border border-primary/20 bg-primary/5"
+                  className="ml-2 p-1 rounded hover:bg-white/10 text-primary text-xs font-mono border border-primary/20 bg-primary/5 shrink-0"
               >
                 AOI
               </button>
