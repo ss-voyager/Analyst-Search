@@ -46,7 +46,7 @@ export default function Home() {
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
             <Globe className="w-4 h-4 text-primary animate-pulse" />
           </div>
-          <span className="font-display font-bold text-xl tracking-tight">Telescope</span>
+          <span className="font-display font-bold text-xl tracking-tight">Voyager</span>
         </div>
         <div className="flex items-center gap-4">
           <button className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
@@ -163,7 +163,7 @@ export default function Home() {
             <span>LNG: 118.2437° W</span>
           </div>
           <div>
-            &copy; 2024 Telescope Geospatial.
+            &copy; 2024 Voyager Geospatial.
           </div>
         </div>
       </footer>
