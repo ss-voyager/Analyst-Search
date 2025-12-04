@@ -9,11 +9,21 @@ export default function Home() {
   const [keyword, setKeyword] = useState("");
   const [place, setPlace] = useState("");
 
+  const [isDrawing, setIsDrawing] = useState(false);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (keyword.trim() || place.trim()) {
       console.log("Searching for:", keyword, "in", place);
       // setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
+    }
+  };
+
+  const toggleDrawingMode = () => {
+    setIsDrawing(!isDrawing);
+    if (!isDrawing) {
+      // Simulate entering drawing mode
+      console.log("Entered AOI drawing mode");
     }
   };
 
@@ -120,10 +130,12 @@ export default function Home() {
                 <div className="flex items-center gap-1 pr-2">
                   <button 
                     type="button"
-                    className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors"
-                    title="Draw Area of Interest"
+                    onClick={toggleDrawingMode}
+                    className={`p-2 rounded-lg transition-all flex items-center gap-2 ${isDrawing ? 'bg-primary text-primary-foreground shadow-[0_0_15px_rgba(0,255,255,0.5)]' : 'hover:bg-white/10 text-muted-foreground hover:text-primary'}`}
+                    title="Select Area of Interest"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-scan-line"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>
+                    <span className="text-xs font-medium hidden md:inline-block">{isDrawing ? 'Drawing...' : 'AOI'}</span>
                   </button>
                 </div>
               </div>
