@@ -168,15 +168,6 @@ export default function SearchResults() {
         </div>
 
         <div className="flex items-center gap-3">
-           <Button 
-             variant="ghost" 
-             size="sm" 
-             className={`hidden md:flex gap-2 ${showMap ? 'bg-accent text-accent-foreground' : ''}`}
-             onClick={() => setShowMap(!showMap)}
-           >
-             {showMap ? <MapIcon className="w-4 h-4" /> : <List className="w-4 h-4" />}
-             <span className="hidden lg:inline">{showMap ? 'Hide Map' : 'Show Map'}</span>
-           </Button>
            <div className="w-8 h-8 rounded-full bg-secondary border border-white/10" />
         </div>
       </header>
@@ -258,6 +249,16 @@ export default function SearchResults() {
                 <SelectItem value="cloud_asc">Least Cloud Cover</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button 
+             variant="ghost" 
+             size="sm" 
+             className={`hidden md:flex gap-2 h-8 border border-white/10 ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
+             onClick={() => setShowMap(!showMap)}
+           >
+             {showMap ? <List className="w-3 h-3" /> : <MapIcon className="w-3 h-3" />}
+             <span className="hidden lg:inline text-xs">{showMap ? 'Hide Map' : 'Show Map'}</span>
+           </Button>
          </div>
       </div>
 
