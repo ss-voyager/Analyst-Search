@@ -1,10 +1,22 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
-import { motion } from "framer-motion";
-import { Search, MapPin, Filter, ArrowLeft, Calendar, Layers, Download, MoreVertical, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Search, MapPin, Filter, ArrowLeft, Calendar, Layers, 
+  Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
+  List, ArrowUpDown, Info, Check
+} from "lucide-react";
 import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
 import { LatLngBoundsExpression } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 // Mock Data
 const MOCK_RESULTS = [
@@ -48,6 +60,16 @@ const MOCK_RESULTS = [
     thumbnail: "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop",
     bounds: [[33.8, -118.2], [33.9, -118.1]] as LatLngBoundsExpression
   },
+  {
+    id: 5,
+    title: "Landsat 8 OLI/TIRS C2 L1",
+    date: "2024-03-08",
+    cloudCover: "0%",
+    platform: "Landsat 8",
+    provider: "USGS",
+    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[34.2, -118.6], [34.3, -118.5]] as LatLngBoundsExpression
+  },
 ];
 
 export default function SearchResults() {
@@ -55,12 +77,22 @@ export default function SearchResults() {
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
   
+  // Search State
   const [keyword, setKeyword] = useState(params.get("q") || "");
   const [place, setPlace] = useState(params.get("loc") || "");
+  
+  // UI State
+  const [showMap, setShowMap] = useState(true);
+  const [showFacets, setShowFacets] = useState(false); // Hidden by default on mobile/desktop init maybe?
+  const [sortBy, setSortBy] = useState("relevance");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-
-  // Mock loading state
   const [isLoading, setIsLoading] = useState(true);
+
+  // Active Filters State (Mock)
+  const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([
+    { type: 'platform', value: 'Sentinel-2', id: 'f1' },
+    { type: 'cloud', value: '< 20%', id: 'f2' }
+  ]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -69,184 +101,345 @@ export default function SearchResults() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Update URL with new params without reloading page (wouter setLocation does this)
     setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
-    // Re-trigger loading for effect
     setIsLoading(true);
     setTimeout(() => setIsLoading(false), 800);
   };
 
+  const removeFilter = (id: string) => {
+    setActiveFilters(prev => prev.filter(f => f.id !== id));
+  };
+
+  const clearLocation = () => {
+    setPlace("");
+    setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=`);
+  };
+
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
-      {/* Header / Search Bar */}
-      <header className="h-16 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0">
-        <button 
-          onClick={() => setLocation("/")}
-          className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        
-        <div className="flex items-center gap-2 mr-4">
-           <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-              <Layers className="w-3 h-3 text-primary" />
-           </div>
-           <span className="font-display font-bold text-lg tracking-tight hidden md:block">Voyager</span>
+      
+      {/* 1. Header / Search Bar */}
+      <header className="h-16 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          <button 
+            onClick={() => setLocation("/")}
+            className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="flex items-center gap-2 mr-4 shrink-0">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                <Layers className="w-3 h-3 text-primary" />
+            </div>
+            <span className="font-display font-bold text-lg tracking-tight hidden lg:block">Voyager</span>
+          </div>
+
+          <form onSubmit={handleSearch} className="flex-1 max-w-2xl flex items-center gap-2">
+            <div className="flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors hover:bg-white/10">
+              <Search className="w-4 h-4 text-muted-foreground mr-2" />
+              <input 
+                  value={keyword}
+                  onChange={(e) => setKeyword(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50"
+                  placeholder="Search keywords..."
+              />
+            </div>
+            <div className="hidden md:flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors relative hover:bg-white/10">
+              <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
+              <input 
+                  value={place}
+                  onChange={(e) => setPlace(e.target.value)}
+                  className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50"
+                  placeholder="Filter by location..."
+              />
+              <button 
+                  type="button"
+                  onClick={() => setIsPickerOpen(true)}
+                  className="ml-2 p-1 rounded hover:bg-white/10 text-primary text-xs font-mono border border-primary/20 bg-primary/5"
+              >
+                AOI
+              </button>
+            </div>
+            <button type="submit" className="hidden md:flex p-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90">
+              <Search className="w-4 h-4" />
+            </button>
+          </form>
         </div>
 
-        <form onSubmit={handleSearch} className="flex-1 max-w-3xl flex items-center gap-2">
-          <div className="flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors">
-             <Search className="w-4 h-4 text-muted-foreground mr-2" />
-             <input 
-                value={keyword}
-                onChange={(e) => setKeyword(e.target.value)}
-                className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50"
-                placeholder="Keywords..."
-             />
-          </div>
-          <div className="flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors relative">
-             <MapPin className="w-4 h-4 text-muted-foreground mr-2" />
-             <input 
-                value={place}
-                onChange={(e) => setPlace(e.target.value)}
-                className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50"
-                placeholder="Location..."
-             />
-             <button 
-                type="button"
-                onClick={() => setIsPickerOpen(true)}
-                className="ml-2 p-1 rounded hover:bg-white/10 text-primary text-xs font-mono border border-primary/20 bg-primary/5"
-             >
-               AOI
-             </button>
-          </div>
-          <button type="submit" className="p-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90">
-            <Search className="w-4 h-4" />
-          </button>
-        </form>
-
-        <div className="ml-auto flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-secondary border border-white/10" />
+        <div className="flex items-center gap-3">
+           <Button 
+             variant="ghost" 
+             size="sm" 
+             className={`hidden md:flex gap-2 ${showMap ? 'bg-accent text-accent-foreground' : ''}`}
+             onClick={() => setShowMap(!showMap)}
+           >
+             {showMap ? <MapIcon className="w-4 h-4" /> : <List className="w-4 h-4" />}
+             <span className="hidden lg:inline">{showMap ? 'Hide Map' : 'Show Map'}</span>
+           </Button>
+           <div className="w-8 h-8 rounded-full bg-secondary border border-white/10" />
         </div>
       </header>
 
-      {/* Main Content Split View */}
+      {/* 2. Current Query / Facets Bar */}
+      <div className="border-b border-white/10 bg-background/95 backdrop-blur flex flex-col md:flex-row md:items-center px-4 py-2 gap-3 z-10">
+         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1">
+            
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className={`gap-2 border-dashed ${showFacets ? 'bg-accent' : ''}`}
+              onClick={() => setShowFacets(!showFacets)}
+            >
+              <Filter className="w-3 h-3" /> Filters
+            </Button>
+            
+            <Separator orientation="vertical" className="h-6 hidden md:block" />
+
+            {/* Query Chips */}
+            {keyword && (
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+                <Search className="w-3 h-3 opacity-50" />
+                {keyword}
+                <button onClick={() => {setKeyword(""); handleSearch({preventDefault:()=>{}} as any)}} className="ml-1 hover:bg-white/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+            
+            {place && (
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal border-primary/30 bg-primary/5 text-primary">
+                <MapPin className="w-3 h-3 opacity-50" />
+                Location
+                <button onClick={clearLocation} className="ml-1 hover:bg-primary/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+
+            {activeFilters.map(filter => (
+              <Badge key={filter.id} variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+                <span className="opacity-50 capitalize">{filter.type}:</span>
+                {filter.value}
+                <button onClick={() => removeFilter(filter.id)} className="ml-1 hover:bg-white/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+            
+            {(keyword || place || activeFilters.length > 0) && (
+              <button 
+                onClick={() => {
+                  setKeyword("");
+                  setPlace("");
+                  setActiveFilters([]);
+                  setLocation("/search");
+                }} 
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors whitespace-nowrap px-2"
+              >
+                Clear all
+              </button>
+            )}
+         </div>
+
+         <div className="flex items-center gap-2 md:ml-auto">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{MOCK_RESULTS.length} results</span>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent border-white/10">
+                <div className="flex items-center gap-2">
+                   <ArrowUpDown className="w-3 h-3" />
+                   <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevance">Relevance</SelectItem>
+                <SelectItem value="date_desc">Newest First</SelectItem>
+                <SelectItem value="date_asc">Oldest First</SelectItem>
+                <SelectItem value="cloud_asc">Least Cloud Cover</SelectItem>
+              </SelectContent>
+            </Select>
+         </div>
+      </div>
+
+      {/* Main Split Layout */}
       <div className="flex-1 flex overflow-hidden relative">
         
-        {/* Left Panel: Results List */}
-        <div className="w-full md:w-[450px] border-r border-white/10 bg-background/50 flex flex-col z-10">
-          {/* Filters Bar */}
-          <div className="h-12 border-b border-white/10 flex items-center px-4 gap-2 overflow-x-auto no-scrollbar shrink-0">
-             <button className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs hover:bg-white/10 whitespace-nowrap">
-               <Filter className="w-3 h-3" /> Filters
-             </button>
-             <button className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs hover:bg-white/10 whitespace-nowrap">
-               <Calendar className="w-3 h-3" /> Date Range
-             </button>
-             <button className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs hover:bg-white/10 whitespace-nowrap">
-               Cloud Cover &lt; 20%
-             </button>
-             <div className="ml-auto text-xs text-muted-foreground">
-               {MOCK_RESULTS.length} results
+        {/* Facets Panel (Expandable) */}
+        <AnimatePresence mode="wait">
+          {showFacets && (
+            <motion.div 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 280, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="border-r border-white/10 bg-card/30 hidden md:flex flex-col overflow-hidden shrink-0"
+            >
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-6 pr-4">
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Calendar className="w-4 h-4" /> Date Range
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                       <input type="date" className="text-xs bg-black/20 border border-white/10 rounded p-1.5 text-muted-foreground" />
+                       <input type="date" className="text-xs bg-black/20 border border-white/10 rounded p-1.5 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  <Separator className="bg-white/5" />
+
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Layers className="w-4 h-4" /> Platform
+                    </h3>
+                    <div className="space-y-2">
+                      {['Sentinel-1', 'Sentinel-2', 'Landsat 8', 'Landsat 9', 'Terra', 'Aqua'].map(p => (
+                        <div key={p} className="flex items-center space-x-2">
+                          <Checkbox id={`p-${p}`} />
+                          <Label htmlFor={`p-${p}`} className="text-xs font-normal text-muted-foreground">{p}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator className="bg-white/5" />
+
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-foreground">Cloud Cover</h3>
+                    <div className="space-y-2">
+                      {['0-10%', '10-20%', '20-50%', '50%+'].map(c => (
+                        <div key={c} className="flex items-center space-x-2">
+                          <Checkbox id={`c-${c}`} />
+                          <Label htmlFor={`c-${c}`} className="text-xs font-normal text-muted-foreground">{c}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Results List ("Baseball Cards") */}
+        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${showMap ? 'md:w-1/2 lg:w-[500px] xl:w-[600px] md:flex-none' : 'w-full'}`}>
+           <ScrollArea className="flex-1">
+             <div className="p-4 space-y-4">
+               {isLoading ? (
+                 // Loading State
+                 Array.from({ length: 4 }).map((_, i) => (
+                   <div key={i} className="h-48 rounded-xl bg-white/5 animate-pulse border border-white/5" />
+                 ))
+               ) : (
+                 MOCK_RESULTS.map((result) => (
+                   <motion.div 
+                     key={result.id}
+                     layout
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     className="group flex flex-col sm:flex-row bg-card/40 border border-white/10 hover:border-primary/50 rounded-xl overflow-hidden transition-all hover:shadow-lg hover:bg-card/60"
+                   >
+                      {/* Thumbnail */}
+                      <div className="sm:w-40 h-40 sm:h-auto bg-black/50 relative shrink-0">
+                        <img src={result.thumbnail} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="" />
+                        <Badge className="absolute top-2 left-2 bg-black/60 hover:bg-black/60 border-white/10 text-[10px] font-mono backdrop-blur-sm">
+                           {result.platform}
+                        </Badge>
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 p-4 flex flex-col min-w-0">
+                         <div className="flex justify-between items-start gap-2">
+                           <h3 className="font-display font-semibold text-base text-foreground truncate leading-tight" title={result.title}>
+                             {result.title}
+                           </h3>
+                           <button className="text-muted-foreground hover:text-foreground shrink-0">
+                             <MoreVertical className="w-4 h-4" />
+                           </button>
+                         </div>
+
+                         <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                               <Calendar className="w-3 h-3" />
+                               <span>{result.date}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                               <Layers className="w-3 h-3" />
+                               <span>{result.provider}</span>
+                            </div>
+                            {result.cloudCover !== "N/A" && (
+                              <div className="col-span-2 flex items-center gap-1.5">
+                                 <span className="text-sky-400">☁</span>
+                                 <span>{result.cloudCover} Cloud Cover</span>
+                              </div>
+                            )}
+                         </div>
+
+                         <div className="mt-auto pt-4 flex items-center justify-between gap-2">
+                            <a href="#" className="text-xs font-medium text-primary hover:underline flex items-center gap-1">
+                              View Details <ArrowLeft className="w-3 h-3 rotate-180" />
+                            </a>
+                            
+                            <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                               <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg border-white/10 hover:bg-white/10">
+                                  <MapPin className="w-3.5 h-3.5" />
+                               </Button>
+                               <Button size="icon" variant="outline" className="h-8 w-8 rounded-lg border-white/10 hover:bg-white/10">
+                                  <Download className="w-3.5 h-3.5" />
+                               </Button>
+                            </div>
+                         </div>
+                      </div>
+                   </motion.div>
+                 ))
+               )}
+               
+               {/* End of results spacer */}
+               <div className="h-8" />
+             </div>
+           </ScrollArea>
+        </div>
+
+        {/* Map Panel (Hideable) */}
+        {showMap && (
+          <div className="flex-1 bg-black/20 relative hidden md:block border-l border-white/10">
+             <MapContainer 
+                 center={[34.05, -118.25]} 
+                 zoom={9} 
+                 style={{ height: '100%', width: '100%' }}
+                 className="z-0 bg-[#1a1a1a]"
+               >
+                 <TileLayer
+                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                   url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                 />
+                 {!isLoading && MOCK_RESULTS.map(result => (
+                   <Rectangle 
+                      key={result.id}
+                      bounds={result.bounds} 
+                      pathOptions={{ 
+                        color: '#00ffff', 
+                        weight: 1, 
+                        fillOpacity: 0.1,
+                        className: 'hover:fill-opacity-30 transition-all cursor-pointer'
+                      }} 
+                   />
+                 ))}
+             </MapContainer>
+             
+             {/* Map Controls Overlay */}
+             <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+                <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
+                  <button className="p-2 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors" title="Layers">
+                    <Layers className="w-4 h-4" />
+                  </button>
+                  <button className="p-2 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors" title="Select Area">
+                    <MapPin className="w-4 h-4" />
+                  </button>
+                </div>
              </div>
           </div>
-
-          {/* Results List */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-             {isLoading ? (
-               // Loading Skeletons
-               Array.from({ length: 4 }).map((_, i) => (
-                 <div key={i} className="h-32 rounded-xl bg-white/5 animate-pulse" />
-               ))
-             ) : (
-               MOCK_RESULTS.map((result) => (
-                 <motion.div 
-                   key={result.id}
-                   initial={{ opacity: 0, y: 10 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   className="group relative bg-card/50 border border-white/5 hover:border-primary/50 rounded-xl p-3 transition-all cursor-pointer hover:shadow-lg hover:bg-card"
-                 >
-                    <div className="flex gap-3">
-                       <div className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-black/50 relative">
-                          <img src={result.thumbnail} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="" />
-                          <div className="absolute bottom-0 left-0 right-0 p-1 bg-gradient-to-t from-black/80 to-transparent text-[10px] text-white font-mono text-center">
-                            Preview
-                          </div>
-                       </div>
-                       <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start">
-                             <h3 className="font-medium text-sm text-primary truncate pr-2">{result.title}</h3>
-                             <button className="text-muted-foreground hover:text-foreground">
-                               <MoreVertical className="w-4 h-4" />
-                             </button>
-                          </div>
-                          
-                          <div className="mt-2 space-y-1">
-                             <div className="flex items-center text-xs text-muted-foreground">
-                               <Calendar className="w-3 h-3 mr-1.5" />
-                               {result.date}
-                             </div>
-                             <div className="flex items-center text-xs text-muted-foreground">
-                               <Layers className="w-3 h-3 mr-1.5" />
-                               {result.platform}
-                             </div>
-                             <div className="flex items-center gap-2 mt-2">
-                                <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-muted-foreground">
-                                  {result.provider}
-                                </span>
-                                {result.cloudCover !== "N/A" && (
-                                  <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[10px] text-muted-foreground">
-                                    ☁ {result.cloudCover}
-                                  </span>
-                                )}
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-                    
-                    <div className="mt-3 pt-3 border-t border-white/5 flex justify-end gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-                       <button className="p-1.5 rounded hover:bg-white/10 text-muted-foreground hover:text-primary" title="Zoom to">
-                         <MapPin className="w-4 h-4" />
-                       </button>
-                       <button className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground text-xs font-medium transition-colors">
-                         <Download className="w-3 h-3" />
-                         Download
-                       </button>
-                    </div>
-                 </motion.div>
-               ))
-             )}
-          </div>
-        </div>
-
-        {/* Right Panel: Map View */}
-        <div className="flex-1 bg-black/20 relative hidden md:block">
-           <MapContainer 
-               center={[34.05, -118.25]} 
-               zoom={10} 
-               style={{ height: '100%', width: '100%' }}
-               className="z-0"
-             >
-               <TileLayer
-                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-               />
-               {!isLoading && MOCK_RESULTS.map(result => (
-                 <Rectangle 
-                    key={result.id}
-                    bounds={result.bounds} 
-                    pathOptions={{ color: '#00ffff', weight: 1, fillOpacity: 0.1 }} 
-                 />
-               ))}
-           </MapContainer>
-           
-           {/* Map Controls Overlay */}
-           <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
-              <button className="w-8 h-8 bg-black/60 backdrop-blur rounded-md border border-white/10 flex items-center justify-center text-white hover:bg-white/10">
-                <Layers className="w-4 h-4" />
-              </button>
-           </div>
-        </div>
+        )}
 
       </div>
 
