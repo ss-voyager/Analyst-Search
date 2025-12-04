@@ -7,8 +7,9 @@ import {
   List, ArrowUpDown, Info, Check
 } from "lucide-react";
 import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
-import { LatLngBoundsExpression } from 'leaflet';
+import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
+import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -88,6 +89,10 @@ export default function SearchResults() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Drawing State
+  const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point'>('none');
+  const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point', data: any} | null>(null);
+
   // Active Filters State (Mock)
   const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([
     { type: 'platform', value: 'Sentinel-2', id: 'f1' },
@@ -106,12 +111,25 @@ export default function SearchResults() {
     setTimeout(() => setIsLoading(false), 800);
   };
 
+  const handleDrawBox = (bounds: LatLngBounds) => {
+    setSpatialFilter({ type: 'box', data: bounds });
+    setDrawMode('none');
+    setPlace(`[${bounds.getWest().toFixed(2)}, ${bounds.getSouth().toFixed(2)}, ${bounds.getEast().toFixed(2)}, ${bounds.getNorth().toFixed(2)}]`);
+  };
+
+  const handleDrawPoint = (point: LatLng) => {
+    setSpatialFilter({ type: 'point', data: point });
+    setDrawMode('none');
+    setPlace(`${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`);
+  };
+
   const removeFilter = (id: string) => {
     setActiveFilters(prev => prev.filter(f => f.id !== id));
   };
 
   const clearLocation = () => {
     setPlace("");
+    setSpatialFilter(null);
     setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=`);
   };
 
@@ -352,14 +370,48 @@ export default function SearchResults() {
              {/* Map Controls Overlay */}
              <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
                 <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
-                  <button className="p-2 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors" title="Layers">
+                  <button 
+                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'none' ? 'text-white' : 'text-white/60'}`} 
+                    title="Pan/Select"
+                    onClick={() => setDrawMode('none')}
+                  >
                     <Layers className="w-4 h-4" />
                   </button>
-                  <button className="p-2 hover:bg-white/10 rounded text-white/80 hover:text-white transition-colors" title="Select Area">
+                  <button 
+                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'box' ? 'bg-primary text-white' : 'text-white/80'}`}
+                    title="Draw Box"
+                    onClick={() => setDrawMode('box')}
+                  >
+                    <div className="w-4 h-4 border-2 border-current rounded-sm" />
+                  </button>
+                  <button 
+                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'point' ? 'bg-primary text-white' : 'text-white/80'}`}
+                    title="Select Point"
+                    onClick={() => setDrawMode('point')}
+                  >
                     <MapPin className="w-4 h-4" />
                   </button>
                 </div>
+                
+                {drawMode !== 'none' && (
+                  <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded shadow-lg animate-in fade-in slide-in-from-left-2">
+                    {drawMode === 'box' ? 'Click & Drag to draw box' : 'Click to select point'}
+                  </div>
+                )}
              </div>
+
+             <MapDrawControl 
+               mode={drawMode} 
+               onDrawBox={handleDrawBox} 
+               onDrawPoint={handleDrawPoint} 
+             />
+             
+             {spatialFilter && (
+               <SpatialFilterLayer 
+                 type={spatialFilter.type} 
+                 data={spatialFilter.data} 
+               />
+             )}
           </div>
         )}
 
