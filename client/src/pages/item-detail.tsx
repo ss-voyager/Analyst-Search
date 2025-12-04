@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LatLngBoundsExpression } from "leaflet";
-import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
 
 // Reusing Mock Data logic (in a real app this would come from an API or store)
 const MOCK_RESULTS = [
@@ -264,12 +264,17 @@ export default function ItemDetail() {
                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                  />
+                 <ImageOverlay
+                    url={item.thumbnail}
+                    bounds={item.bounds}
+                    opacity={0.8}
+                 />
                  <Rectangle 
                     bounds={item.bounds} 
                     pathOptions={{ 
                       color: '#00ffff', 
                       weight: 2, 
-                      fillOpacity: 0.2,
+                      fillOpacity: 0,
                     }} 
                  />
             </MapContainer>
@@ -310,12 +315,17 @@ export default function ItemDetail() {
                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                        url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                      />
+                     <ImageOverlay
+                        url={item.thumbnail}
+                        bounds={item.bounds}
+                        opacity={0.8}
+                     />
                      <Rectangle 
                         bounds={item.bounds} 
                         pathOptions={{ 
                           color: '#00ffff', 
                           weight: 2, 
-                          fillOpacity: 0.2,
+                          fillOpacity: 0,
                         }} 
                      />
                 </MapContainer>
