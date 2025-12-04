@@ -365,7 +365,6 @@ export default function SearchResults() {
                       }} 
                    />
                  ))}
-             </MapContainer>
              
              {/* Map Controls Overlay */}
              <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
@@ -412,6 +411,7 @@ export default function SearchResults() {
                  data={spatialFilter.data} 
                />
              )}
+          </MapContainer>
           </div>
         )}
 
