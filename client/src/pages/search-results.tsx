@@ -367,7 +367,7 @@ export default function SearchResults() {
                  ))}
              
              {/* Map Controls Overlay */}
-             <div className="absolute top-4 left-4 z-[400] flex flex-col gap-2">
+             <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
                 <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
                   <button 
                     className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'none' ? 'text-white' : 'text-white/60'}`} 
