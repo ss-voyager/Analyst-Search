@@ -39,6 +39,23 @@ export default function Home() {
     "Ocean Currents"
   ];
 
+  const PLACE_SUGGESTIONS = [
+    "New York, USA",
+    "London, UK",
+    "Tokyo, Japan",
+    "Paris, France",
+    "Berlin, Germany",
+    "Sydney, Australia",
+    "San Francisco, USA",
+    "Singapore",
+    "Dubai, UAE",
+    "Rio de Janeiro, Brazil"
+  ];
+
+  const filteredPlaces = PLACE_SUGGESTIONS.filter(p => 
+    p.toLowerCase().includes(place.toLowerCase())
+  );
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative selection:bg-primary/30">
       {/* Background Asset */}
@@ -154,6 +171,32 @@ export default function Home() {
                     className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
                     data-testid="input-search-location"
                   />
+                  {isLocationFocused && place && filteredPlaces.length > 0 && (
+                     <div className="absolute top-full left-0 w-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                        <div className="p-2 space-y-1">
+                          {filteredPlaces.map((p, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setPlace(p);
+                                setIsLocationFocused(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-left group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-white/30 transition-colors">
+                                <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-foreground">{p}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                     </div>
+                  )}
+
                   {isLocationFocused && showLocationOptions && !place && (
                     <div className="absolute top-full left-0 w-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                       <div className="p-2 space-y-1">
