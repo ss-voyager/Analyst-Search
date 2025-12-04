@@ -41,39 +41,39 @@
 }
 
 :root {
-  /* Dark Theme by Default for "Space/Future" vibe */
-  --background: 224 71% 4%;
+  /* Geospatial Dark Theme - Cyan/Teal Focus */
+  --background: 220 40% 4%;
   --foreground: 210 40% 98%;
 
-  --card: 224 71% 4%;
+  --card: 220 40% 6%;
   --card-foreground: 210 40% 98%;
 
-  --popover: 224 71% 4%;
+  --popover: 220 40% 6%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 263 70% 50%;
-  --primary-foreground: 210 40% 98%;
+  --primary: 180 70% 45%; /* Cyan for geospatial feel */
+  --primary-foreground: 220 40% 4%;
 
-  --secondary: 217 19% 27%;
+  --secondary: 215 25% 20%;
   --secondary-foreground: 210 40% 98%;
 
-  --muted: 217 19% 27%;
+  --muted: 215 25% 20%;
   --muted-foreground: 215 20% 65%;
 
-  --accent: 217 19% 27%;
-  --accent-foreground: 210 40% 98%;
+  --accent: 180 30% 20%;
+  --accent-foreground: 180 70% 80%;
 
   --destructive: 0 62% 30%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 217 19% 27%;
-  --input: 217 19% 27%;
-  --ring: 263 70% 50%;
+  --border: 215 25% 20%;
+  --input: 215 25% 20%;
+  --ring: 180 70% 45%;
 
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
+  --chart-1: 180 70% 50%;
+  --chart-2: 210 70% 50%;
+  --chart-3: 280 60% 60%;
+  --chart-4: 32 80% 60%;
   --chart-5: 340 75% 55%;
 }
 
