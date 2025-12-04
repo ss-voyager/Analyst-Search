@@ -183,13 +183,6 @@ export default function SearchResults() {
                   className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 min-w-0"
                   placeholder="Where is it located?"
               />
-              <button 
-                  type="button"
-                  onClick={() => setIsPickerOpen(true)}
-                  className="ml-2 p-1 rounded hover:bg-white/10 text-primary text-xs font-mono border border-primary/20 bg-primary/5 shrink-0"
-              >
-                AOI
-              </button>
             </div>
             <button type="submit" className="hidden md:flex p-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90">
               <Search className="w-4 h-4" />
