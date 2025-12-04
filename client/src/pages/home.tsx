@@ -13,6 +13,7 @@ export default function Home() {
   const [place, setPlace] = useState("");
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isLocationFocused, setIsLocationFocused] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,14 +135,35 @@ export default function Home() {
                   </Select>
                 </div>
                 <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <input
-                  type="text"
-                  value={place}
-                  onChange={(e) => setPlace(e.target.value)}
-                  placeholder="Where is it located?"
-                  className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
-                  data-testid="input-search-location"
-                />
+                <div className="w-full relative">
+                  <input
+                    type="text"
+                    value={place}
+                    onChange={(e) => setPlace(e.target.value)}
+                    onFocus={() => setIsLocationFocused(true)}
+                    onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
+                    placeholder="Where is it located?"
+                    className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
+                    data-testid="input-search-location"
+                  />
+                  {isLocationFocused && (
+                    <div className="absolute top-full left-0 w-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsPickerOpen(true)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors text-left group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 group-hover:border-primary/60 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-foreground">Draw Bounding Box</div>
+                          <div className="text-xs text-muted-foreground">Define spatial extent on map</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Search Button */}
