@@ -454,8 +454,8 @@ export default function SearchResults() {
                         </div>
 
                         {/* Content Area */}
-                        <div className="flex-1 p-3 flex flex-col min-w-0 bg-card">
-                           <h3 className="font-display font-semibold text-sm text-primary truncate mb-1" title={result.title}>
+                        <div className="flex-1 p-3 flex flex-col min-w-0 bg-card cursor-pointer" onClick={() => setLocation(`/item/${result.id}`)}>
+                           <h3 className="font-display font-semibold text-sm text-primary truncate mb-1 hover:underline" title={result.title}>
                              {result.title}
                            </h3>
                            
