@@ -14,6 +14,7 @@ export default function Home() {
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
+  const [showLocationOptions, setShowLocationOptions] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,20 +141,29 @@ export default function Home() {
                     id="loc-input"
                     type="text"
                     value={place}
-                    onChange={(e) => setPlace(e.target.value)}
-                    onFocus={() => setIsLocationFocused(true)}
+                    onChange={(e) => {
+                      setPlace(e.target.value);
+                      setShowLocationOptions(false);
+                    }}
+                    onFocus={() => {
+                      setIsLocationFocused(true);
+                      if (!place) setShowLocationOptions(true);
+                    }}
                     onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
                     placeholder="Where is it located?"
                     className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
                     data-testid="input-search-location"
                   />
-                  {isLocationFocused && (
+                  {isLocationFocused && showLocationOptions && !place && (
                     <div className="absolute top-full left-0 w-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                       <div className="p-2 space-y-1">
                         <button
                           type="button"
                           onMouseDown={(e) => e.preventDefault()} // Prevent blur
-                          onClick={() => document.getElementById('loc-input')?.focus()}
+                          onClick={() => {
+                            document.getElementById('loc-input')?.focus();
+                            setShowLocationOptions(false);
+                          }}
                           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-left group"
                         >
                           <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30 group-hover:border-blue-500/60 transition-colors">
