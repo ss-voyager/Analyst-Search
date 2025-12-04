@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import { ArrowLeft, Calendar, Layers, Download, Share2, ExternalLink, Info, Globe, Cloud, Clock, Database, Tag, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Calendar, Layers, Download, Share2, ExternalLink, Info, Globe, Cloud, Clock, Database, Tag, Check, Map as MapIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -90,6 +92,7 @@ const MOCK_RESULTS = [
 export default function ItemDetail() {
   const [, params] = useRoute("/item/:id");
   const [, setLocation] = useLocation();
+  const [isMapOpen, setIsMapOpen] = useState(false);
   const id = params?.id ? parseInt(params.id) : null;
   
   const item = MOCK_RESULTS.find(r => r.id === id) || MOCK_RESULTS[0];
@@ -223,6 +226,9 @@ export default function ItemDetail() {
                     <Button className="w-full gap-2" size="lg">
                       <Download className="w-4 h-4" /> Download Asset
                     </Button>
+                    <Button variant="outline" className="w-full gap-2" onClick={() => setIsMapOpen(true)}>
+                      <MapIcon className="w-4 h-4" /> View Extent
+                    </Button>
                     <Button variant="outline" className="w-full gap-2">
                       <Share2 className="w-4 h-4" /> Share Item
                     </Button>
@@ -272,6 +278,51 @@ export default function ItemDetail() {
             </div>
         </div>
       </div>
+      
+      <AnimatePresence>
+        {isMapOpen && (
+          <motion.div 
+            initial={{opacity: 0}} 
+            animate={{opacity: 1}} 
+            exit={{opacity: 0}} 
+            className="fixed inset-0 z-50 bg-background/95 backdrop-blur flex flex-col"
+          >
+             <div className="h-16 border-b border-white/10 flex items-center justify-between px-4 bg-background/50">
+               <div className="flex items-center gap-2">
+                  <MapIcon className="w-5 h-5 text-primary" />
+                  <h2 className="font-display font-bold text-lg">Extent Preview</h2>
+               </div>
+               <Button variant="ghost" size="icon" onClick={() => setIsMapOpen(false)} className="rounded-full hover:bg-white/10">
+                 <X className="w-5 h-5" />
+               </Button>
+             </div>
+             <div className="flex-1 relative bg-black/20">
+                <MapContainer 
+                     center={item.bounds ? [
+                       ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
+                       ((item.bounds as any)[0][1] + (item.bounds as any)[1][1]) / 2
+                     ] : [34.05, -118.25]} 
+                     zoom={10} 
+                     style={{ height: '100%', width: '100%' }}
+                     className="z-0 bg-[#1a1a1a]"
+                   >
+                     <TileLayer
+                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                       url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                     />
+                     <Rectangle 
+                        bounds={item.bounds} 
+                        pathOptions={{ 
+                          color: '#00ffff', 
+                          weight: 2, 
+                          fillOpacity: 0.2,
+                        }} 
+                     />
+                </MapContainer>
+             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
