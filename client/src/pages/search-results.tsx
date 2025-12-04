@@ -10,6 +10,7 @@ import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
 import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -186,6 +187,7 @@ export default function SearchResults() {
         </div>
 
         <div className="flex items-center gap-3">
+           <ThemeToggle />
            <div className="w-8 h-8 rounded-full bg-secondary border border-white/10" />
         </div>
       </header>

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Search, MapPin, Globe, Navigation, ArrowRight, Command } from "lucide-react";
 import heroBg from "@assets/generated_images/dark_cinematic_view_of_earth_from_space_with_data_overlays.png";
 import { LocationPicker } from "@/components/location-picker";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -66,6 +67,7 @@ export default function Home() {
           <button className="text-sm px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-medium backdrop-blur-sm">
             Sign In
           </button>
+          <ThemeToggle />
         </div>
       </nav>
 
