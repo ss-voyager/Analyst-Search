@@ -1006,8 +1006,8 @@ export default function SearchResults() {
                                 <span className="text-foreground/80">{result.date}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Layers className="w-3 h-3 opacity-70" />
-                                <span className="text-foreground/80">Cloud Cover: {result.cloudCover}</span>
+                                <Globe className="w-3 h-3 opacity-70" />
+                                <span className="text-foreground/80">Agency: {result.provider}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <File className="w-3 h-3 opacity-70" />
