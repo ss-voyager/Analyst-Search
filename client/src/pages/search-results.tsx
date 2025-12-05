@@ -550,6 +550,48 @@ export default function SearchResults() {
     { id: 3, name: "Amazon Deforestation Monitor", keywords: ["forest", "loss"], location: "Amazon Basin", date: "Last 7 days", newResults: 5 },
   ];
 
+  const handleRunSavedSearch = (search: any) => {
+    setIsSavedSearchesOpen(false);
+    
+    // Set search parameters
+    setKeyword(search.keywords.join(", "));
+    setPlace(search.location);
+    setSelectedKeywords(search.keywords);
+    
+    // Set mock date based on description
+    const today = new Date();
+    let fromDate = new Date();
+    
+    if (search.date === "Last 30 days") {
+      fromDate.setDate(today.getDate() - 30);
+      setDate({ from: fromDate, to: today });
+    } else if (search.date === "Last 7 days") {
+      fromDate.setDate(today.getDate() - 7);
+      setDate({ from: fromDate, to: today });
+    } else {
+      // Just set a generic range for others
+      fromDate.setMonth(today.getMonth() - 2);
+      setDate({ from: fromDate, to: today });
+    }
+    
+    // Update active filters chips
+    const newFilters: any[] = [];
+    search.keywords.forEach((kw: string) => {
+      newFilters.push({ type: 'keyword', value: kw, id: `kw-${kw}` });
+    });
+    // Add location as filter if needed, though we set it in place
+    
+    setActiveFilters(newFilters);
+    
+    // Trigger search
+    toast.success(`Loaded saved search: ${search.name}`);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 800);
+    
+    // Update URL
+    setLocation(`/search?q=${encodeURIComponent(search.keywords.join(", "))}&loc=${encodeURIComponent(search.location)}`);
+  };
+
   const handleDrawBox = (bounds: LatLngBounds) => {
     setSpatialFilter({ type: 'box', data: bounds });
     setDrawMode('none');
@@ -740,13 +782,7 @@ export default function SearchResults() {
                       <div key={search.id} className="group flex flex-col gap-3 p-4 rounded-xl border border-border bg-card/50 hover:bg-card hover:border-primary/50 transition-all">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors cursor-pointer" onClick={() => {
-                              setIsSavedSearchesOpen(false);
-                              toast.info(`Running search: ${search.name}`);
-                              // Simulate loading search
-                              setIsLoading(true);
-                              setTimeout(() => setIsLoading(false), 800);
-                            }}>
+                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors cursor-pointer" onClick={() => handleRunSavedSearch(search)}>
                               {search.name}
                             </h3>
                             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
@@ -795,12 +831,7 @@ export default function SearchResults() {
                         </div>
 
                         <div className="flex items-center justify-end pt-2 mt-1 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <Button size="sm" variant="secondary" className="h-7 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20" onClick={() => {
-                              setIsSavedSearchesOpen(false);
-                              toast.info(`Running search: ${search.name}`);
-                              setIsLoading(true);
-                              setTimeout(() => setIsLoading(false), 800);
-                           }}>
+                           <Button size="sm" variant="secondary" className="h-7 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20" onClick={() => handleRunSavedSearch(search)}>
                              Run Search
                            </Button>
                         </div>
