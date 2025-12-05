@@ -117,10 +117,7 @@ export default function SearchResults() {
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point', data: any} | null>(null);
 
   // Active Filters State (Mock)
-  const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([
-    { type: 'platform', value: 'Sentinel-2', id: 'f1' },
-    { type: 'cloud', value: '< 20%', id: 'f2' }
-  ]);
+  const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
