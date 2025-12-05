@@ -138,11 +138,11 @@ export default function SearchResults() {
     <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       
       {/* 1. Header / Search Bar */}
-      <header className="h-16 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
+      <header className="h-16 border-b border-border bg-background/95 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
         <div className="flex items-center gap-4 flex-1">
           <button 
             onClick={() => setLocation("/")}
-            className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -159,7 +159,7 @@ export default function SearchResults() {
           </div>
 
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl relative group ml-4">
-            <div className="flex items-center bg-white/80 dark:bg-black/50 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-xl p-1 shadow-sm transition-all duration-300 focus-within:border-primary/50 focus-within:bg-white/90 dark:focus-within:bg-black/80 divide-x divide-black/10 dark:divide-white/10">
+            <div className="flex items-center bg-muted/50 dark:bg-black/50 backdrop-blur-xl border border-border rounded-xl p-1 shadow-sm transition-all duration-300 focus-within:border-primary/50 focus-within:bg-background dark:focus-within:bg-black/80 divide-x divide-border">
               
               <div className="flex items-center flex-1 px-3">
                 <input 
@@ -192,12 +192,12 @@ export default function SearchResults() {
 
         <div className="flex items-center gap-3">
            <ThemeToggle />
-           <div className="w-8 h-8 rounded-full bg-secondary border border-white/10" />
+           <div className="w-8 h-8 rounded-full bg-secondary border border-border" />
         </div>
       </header>
 
       {/* 2. Current Query / Facets Bar */}
-      <div className="border-b border-white/10 bg-background/95 backdrop-blur flex flex-col md:flex-row md:items-center px-4 py-2 gap-3 z-10">
+      <div className="border-b border-border bg-background/95 backdrop-blur flex flex-col md:flex-row md:items-center px-4 py-2 gap-3 z-10">
          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1">
             
             <Button 
@@ -216,7 +216,7 @@ export default function SearchResults() {
               <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
                 <Search className="w-3 h-3 opacity-50" />
                 {keyword}
-                <button onClick={() => {setKeyword(""); handleSearch({preventDefault:()=>{}} as any)}} className="ml-1 hover:bg-white/20 rounded-full p-0.5">
+                <button onClick={() => {setKeyword(""); handleSearch({preventDefault:()=>{}} as any)}} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
@@ -236,7 +236,7 @@ export default function SearchResults() {
               <Badge key={filter.id} variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
                 <span className="opacity-50 capitalize">{filter.type}:</span>
                 {filter.value}
-                <button onClick={() => removeFilter(filter.id)} className="ml-1 hover:bg-white/20 rounded-full p-0.5">
+                <button onClick={() => removeFilter(filter.id)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
@@ -260,7 +260,7 @@ export default function SearchResults() {
          <div className="flex items-center gap-2 md:ml-auto">
             <span className="text-xs text-muted-foreground whitespace-nowrap">{MOCK_RESULTS.length} results</span>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent border-white/10">
+              <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent border-border">
                 <div className="flex items-center gap-2">
                    <ArrowUpDown className="w-3 h-3" />
                    <SelectValue />
@@ -277,7 +277,7 @@ export default function SearchResults() {
             <Button 
              variant="ghost" 
              size="sm" 
-             className={`hidden md:flex gap-2 h-8 border border-white/10 ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
+             className={`hidden md:flex gap-2 h-8 border border-border ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
              onClick={() => setShowMap(!showMap)}
            >
              {showMap ? <List className="w-3 h-3" /> : <MapIcon className="w-3 h-3" />}
@@ -297,7 +297,7 @@ export default function SearchResults() {
               animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="border-r border-white/10 bg-card/30 hidden md:flex flex-col overflow-hidden shrink-0"
+              className="border-r border-border bg-card hidden md:flex flex-col overflow-hidden shrink-0"
             >
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-6 pr-4">
@@ -306,12 +306,12 @@ export default function SearchResults() {
                       <Calendar className="w-4 h-4" /> Date Range
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
-                       <input type="date" className="text-xs bg-black/20 border border-white/10 rounded p-1.5 text-muted-foreground" />
-                       <input type="date" className="text-xs bg-black/20 border border-white/10 rounded p-1.5 text-muted-foreground" />
+                       <input type="date" className="text-xs bg-muted border border-border rounded p-1.5 text-muted-foreground" />
+                       <input type="date" className="text-xs bg-muted border border-border rounded p-1.5 text-muted-foreground" />
                     </div>
                   </div>
 
-                  <Separator className="bg-white/5" />
+                  <Separator className="bg-border" />
 
                   <div className="space-y-3">
                     <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
@@ -327,7 +327,7 @@ export default function SearchResults() {
                     </div>
                   </div>
 
-                  <Separator className="bg-white/5" />
+                  <Separator className="bg-border" />
 
                   <div className="space-y-3">
                     <h3 className="text-sm font-medium text-foreground">Cloud Cover</h3>
@@ -347,13 +347,13 @@ export default function SearchResults() {
         </AnimatePresence>
 
         {/* Results Grid (Left) */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background/50">
+        <div className="flex-1 flex flex-col min-w-0 bg-muted/30 dark:bg-background/50">
            <ScrollArea className="flex-1">
              <div className="p-4">
                {isLoading ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                    {Array.from({ length: 8 }).map((_, i) => (
-                     <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse border border-white/5" />
+                     <div key={i} className="aspect-[3/4] rounded-xl bg-muted animate-pulse border border-border" />
                    ))}
                  </div>
                ) : (
@@ -364,10 +364,10 @@ export default function SearchResults() {
                        layout
                        initial={{ opacity: 0, scale: 0.95 }}
                        animate={{ opacity: 1, scale: 1 }}
-                       className="group flex flex-col bg-card border border-white/10 hover:border-primary/50 rounded-sm overflow-hidden transition-all hover:shadow-xl hover:bg-card/80"
+                       className="group flex flex-col bg-card border border-border hover:border-primary/50 rounded-sm overflow-hidden transition-all hover:shadow-xl hover:bg-card/80"
                      >
                         {/* Thumbnail Area - Square aspect ratio like reference */}
-                        <div className="aspect-square bg-black/50 relative group-hover:brightness-110 transition-all">
+                        <div className="aspect-square bg-muted relative group-hover:brightness-110 transition-all">
                           <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
                           
                           {/* Selection Checkbox Overlay */}
@@ -391,7 +391,7 @@ export default function SearchResults() {
                            </div>
 
                            {/* Action Footer */}
-                           <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+                           <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
                               <button className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
                                 <div className="w-3 h-3 rounded-full border border-current flex items-center justify-center">
                                   <span className="text-[8px] leading-none">+</span>
@@ -417,7 +417,7 @@ export default function SearchResults() {
 
         {/* Map Panel (Right - Movable) */}
         {showMap && (
-          <div className="w-full md:w-[400px] lg:w-[500px] bg-black/20 relative hidden md:block border-l border-white/10 shrink-0">
+          <div className="w-full md:w-[400px] lg:w-[500px] bg-muted/20 dark:bg-black/20 relative hidden md:block border-l border-border shrink-0">
              <MapContainer 
                  center={[34.05, -118.25]} 
                  zoom={9} 
