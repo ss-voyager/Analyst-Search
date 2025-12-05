@@ -1523,7 +1523,7 @@ export default function SearchResults() {
                                     <Download className="w-3 h-3 mr-2" />
                                     Download
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-xs cursor-pointer" onSelect={() => setPreviewedResultId(result.id)}>
+                                  <DropdownMenuItem className="text-xs cursor-pointer" onSelect={() => { setPreviewedResultId(result.id); setShowMap(true); }}>
                                     <MapIcon className="w-3 h-3 mr-2" />
                                     Preview on map
                                   </DropdownMenuItem>
