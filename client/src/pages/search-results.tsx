@@ -226,10 +226,6 @@ export default function SearchResults() {
                           }} className="gap-2 cursor-pointer">
                               <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-border" />
-                          <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer">
-                              <MapIcon className="w-4 h-4" /> <span>Select Region on a Map</span>
-                          </DropdownMenuItem>
                       </DropdownMenuContent>
                   </DropdownMenu>
                   
