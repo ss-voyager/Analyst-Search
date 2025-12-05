@@ -126,7 +126,7 @@ export default function Home() {
           className="text-center mb-12"
         >
           <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 tracking-tight text-foreground drop-shadow-2xl">
-            Map the World's Data.
+            Understand your data.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             
