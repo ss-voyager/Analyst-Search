@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Rectangle, useMapEvents, Marker, Popup } from 'react-leaflet';
+import { Rectangle, useMapEvents, Marker, Popup, Polygon, Polyline } from 'react-leaflet';
 import { LatLngBounds, LatLng, Icon } from 'leaflet';
 
 // Fix Leaflet's default icon path issues in React
@@ -19,26 +19,45 @@ const defaultIcon = new Icon({
 
 
 interface MapDrawControlProps {
-  mode: 'none' | 'box' | 'point';
+  mode: 'none' | 'box' | 'point' | 'polygon';
   onDrawBox: (bounds: LatLngBounds) => void;
   onDrawPoint: (point: LatLng) => void;
+  onDrawPolygon?: (points: LatLng[]) => void;
 }
 
-export function MapDrawControl({ mode, onDrawBox, onDrawPoint }: MapDrawControlProps) {
+export function MapDrawControl({ mode, onDrawBox, onDrawPoint, onDrawPolygon }: MapDrawControlProps) {
   const [startPoint, setStartPoint] = useState<LatLng | null>(null);
   const [currentBounds, setCurrentBounds] = useState<LatLngBounds | null>(null);
+  const [polyPoints, setPolyPoints] = useState<LatLng[]>([]);
 
-  useMapEvents({
+  // Reset poly points if mode changes
+  useEffect(() => {
+      setPolyPoints([]);
+  }, [mode]);
+
+  const map = useMapEvents({
     click(e) {
       if (mode === 'point') {
         onDrawPoint(e.latlng);
+      } else if (mode === 'polygon') {
+        setPolyPoints(prev => [...prev, e.latlng]);
       }
+    },
+    dblclick(e) {
+       if (mode === 'polygon') {
+           if (polyPoints.length > 2 && onDrawPolygon) {
+               onDrawPolygon(polyPoints); // Use current points + last double click point if needed, but usually dblclick adds one more point via click event first?
+               // Actually dblclick fires after 2 clicks. Leaflet behavior is tricky.
+               // Let's rely on the points collected so far.
+               setPolyPoints([]);
+           }
+       }
     },
     mousedown(e) {
       if (mode === 'box') {
         setStartPoint(e.latlng);
         setCurrentBounds(new LatLngBounds(e.latlng, e.latlng));
-        e.target.dragging.disable();
+        map.dragging.disable();
       }
     },
     mousemove(e) {
@@ -53,7 +72,7 @@ export function MapDrawControl({ mode, onDrawBox, onDrawPoint }: MapDrawControlP
         onDrawBox(finalBounds);
         setStartPoint(null);
         setCurrentBounds(null);
-        e.target.dragging.enable();
+        map.dragging.enable();
       }
     }
   });
@@ -62,12 +81,21 @@ export function MapDrawControl({ mode, onDrawBox, onDrawPoint }: MapDrawControlP
     return <Rectangle bounds={currentBounds} pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.2, dashArray: '5, 5' }} />;
   }
 
+  if (polyPoints.length > 0) {
+      return (
+          <>
+            <Polyline positions={polyPoints} pathOptions={{ color: '#3b82f6', weight: 2, dashArray: '5, 5' }} />
+            {polyPoints.map((p, i) => <Marker key={i} position={p} icon={defaultIcon} />)}
+          </>
+      );
+  }
+
   return null;
 }
 
 interface SpatialFilterLayerProps {
-  type: 'box' | 'point' | null;
-  data: any; // LatLngBounds or LatLng
+  type: 'box' | 'point' | 'polygon' | null;
+  data: any; // LatLngBounds or LatLng or LatLng[]
 }
 
 export function SpatialFilterLayer({ type, data }: SpatialFilterLayerProps) {
@@ -88,6 +116,10 @@ export function SpatialFilterLayer({ type, data }: SpatialFilterLayerProps) {
         <Popup>Selected Point</Popup>
       </Marker>
     );
+  }
+
+  if (type === 'polygon') {
+      return <Polygon positions={data} pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.1 }} />
   }
 
   return null;

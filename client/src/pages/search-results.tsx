@@ -389,8 +389,8 @@ export default function SearchResults() {
   }, [theme]);
 
   // Drawing State
-  const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point'>('none');
-  const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point', data: any} | null>(null);
+  const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point' | 'polygon'>('none');
+  const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
@@ -509,6 +509,12 @@ export default function SearchResults() {
     setSpatialFilter({ type: 'point', data: point });
     setDrawMode('none');
     setPlace(`${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`);
+  };
+
+  const handleDrawPolygon = (points: LatLng[]) => {
+    setSpatialFilter({ type: 'polygon', data: points });
+    setDrawMode('none');
+    setPlace("Custom Polygon");
   };
 
   const removeFilter = (id: string) => {
@@ -1093,7 +1099,7 @@ export default function SearchResults() {
                      <Rectangle 
                         bounds={result.bounds} 
                         pathOptions={{ 
-                          color: hoveredResultId === result.id || previewedResultId === result.id ? '#ef4444' : '#3b82f6', 
+                          color: hoveredResultId === result.id || previewedResultId === result.id ? '#ef4444' : '#6b7280', 
                           weight: hoveredResultId === result.id || previewedResultId === result.id ? 3 : 1, 
                           fillOpacity: hoveredResultId === result.id || previewedResultId === result.id ? 0 : 0.1,
                           className: 'hover:fill-opacity-30 transition-all cursor-pointer'
@@ -1152,11 +1158,22 @@ export default function SearchResults() {
                   >
                     <MapPin className="w-4 h-4" />
                   </button>
+                  <button 
+                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'polygon' ? 'bg-primary text-white' : 'text-white/80'}`}
+                    title="Draw Polygon"
+                    onClick={() => setDrawMode('polygon')}
+                  >
+                    <div className="w-4 h-4 relative">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M3 8l7-5 11 5-6 13-12-3z" />
+                      </svg>
+                    </div>
+                  </button>
                 </div>
                 
                 {drawMode !== 'none' && (
                   <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded shadow-lg animate-in fade-in slide-in-from-left-2">
-                    {drawMode === 'box' ? 'Click & Drag to draw box' : 'Click to select point'}
+                    {drawMode === 'box' ? 'Click & Drag to draw box' : drawMode === 'point' ? 'Click to select point' : 'Click points to draw polygon'}
                   </div>
                 )}
              </div>
@@ -1165,6 +1182,7 @@ export default function SearchResults() {
                mode={drawMode} 
                onDrawBox={handleDrawBox} 
                onDrawPoint={handleDrawPoint} 
+               onDrawPolygon={handleDrawPolygon}
              />
              
              {spatialFilter && (
