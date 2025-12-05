@@ -577,8 +577,22 @@ export default function SearchResults() {
             {place && (
               <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal border-primary/30 bg-primary/5 text-primary">
                 <MapPin className="w-3 h-3 opacity-50" />
-                Location
+                {place}
                 <button onClick={clearLocation} className="ml-1 hover:bg-primary/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+
+            {date?.from && (
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+                <CalendarIcon className="w-3 h-3 opacity-50" />
+                {date.to ? (
+                  <>{format(date.from, "MMM dd")} - {format(date.to, "MMM dd")}</>
+                ) : (
+                  format(date.from, "MMM dd")
+                )}
+                <button onClick={() => setDate(undefined)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
@@ -594,7 +608,30 @@ export default function SearchResults() {
               </Badge>
             ))}
             
-            {(keyword || place || activeFilters.length > 0) && (
+            {selectedProperties.map(prop => (
+              <Badge key={`prop-${prop}`} variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+                <Tag className="w-3 h-3 opacity-50" />
+                {prop.replace('has_', '').replace('is_', '')}
+                <button onClick={() => toggleProperty(prop)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+            
+            {selectedKeywords.map(kw => (
+               // Only render if not already in activeFilters (to avoid duplicates if logic overlaps)
+               !activeFilters.find(f => f.id === `kw-${kw}`) && (
+                <Badge key={`kw-chip-${kw}`} variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+                  <Tag className="w-3 h-3 opacity-50" />
+                  {kw}
+                  <button onClick={() => toggleKeyword(kw)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+               )
+            ))}
+            
+            {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0) && (
               <button 
                 onClick={() => {
                   setKeyword("");
