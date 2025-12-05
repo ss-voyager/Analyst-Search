@@ -50,11 +50,11 @@ const MOCK_RESULTS = [
       { type: "Next Pass", title: "Sentinel-2A (5 days later)", id: "S2A_MSIL2A_20240320" }
     ],
     provenance: [
-        { step: "Ingestion", agent: "Ingest-Service-v1.2", date: "2024-03-15T10:23:00Z", status: "Success" },
-        { step: "Processing L1C", agent: "Sentinel-Processor-A", date: "2024-03-15T10:45:00Z", status: "Success" },
-        { step: "Atmospheric Correction", agent: "Sen2Cor-2.11", date: "2024-03-15T11:15:00Z", status: "Success" },
-        { step: "Quality Check", agent: "QA-Bot-9000", date: "2024-03-15T11:20:00Z", status: "Passed" },
-        { step: "Archival", agent: "Archive-System", date: "2024-03-15T11:25:00Z", status: "Stored" }
+        { date: "2024-03-15T10:23:00Z", system: "Sentinel-2B", event: "Data Capture" },
+        { date: "2024-03-15T10:45:00Z", system: "Sentinel-Processor-A", event: "Processing L1C" },
+        { date: "2024-03-15T11:15:00Z", system: "Sen2Cor-2.11", event: "Atmospheric Correction" },
+        { date: "2024-03-15T11:20:00Z", system: "QA-Bot-9000", event: "Quality Check Passed" },
+        { date: "2024-03-15T11:25:00Z", system: "Archive-System", event: "Archival" }
     ]
   },
   // ... (other items would need similar metadata structure, applying generic for now)
@@ -82,8 +82,8 @@ const getItem = (id: number | null) => {
     }
     if (!item.provenance) {
         item.provenance = [
-            { step: "Ingestion", agent: "System", date: "2024-03-15T10:00:00Z", status: "Success" },
-            { step: "Processing", agent: "Processor-v1", date: "2024-03-15T10:30:00Z", status: "Success" }
+            { date: "2024-03-15T10:00:00Z", system: "System", event: "Ingestion" },
+            { date: "2024-03-15T10:30:00Z", system: "Processor-v1", event: "Processing" }
         ] as any;
     }
     return item;
@@ -253,25 +253,20 @@ export default function ItemDetail() {
                                 <Table>
                                     <TableHeader>
                                         <TableRow className="bg-muted/30">
-                                            <TableHead className="w-[150px]">Step</TableHead>
-                                            <TableHead>Agent</TableHead>
                                             <TableHead>Date</TableHead>
-                                            <TableHead className="text-right">Status</TableHead>
+                                            <TableHead>System / Agent</TableHead>
+                                            <TableHead className="text-right">Event / Modification</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {item.provenance?.map((prov: any, i: number) => (
                                             <TableRow key={i}>
-                                                <TableCell className="font-medium">{prov.step}</TableCell>
-                                                <TableCell className="text-muted-foreground font-mono text-xs">{prov.agent}</TableCell>
-                                                <TableCell className="text-muted-foreground text-xs">
+                                                <TableCell className="text-muted-foreground text-xs font-mono">
                                                     {new Date(prov.date).toLocaleString()}
                                                 </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Badge variant={prov.status === 'Success' || prov.status === 'Stored' || prov.status === 'Passed' ? 'outline' : 'destructive'} className={prov.status === 'Success' || prov.status === 'Stored' || prov.status === 'Passed' ? 'border-green-500/50 text-green-500' : ''}>
-                                                        {prov.status === 'Success' || prov.status === 'Stored' || prov.status === 'Passed' ? <Check className="w-3 h-3 mr-1" /> : null}
-                                                        {prov.status}
-                                                    </Badge>
+                                                <TableCell className="font-medium">{prov.system}</TableCell>
+                                                <TableCell className="text-right text-muted-foreground">
+                                                    {prov.event}
                                                 </TableCell>
                                             </TableRow>
                                         ))}
