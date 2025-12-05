@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
+import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
 import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
@@ -28,6 +28,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
@@ -292,6 +293,16 @@ const generateMockResults = (count: number) => {
 };
 
 const MOCK_RESULTS = generateMockResults(100);
+
+const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) {
+      map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+    }
+  }, [bounds, map]);
+  return null;
+};
 
 export default function SearchResults() {
   const [location, setLocation] = useLocation();
@@ -751,11 +762,22 @@ export default function SearchResults() {
                )
             ))}
             
-            {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0) && (
+            {spatialFilter && (
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal border-primary/30 bg-primary/5 text-primary">
+                <MapIcon className="w-3 h-3 opacity-50" />
+                {spatialFilter.type === 'box' ? 'AOI: Box' : spatialFilter.type === 'point' ? 'AOI: Point' : 'AOI: Polygon'}
+                <button onClick={() => { setSpatialFilter(null); setDrawMode('none'); }} className="ml-1 hover:bg-primary/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+
+            {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0 || spatialFilter) && (
               <button 
                 onClick={() => {
                   setKeyword("");
                   setPlace("");
+                  setSpatialFilter(null);
                   setActiveFilters([]);
                   setSelectedLocationIds([]);
                   setSelectedProperties([]);
@@ -771,7 +793,22 @@ export default function SearchResults() {
          </div>
 
          <div className="flex items-center gap-2 md:ml-auto">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{filteredResults.length} results</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {filteredResults.length} results
+              {spatialFilter && <span className="hidden lg:inline"> within your AOI</span>}
+            </span>
+            
+            {spatialFilter && (
+                <Button 
+                 variant="outline" 
+                 size="sm" 
+                 className="h-8 text-xs border-dashed border-primary/50 text-primary bg-primary/5 hover:bg-primary/10"
+                 onClick={() => setDrawMode('box')}
+               >
+                 Modify AOI
+               </Button>
+            )}
+
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[160px] h-8 text-xs bg-transparent border-border">
                 <div className="flex items-center gap-2">
@@ -977,7 +1014,21 @@ export default function SearchResults() {
                {isLoading ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                    {Array.from({ length: 8 }).map((_, i) => (
-                     <div key={i} className="aspect-[3/4] rounded-xl bg-muted animate-pulse border border-border" />
+                     <div key={i} className="flex flex-col h-[340px] rounded-xl border border-border overflow-hidden bg-card">
+                       <Skeleton className="h-[180px] w-full rounded-none" />
+                       <div className="p-3 flex-1 flex flex-col space-y-2">
+                         <Skeleton className="h-4 w-3/4" />
+                         <div className="space-y-1 pt-2">
+                           <Skeleton className="h-3 w-1/2" />
+                           <Skeleton className="h-3 w-1/3" />
+                           <Skeleton className="h-3 w-1/4" />
+                         </div>
+                         <div className="mt-auto pt-2 flex justify-between items-center">
+                            <Skeleton className="h-6 w-16 rounded-full" />
+                            <Skeleton className="h-6 w-16" />
+                         </div>
+                       </div>
+                     </div>
                    ))}
                  </div>
                ) : (
@@ -985,6 +1036,7 @@ export default function SearchResults() {
                    {filteredResults.map((result, i) => (
                      <motion.div
                        key={result.id}
+                       id={`result-card-${result.id}`}
                        initial={{ opacity: 0, scale: 0.95 }}
                        animate={{ opacity: 1, scale: 1 }}
                        transition={{ delay: i * 0.05, duration: 0.3 }}
@@ -1098,6 +1150,14 @@ export default function SearchResults() {
                    <div key={result.id}>
                      <Rectangle 
                         bounds={result.bounds} 
+                        eventHandlers={{
+                          click: () => {
+                            document.getElementById(`result-card-${result.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            setHoveredResultId(result.id);
+                          },
+                          mouseover: () => setHoveredResultId(result.id),
+                          mouseout: () => setHoveredResultId(null)
+                        }}
                         pathOptions={{ 
                           color: hoveredResultId === result.id || previewedResultId === result.id ? '#ef4444' : '#6b7280', 
                           weight: hoveredResultId === result.id || previewedResultId === result.id ? 3 : 1, 
@@ -1190,6 +1250,10 @@ export default function SearchResults() {
                  type={spatialFilter.type} 
                  data={spatialFilter.data} 
                />
+             )}
+
+             {spatialFilter && spatialFilter.type === 'box' && (
+               <MapEffect bounds={spatialFilter.data} />
              )}
           </MapContainer>
           </div>

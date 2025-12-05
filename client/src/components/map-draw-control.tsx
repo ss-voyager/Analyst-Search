@@ -105,7 +105,7 @@ export function SpatialFilterLayer({ type, data }: SpatialFilterLayerProps) {
     return (
       <Rectangle 
         bounds={data} 
-        pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.1 }} 
+        pathOptions={{ color: '#3b82f6', weight: 4, fillOpacity: 0.15 }} 
       />
     );
   }
@@ -119,7 +119,7 @@ export function SpatialFilterLayer({ type, data }: SpatialFilterLayerProps) {
   }
 
   if (type === 'polygon') {
-      return <Polygon positions={data} pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.1 }} />
+      return <Polygon positions={data} pathOptions={{ color: '#3b82f6', weight: 4, fillOpacity: 0.15 }} />
   }
 
   return null;
