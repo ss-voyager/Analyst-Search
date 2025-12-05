@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -90,6 +91,26 @@ export default function SearchResults() {
   const [sortBy, setSortBy] = useState("relevance");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLocationFocused, setIsLocationFocused] = useState(false);
+  const [showLocationOptions, setShowLocationOptions] = useState(false);
+
+  const PLACE_SUGGESTIONS = [
+    "New York, USA",
+    "London, UK",
+    "Tokyo, Japan",
+    "Paris, France",
+    "Berlin, Germany",
+    "Sydney, Australia",
+    "San Francisco, USA",
+    "Singapore",
+    "Dubai, UAE",
+    "Rio de Janeiro, Brazil"
+  ];
+
+  const filteredPlaces = PLACE_SUGGESTIONS.filter(p => 
+    p.toLowerCase().includes(place.toLowerCase())
+  );
+
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(true);
 
@@ -190,13 +211,68 @@ export default function SearchResults() {
               </div>
 
               <div className="hidden md:flex items-center flex-[0.8] px-3 relative">
-                <MapPin className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
-                <input 
+                <div className="flex items-center flex-1 w-full relative">
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                           <button type="button" className="mr-2 text-muted-foreground hover:text-primary transition-colors outline-none">
+                               <MapPin className="w-4 h-4" />
+                           </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-xl border-border text-foreground">
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">Location Tools</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => {
+                            document.getElementById('loc-input-results')?.focus();
+                            setShowLocationOptions(false);
+                          }} className="gap-2 cursor-pointer">
+                              <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-border" />
+                          <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer">
+                              <MapIcon className="w-4 h-4" /> <span>Select Region on a Map</span>
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  <input
+                    id="loc-input-results"
                     value={place}
-                    onChange={(e) => setPlace(e.target.value)}
+                    onChange={(e) => {
+                      setPlace(e.target.value);
+                      setShowLocationOptions(false);
+                    }}
+                    onFocus={() => {
+                      setIsLocationFocused(true);
+                    }}
+                    onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
                     className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 min-w-0 h-8 text-foreground"
                     placeholder="Where is it located?"
-                />
+                  />
+                  {isLocationFocused && !showLocationOptions && filteredPlaces.length > 0 && (
+                     <div className="absolute top-full left-0 w-full mt-2 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                        <div className="p-2 space-y-1">
+                          {filteredPlaces.map((p, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                setPlace(p);
+                                setIsLocationFocused(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors text-left group"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center border border-border group-hover:border-primary/30 transition-colors">
+                                <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-foreground">{p}</div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                     </div>
+                  )}
+                </div>
               </div>
 
               <div className="p-0.5">
