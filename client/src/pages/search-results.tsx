@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, MapPin, Filter, ArrowLeft, Calendar, Layers, 
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
-  List, ArrowUpDown, Info, Check, User, Globe, Tag
+  List, ArrowUpDown, Info, Check, User, Globe, Tag,
+  Folder, FolderOpen, File
 } from "lucide-react";
 import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
@@ -516,25 +517,9 @@ export default function SearchResults() {
                     <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
                       <Globe className="w-4 h-4 text-primary" /> Location Hierarchy
                     </h3>
-                    <Accordion type="multiple" className="w-full">
-                      {HIERARCHY_LOCATIONS.map((region, i) => (
-                        <AccordionItem key={i} value={`item-${i}`} className="border-none">
-                          <AccordionTrigger className="py-2 text-xs hover:no-underline hover:bg-primary/5 hover:text-primary px-2 rounded-md font-medium transition-colors">
-                            {region.region}
-                          </AccordionTrigger>
-                          <AccordionContent>
-                            <div className="pl-4 pt-1 space-y-1">
-                              {region.countries.map(country => (
-                                <div key={country} className="flex items-center space-x-2 py-1 group">
-                                  <Checkbox id={`loc-${country}`} className="data-[state=checked]:bg-primary border-muted-foreground/40 group-hover:border-primary/60" />
-                                  <Label htmlFor={`loc-${country}`} className="text-xs font-normal text-muted-foreground cursor-pointer group-hover:text-foreground transition-colors">{country}</Label>
-                                </div>
-                              ))}
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
+                    <div className="border border-border/60 rounded-lg bg-muted/10 p-2 max-h-[300px] overflow-y-auto">
+                      <FolderTree nodes={HIERARCHY_TREE} />
+                    </div>
                   </div>
 
                   <Separator className="bg-border/50" />
