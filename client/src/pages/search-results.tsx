@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, MapPin, Filter, ArrowLeft, Calendar, Layers, 
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
-  List, ArrowUpDown, Info, Check, User
+  List, ArrowUpDown, Info, Check, User, Globe, Tag
 } from "lucide-react";
 import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
 import desertImage from '@assets/stock_images/satellite_view_of_de_09a0f404.jpg';
@@ -71,6 +72,35 @@ const TITLES: Record<string, string[]> = {
   "SPOT 7": ["1.5m Imagery", "Panchromatic"],
   "Pleiades Neo": ["30cm Imagery", "Panchromatic"]
 };
+
+const HIERARCHY_LOCATIONS = [
+  {
+    region: "North America",
+    countries: ["USA", "Canada", "Mexico"]
+  },
+  {
+    region: "Europe",
+    countries: ["UK", "France", "Germany", "Spain", "Italy"]
+  },
+  {
+    region: "Asia",
+    countries: ["Japan", "China", "India", "Singapore"]
+  },
+  {
+    region: "South America",
+    countries: ["Brazil", "Argentina", "Chile"]
+  },
+  {
+    region: "Africa",
+    countries: ["Egypt", "South Africa", "Nigeria", "Kenya"]
+  }
+];
+
+const KEYWORDS = [
+  "Vegetation", "Water", "Urban", "Agriculture", "Disaster", 
+  "Snow/Ice", "Clouds", "Desert", "Forest", "Ocean",
+  "Infrastructure", "Mining", "Oil & Gas", "Renewable Energy"
+];
 
 const generateMockResults = (count: number) => {
   return Array.from({ length: count }, (_, i) => {
@@ -477,6 +507,49 @@ export default function SearchResults() {
                     <div className="grid grid-cols-2 gap-2">
                        <input type="date" className="text-xs bg-muted border border-border rounded p-1.5 text-muted-foreground" />
                        <input type="date" className="text-xs bg-muted border border-border rounded p-1.5 text-muted-foreground" />
+                    </div>
+                  </div>
+
+                  <Separator className="bg-border" />
+
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Globe className="w-4 h-4" /> Location Hierarchy
+                    </h3>
+                    <Accordion type="multiple" className="w-full">
+                      {HIERARCHY_LOCATIONS.map((region, i) => (
+                        <AccordionItem key={i} value={`item-${i}`} className="border-none">
+                          <AccordionTrigger className="py-2 text-xs hover:no-underline hover:bg-muted/50 px-2 rounded-md">
+                            {region.region}
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="pl-4 pt-1 space-y-1">
+                              {region.countries.map(country => (
+                                <div key={country} className="flex items-center space-x-2 py-1">
+                                  <Checkbox id={`loc-${country}`} />
+                                  <Label htmlFor={`loc-${country}`} className="text-xs font-normal text-muted-foreground cursor-pointer">{country}</Label>
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ))}
+                    </Accordion>
+                  </div>
+
+                  <Separator className="bg-border" />
+
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
+                      <Tag className="w-4 h-4" /> Keywords
+                    </h3>
+                    <div className="space-y-2">
+                      {KEYWORDS.map(k => (
+                        <div key={k} className="flex items-center space-x-2">
+                          <Checkbox id={`k-${k}`} />
+                          <Label htmlFor={`k-${k}`} className="text-xs font-normal text-muted-foreground cursor-pointer">{k}</Label>
+                        </div>
+                      ))}
                     </div>
                   </div>
 
