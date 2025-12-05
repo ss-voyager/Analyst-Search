@@ -243,6 +243,19 @@ export default function Home() {
                      </div>
                   )}
                 </div>
+
+                {/* Map Draw Button */}
+                <div className="h-8 w-[1px] bg-black/10 dark:bg-white/10 mx-2 hidden md:block" />
+                
+                <button
+                  type="button"
+                  onClick={openPicker}
+                  className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground hover:text-primary transition-colors shrink-0"
+                  title="Draw area on map"
+                >
+                  <MapIcon className="w-5 h-5" />
+                  <span className="text-sm font-medium">Map</span>
+                </button>
               </div>
 
               {/* Search Button */}
