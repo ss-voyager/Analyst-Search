@@ -16,6 +16,7 @@ export default function Home() {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [showLocationOptions, setShowLocationOptions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +55,32 @@ export default function Home() {
   const filteredPlaces = PLACE_SUGGESTIONS.filter(p => 
     p.toLowerCase().includes(place.toLowerCase())
   );
+
+  // Reset selection when suggestions change
+  useState(() => {
+     setSelectedIndex(-1);
+  });
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isLocationFocused || filteredPlaces.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev + 1) % filteredPlaces.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev - 1 + filteredPlaces.length) % filteredPlaces.length);
+    } else if (e.key === 'Enter') {
+      if (selectedIndex >= 0) {
+        e.preventDefault();
+        setPlace(filteredPlaces[selectedIndex]);
+        setIsLocationFocused(false);
+        setSelectedIndex(-1);
+      }
+    } else if (e.key === 'Escape') {
+      setIsLocationFocused(false);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative selection:bg-primary/30">
@@ -117,14 +144,17 @@ export default function Home() {
               
               {/* Keyword Input */}
               <div className="flex items-center flex-1 w-full px-2">
+                <label htmlFor="keyword-input" className="sr-only">Search keywords</label>
                 <input
+                  id="keyword-input"
                   type="text"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
                   placeholder="Search keywords..."
-                  className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
+                  className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
                   data-testid="input-search-keyword"
                   autoFocus
+                  aria-label="Search keywords"
                 />
               </div>
 
@@ -136,6 +166,7 @@ export default function Home() {
                        <MapPin className="w-5 h-5" />
                    </div>
                   
+                  <label htmlFor="loc-input" className="sr-only">Location</label>
                   <input
                     id="loc-input"
                     type="text"
@@ -143,34 +174,60 @@ export default function Home() {
                     onChange={(e) => {
                       setPlace(e.target.value);
                       setShowLocationOptions(false);
+                      setSelectedIndex(-1);
                     }}
+                    onKeyDown={handleKeyDown}
                     onFocus={() => {
                       setIsLocationFocused(true);
                     }}
                     onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
                     placeholder="Enter place name"
-                    className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
+                    className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
                     data-testid="input-search-location"
+                    autoComplete="off"
+                    aria-label="Location"
+                    aria-autocomplete="list"
+                    aria-controls="location-suggestions"
+                    aria-activedescendant={selectedIndex >= 0 ? `suggestion-${selectedIndex}` : undefined}
                   />
                   {isLocationFocused && !showLocationOptions && filteredPlaces.length > 0 && (
-                     <div className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+                     <div 
+                       id="location-suggestions"
+                       role="listbox"
+                       className="absolute top-full left-0 w-full mt-2 bg-white/90 dark:bg-black/90 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
+                     >
                         <div className="p-2 space-y-1">
                           {filteredPlaces.map((p, i) => (
                             <button
                               key={i}
+                              id={`suggestion-${i}`}
+                              role="option"
+                              aria-selected={i === selectedIndex}
                               type="button"
                               onMouseDown={(e) => e.preventDefault()}
                               onClick={() => {
                                 setPlace(p);
                                 setIsLocationFocused(false);
                               }}
-                              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left group"
+                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left group ${
+                                i === selectedIndex 
+                                  ? 'bg-primary/10 text-primary' 
+                                  : 'hover:bg-black/5 dark:hover:bg-white/10 text-foreground'
+                              }`}
                             >
-                              <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5 flex items-center justify-center border border-black/10 dark:border-white/10 group-hover:border-black/30 dark:group-hover:border-white/30 transition-colors">
-                                <MapPin className="w-4 h-4 text-muted-foreground group-hover:text-foreground" />
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
+                                i === selectedIndex
+                                  ? 'bg-primary/20 border-primary/30'
+                                  : 'bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10 group-hover:border-black/30 dark:group-hover:border-white/30'
+                              }`}>
+                                <MapPin className={`w-4 h-4 ${
+                                  i === selectedIndex ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                                }`} />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-foreground">{p}</div>
+                                <div className={`text-sm font-medium ${
+                                  i === selectedIndex ? 'text-primary' : 'text-foreground'
+                                }`}>{p}</div>
                               </div>
                             </button>
                           ))}
