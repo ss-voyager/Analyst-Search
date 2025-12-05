@@ -19,10 +19,8 @@ export default function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (keyword.trim() || place.trim()) {
-      console.log("Searching for:", keyword, "in", place);
-      setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
-    }
+    console.log("Searching for:", keyword, "in", place);
+    setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
   };
 
   const openPicker = () => {
