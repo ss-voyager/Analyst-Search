@@ -270,6 +270,10 @@ const generateMockResults = (count: number) => {
     // Random keywords
     const itemKeywords = KEYWORDS.filter(() => Math.random() > 0.95);
     
+    // Random format
+    const FORMATS = ["GeoTIFF", "NITF", "GIMI", "LiDAR", "JPEG2000"];
+    const format = FORMATS[Math.floor(Math.random() * FORMATS.length)];
+
     return {
       id: i + 1,
       title,
@@ -281,7 +285,8 @@ const generateMockResults = (count: number) => {
       bounds: [[lat, lng], [lat + 0.05, lng + 0.05]] as LatLngBoundsExpression,
       locationId,
       properties,
-      keywords: itemKeywords
+      keywords: itemKeywords,
+      format
     };
   });
 };
@@ -992,9 +997,6 @@ export default function SearchResults() {
                              <h3 className="font-display font-semibold text-sm text-primary truncate hover:underline" title={result.title}>
                                {result.title}
                              </h3>
-                             <span className="text-[10px] font-mono text-muted-foreground shrink-0 border border-border px-1 rounded">
-                               {result.platform}
-                             </span>
                            </div>
                            
                            <div className="text-[11px] text-muted-foreground space-y-1.5 mb-3 mt-1">
@@ -1007,21 +1009,37 @@ export default function SearchResults() {
                                 <span className="text-foreground/80">Cloud Cover: {result.cloudCover}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <MapPin className="w-3 h-3 opacity-70" />
-                                <span className="text-foreground/80 truncate">Lat: {result.bounds[0][0].toFixed(2)}, Lng: {result.bounds[0][1].toFixed(2)}</span>
+                                <File className="w-3 h-3 opacity-70" />
+                                <span className="text-foreground/80">{result.format}</span>
                               </div>
                            </div>
 
                            {/* Action Footer */}
                            <div className="mt-auto pt-2 border-t border-border flex items-center justify-between">
-                              <button className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors hover:underline">
-                                View details
-                              </button>
+                              <div /> {/* Spacer */}
                               
-                              <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors bg-muted/30 hover:bg-muted px-2 py-1 rounded-md">
-                                <Download className="w-3 h-3" />
-                                <span className="sr-only">Download</span>
-                              </button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors bg-muted/30 hover:bg-muted px-2 py-1 rounded-md">
+                                    Tools
+                                    <ChevronDown className="w-3 h-3" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                  <DropdownMenuItem className="text-xs cursor-pointer">
+                                    <Download className="w-3 h-3 mr-2" />
+                                    Download
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-xs cursor-pointer">
+                                    <File className="w-3 h-3 mr-2" />
+                                    View raw Solr
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem className="text-xs cursor-pointer" onSelect={() => setHoveredResultId(result.id)}>
+                                    <MapIcon className="w-3 h-3 mr-2" />
+                                    Preview on map
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                            </div>
                         </div>
                      </motion.div>
