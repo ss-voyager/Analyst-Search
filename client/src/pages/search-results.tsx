@@ -436,6 +436,22 @@ export default function SearchResults() {
     }
     
     return true;
+  }).sort((a, b) => {
+    if (sortBy === 'relevance') return 0; // Keep original order (randomish)
+    
+    if (sortBy === 'date_desc') {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+    
+    if (sortBy === 'date_asc') {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    }
+    
+    if (sortBy === 'name_asc') {
+      return a.title.localeCompare(b.title);
+    }
+    
+    return 0;
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -751,7 +767,7 @@ export default function SearchResults() {
          <div className="flex items-center gap-2 md:ml-auto">
             <span className="text-xs text-muted-foreground whitespace-nowrap">{filteredResults.length} results</span>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent border-border">
+              <SelectTrigger className="w-[160px] h-8 text-xs bg-transparent border-border">
                 <div className="flex items-center gap-2">
                    <ArrowUpDown className="w-3 h-3" />
                    <SelectValue />
@@ -759,9 +775,9 @@ export default function SearchResults() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="relevance">Relevance</SelectItem>
-                <SelectItem value="date_desc">Newest First</SelectItem>
-                <SelectItem value="date_asc">Oldest First</SelectItem>
-                <SelectItem value="cloud_asc">Least Cloud Cover</SelectItem>
+                <SelectItem value="date_desc">Newest → Oldest</SelectItem>
+                <SelectItem value="date_asc">Oldest → Newest</SelectItem>
+                <SelectItem value="name_asc">Name A–Z</SelectItem>
               </SelectContent>
             </Select>
 
