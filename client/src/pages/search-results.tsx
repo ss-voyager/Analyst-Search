@@ -334,17 +334,52 @@ export default function SearchResults() {
 
   // Active Filters State (Mock)
   const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
+  // Filter mock results based on selected locations
+  const filteredResults = MOCK_RESULTS.filter(item => {
+    // If no location selected, show all
+    if (selectedLocationIds.length === 0) return true;
+    
+    // Filter by locationId if it matches any selected ID or its children (mocked by just checking if item.locationId is in selection for now)
+    // In a real app, we'd check if the item's location is a descendant of the selected node
+    // Here we just check direct match for simplicity since we assigned leaf IDs
+    
+    // Simple logic: check if item.locationId is in selectedLocationIds
+    return item.locationId && selectedLocationIds.includes(item.locationId);
+  });
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
     setIsLoading(true);
     setTimeout(() => setIsLoading(false), 800);
+  };
+
+  const handleLocationFilterSelect = (id: string, label: string) => {
+    setSelectedLocationIds(prev => {
+      const isSelected = prev.includes(id);
+      let newSelection;
+      
+      if (isSelected) {
+        newSelection = prev.filter(locId => locId !== id);
+        // Remove from active filters chips
+        setActiveFilters(curr => curr.filter(f => f.id !== `loc-${id}`));
+      } else {
+        newSelection = [...prev, id];
+        // Add to active filters chips
+        if (!activeFilters.find(f => f.id === `loc-${id}`)) {
+          setActiveFilters(curr => [...curr, { type: 'location', value: label, id: `loc-${id}` }]);
+        }
+      }
+      
+      return newSelection;
+    });
   };
 
   const handleDrawBox = (bounds: LatLngBounds) => {
@@ -360,6 +395,10 @@ export default function SearchResults() {
   };
 
   const removeFilter = (id: string) => {
+    if (id.startsWith('loc-')) {
+      const locId = id.replace('loc-', '');
+      setSelectedLocationIds(prev => prev.filter(lid => locId !== lid));
+    }
     setActiveFilters(prev => prev.filter(f => f.id !== id));
   };
 
@@ -555,6 +594,7 @@ export default function SearchResults() {
                   setKeyword("");
                   setPlace("");
                   setActiveFilters([]);
+                  setSelectedLocationIds([]);
                   setLocation("/search");
                 }} 
                 className="text-xs text-muted-foreground hover:text-destructive transition-colors whitespace-nowrap px-2"
@@ -565,7 +605,7 @@ export default function SearchResults() {
          </div>
 
          <div className="flex items-center gap-2 md:ml-auto">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{MOCK_RESULTS.length} results</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{filteredResults.length} results</span>
             <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="w-[140px] h-8 text-xs bg-transparent border-border">
                 <div className="flex items-center gap-2">
@@ -625,7 +665,7 @@ export default function SearchResults() {
                       <Globe className="w-4 h-4 text-primary" /> Location Hierarchy
                     </h3>
                     <div className="border border-border/60 rounded-lg bg-muted/10 p-2 max-h-[300px] overflow-y-auto">
-                      <FolderTree nodes={HIERARCHY_TREE} />
+                      <FolderTree nodes={HIERARCHY_TREE} onSelect={handleLocationFilterSelect} selectedIds={selectedLocationIds} />
                     </div>
                   </div>
 
@@ -735,13 +775,13 @@ export default function SearchResults() {
                  </div>
                ) : (
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                   {MOCK_RESULTS.map((result) => (
-                     <motion.div 
+                   {filteredResults.map((result, i) => (
+                     <motion.div
                        key={result.id}
-                       layout
                        initial={{ opacity: 0, scale: 0.95 }}
                        animate={{ opacity: 1, scale: 1 }}
-                       className="group flex flex-col bg-card border border-border hover:border-primary/50 rounded-sm overflow-hidden transition-all hover:shadow-xl hover:bg-card/80"
+                       transition={{ delay: i * 0.05, duration: 0.3 }}
+                       className="group relative aspect-[3/4] bg-card dark:bg-black/40 border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer"
                      >
                         {/* Thumbnail Area - Square aspect ratio like reference */}
                         <div className="aspect-square bg-muted relative group-hover:brightness-110 transition-all">
@@ -809,7 +849,7 @@ export default function SearchResults() {
                      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                    }
                  />
-                 {!isLoading && MOCK_RESULTS.map(result => (
+                 {!isLoading && filteredResults.map(result => (
                    <Rectangle 
                       key={result.id}
                       bounds={result.bounds} 
