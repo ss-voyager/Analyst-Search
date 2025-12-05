@@ -179,9 +179,6 @@ export default function Home() {
               <div className="flex items-center flex-[1.5] w-full px-2 relative">
                 
                 <div className="flex items-center flex-1 w-full relative">
-                   <div className="mr-2 text-muted-foreground">
-                       <MapPin className="w-5 h-5" />
-                   </div>
                   
                   <label htmlFor="loc-input" className="sr-only">Location</label>
                   <input
