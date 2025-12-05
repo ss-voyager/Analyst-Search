@@ -855,16 +855,6 @@ export default function SearchResults() {
               </SelectContent>
             </Select>
 
-            <Button 
-             variant="ghost" 
-             size="sm" 
-             className={`hidden md:flex gap-2 h-8 border border-border ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
-             onClick={() => setShowMap(!showMap)}
-           >
-             {showMap ? <PanelRightClose className="w-3 h-3" /> : <PanelRightOpen className="w-3 h-3" />}
-             <span className="hidden lg:inline text-xs">{showMap ? 'Hide Map' : 'Show Map'}</span>
-           </Button>
-
            <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -895,6 +885,16 @@ export default function SearchResults() {
                 </TooltipContent>
               </Tooltip>
            </TooltipProvider>
+
+            <Button 
+             variant="ghost" 
+             size="sm" 
+             className={`hidden md:flex gap-2 h-8 border border-border ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
+             onClick={() => setShowMap(!showMap)}
+           >
+             {showMap ? <PanelRightClose className="w-3 h-3" /> : <PanelRightOpen className="w-3 h-3" />}
+             <span className="hidden lg:inline text-xs">{showMap ? 'Hide Map' : 'Show Map'}</span>
+           </Button>
 
            {/* Save Search Modal */}
            <Dialog open={isSaveSearchOpen} onOpenChange={setIsSaveSearchOpen}>
