@@ -5,7 +5,8 @@ import {
   Search, MapPin, Filter, ArrowLeft, Calendar as CalendarIcon, Layers, 
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
   List, ArrowUpDown, Info, Check, User, Globe, Tag,
-  Folder, FolderOpen, File, Star, Share2, Mail, Bell, Copy, Trash, Link as LinkIcon
+  Folder, FolderOpen, File, Star, Share2, Mail, Bell, Copy, Trash, Link as LinkIcon,
+  PanelRightClose, PanelRightOpen
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -860,7 +861,7 @@ export default function SearchResults() {
              className={`hidden md:flex gap-2 h-8 border border-border ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
              onClick={() => setShowMap(!showMap)}
            >
-             {showMap ? <List className="w-3 h-3" /> : <MapIcon className="w-3 h-3" />}
+             {showMap ? <PanelRightClose className="w-3 h-3" /> : <PanelRightOpen className="w-3 h-3" />}
              <span className="hidden lg:inline text-xs">{showMap ? 'Hide Map' : 'Show Map'}</span>
            </Button>
 
