@@ -76,10 +76,7 @@ export default function Home() {
       {/* Navbar */}
       <nav className="relative z-10 w-full px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-            <Globe className="w-4 h-4 text-primary animate-pulse" />
-          </div>
-          <span className="font-display font-bold text-xl tracking-tight">Voyager</span>
+          <span className="font-display font-bold text-3xl tracking-tight text-[#3b82f6]">Voyager</span>
         </div>
         <div className="flex items-center gap-4">
           <button className="text-sm px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-medium backdrop-blur-sm">
