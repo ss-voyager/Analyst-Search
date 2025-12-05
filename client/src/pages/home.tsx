@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Search, MapPin, Globe, Navigation, ArrowRight, Command } from "lucide-react";
-import heroBg from "@assets/generated_images/satellite_analysis_interface_with_data_overlays.png";
+import heroBg from "@assets/generated_images/multispectral_satellite_imagery_false_color.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
