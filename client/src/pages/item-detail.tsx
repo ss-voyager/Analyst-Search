@@ -48,6 +48,13 @@ const MOCK_RESULTS = [
       { type: "Derived From", title: "Sentinel-2B L1C Source", id: "S2B_MSIL1C_20240315" },
       { type: "Co-located", title: "Landsat 9 Scene (Same Date)", id: "LC09_L1TP_042036_20240315" },
       { type: "Next Pass", title: "Sentinel-2A (5 days later)", id: "S2A_MSIL2A_20240320" }
+    ],
+    provenance: [
+        { step: "Ingestion", agent: "Ingest-Service-v1.2", date: "2024-03-15T10:23:00Z", status: "Success" },
+        { step: "Processing L1C", agent: "Sentinel-Processor-A", date: "2024-03-15T10:45:00Z", status: "Success" },
+        { step: "Atmospheric Correction", agent: "Sen2Cor-2.11", date: "2024-03-15T11:15:00Z", status: "Success" },
+        { step: "Quality Check", agent: "QA-Bot-9000", date: "2024-03-15T11:20:00Z", status: "Passed" },
+        { step: "Archival", agent: "Archive-System", date: "2024-03-15T11:25:00Z", status: "Stored" }
     ]
   },
   // ... (other items would need similar metadata structure, applying generic for now)
@@ -71,6 +78,12 @@ const getItem = (id: number | null) => {
     if (!item.relationships) {
         item.relationships = [
             { type: "Related", title: `Similar ${item.platform} Item`, id: `${item.platform}_REL_001` }
+        ] as any;
+    }
+    if (!item.provenance) {
+        item.provenance = [
+            { step: "Ingestion", agent: "System", date: "2024-03-15T10:00:00Z", status: "Success" },
+            { step: "Processing", agent: "Processor-v1", date: "2024-03-15T10:30:00Z", status: "Success" }
         ] as any;
     }
     return item;
@@ -164,9 +177,10 @@ export default function ItemDetail() {
                     </div>
 
                     <Tabs defaultValue="details" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full grid-cols-3">
                             <TabsTrigger value="details">Details</TabsTrigger>
-                            <TabsTrigger value="relationships">Relationships</TabsTrigger>
+                            <TabsTrigger value="lineage">Lineage</TabsTrigger>
+                            <TabsTrigger value="provenance">Provenance</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="mt-4">
                             <div className="rounded-md border border-border overflow-hidden">
@@ -202,7 +216,7 @@ export default function ItemDetail() {
                                 </Table>
                             </div>
                         </TabsContent>
-                        <TabsContent value="relationships" className="mt-4">
+                        <TabsContent value="lineage" className="mt-4">
                             <div className="rounded-md border border-border overflow-hidden">
                                 <Table>
                                     <TableHeader>
@@ -230,6 +244,37 @@ export default function ItemDetail() {
                                                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                                         <ExternalLink className="h-4 w-4" />
                                                     </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="provenance" className="mt-4">
+                            <div className="rounded-md border border-border overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="bg-muted/30">
+                                            <TableHead className="w-[150px]">Step</TableHead>
+                                            <TableHead>Agent</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">Status</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {item.provenance?.map((prov: any, i: number) => (
+                                            <TableRow key={i}>
+                                                <TableCell className="font-medium">{prov.step}</TableCell>
+                                                <TableCell className="text-muted-foreground font-mono text-xs">{prov.agent}</TableCell>
+                                                <TableCell className="text-muted-foreground text-xs">
+                                                    {new Date(prov.date).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Badge variant={prov.status === 'Success' || prov.status === 'Stored' || prov.status === 'Passed' ? 'outline' : 'destructive'} className={prov.status === 'Success' || prov.status === 'Stored' || prov.status === 'Passed' ? 'border-green-500/50 text-green-500' : ''}>
+                                                        {prov.status === 'Success' || prov.status === 'Stored' || prov.status === 'Passed' ? <Check className="w-3 h-3 mr-1" /> : null}
+                                                        {prov.status}
+                                                    </Badge>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
