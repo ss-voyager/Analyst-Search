@@ -76,7 +76,11 @@ export default function Home() {
       {/* Navbar */}
       <nav className="relative z-10 w-full px-6 py-6 flex justify-between items-center max-w-7xl mx-auto">
         <div className="flex items-center gap-2">
-          <span className="font-display font-bold text-3xl tracking-tight text-primary">Voyager</span>
+          <span className="font-display font-bold text-3xl tracking-tight">
+            <span className="text-[#3b82f6]">V</span>
+            <span className="text-[#0c3a6d] dark:text-white">o</span>
+            <span className="text-[#3b82f6]">yager</span>
+          </span>
         </div>
         <div className="flex items-center gap-4">
           <button className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm">

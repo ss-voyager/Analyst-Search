@@ -151,7 +151,11 @@ export default function SearchResults() {
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
                 <Layers className="w-3 h-3 text-primary" />
             </div>
-            <span className="font-display font-bold text-lg tracking-tight hidden lg:block">Voyager</span>
+            <span className="font-display font-bold text-lg tracking-tight hidden lg:block">
+              <span className="text-[#3b82f6]">V</span>
+              <span className="text-[#0c3a6d] dark:text-white">o</span>
+              <span className="text-[#3b82f6]">yager</span>
+            </span>
           </div>
 
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl flex items-center gap-2">
