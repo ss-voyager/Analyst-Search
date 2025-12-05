@@ -495,39 +495,39 @@ export default function SearchResults() {
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 280, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="border-r border-border bg-card hidden md:flex flex-col overflow-hidden shrink-0"
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="border-r border-border/50 bg-background/95 backdrop-blur-xl hidden md:flex flex-col overflow-hidden shrink-0 z-10 shadow-lg"
             >
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-6 pr-4">
                   <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Calendar className="w-4 h-4" /> Date Range
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                      <Calendar className="w-4 h-4 text-primary" /> Date Range
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
-                       <input type="date" className="text-xs bg-muted border border-border rounded p-1.5 text-muted-foreground" />
-                       <input type="date" className="text-xs bg-muted border border-border rounded p-1.5 text-muted-foreground" />
+                       <input type="date" className="text-xs bg-muted/30 border border-border/60 rounded-md p-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
+                       <input type="date" className="text-xs bg-muted/30 border border-border/60 rounded-md p-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
                     </div>
                   </div>
 
-                  <Separator className="bg-border" />
+                  <Separator className="bg-border/50" />
 
                   <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Globe className="w-4 h-4" /> Location Hierarchy
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                      <Globe className="w-4 h-4 text-primary" /> Location Hierarchy
                     </h3>
                     <Accordion type="multiple" className="w-full">
                       {HIERARCHY_LOCATIONS.map((region, i) => (
                         <AccordionItem key={i} value={`item-${i}`} className="border-none">
-                          <AccordionTrigger className="py-2 text-xs hover:no-underline hover:bg-muted/50 px-2 rounded-md">
+                          <AccordionTrigger className="py-2 text-xs hover:no-underline hover:bg-primary/5 hover:text-primary px-2 rounded-md font-medium transition-colors">
                             {region.region}
                           </AccordionTrigger>
                           <AccordionContent>
                             <div className="pl-4 pt-1 space-y-1">
                               {region.countries.map(country => (
-                                <div key={country} className="flex items-center space-x-2 py-1">
-                                  <Checkbox id={`loc-${country}`} />
-                                  <Label htmlFor={`loc-${country}`} className="text-xs font-normal text-muted-foreground cursor-pointer">{country}</Label>
+                                <div key={country} className="flex items-center space-x-2 py-1 group">
+                                  <Checkbox id={`loc-${country}`} className="data-[state=checked]:bg-primary border-muted-foreground/40 group-hover:border-primary/60" />
+                                  <Label htmlFor={`loc-${country}`} className="text-xs font-normal text-muted-foreground cursor-pointer group-hover:text-foreground transition-colors">{country}</Label>
                                 </div>
                               ))}
                             </div>
@@ -537,27 +537,30 @@ export default function SearchResults() {
                     </Accordion>
                   </div>
 
-                  <Separator className="bg-border" />
+                  <Separator className="bg-border/50" />
 
                   <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Tag className="w-4 h-4" /> Keywords
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                      <Tag className="w-4 h-4 text-primary" /> Keywords
                     </h3>
-                    <div className="space-y-2">
-                      {KEYWORDS.map(k => (
-                        <div key={k} className="flex items-center space-x-2">
-                          <Checkbox id={`k-${k}`} />
-                          <Label htmlFor={`k-${k}`} className="text-xs font-normal text-muted-foreground cursor-pointer">{k}</Label>
-                        </div>
-                      ))}
-                    </div>
+                    <Select>
+                      <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border/60 focus:ring-primary/20 hover:bg-muted/50 transition-colors">
+                        <SelectValue placeholder="Select a keyword..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Keywords</SelectItem>
+                        {KEYWORDS.map(k => (
+                          <SelectItem key={k} value={k.toLowerCase()}>{k}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                  <Separator className="bg-border" />
+                  <Separator className="bg-border/50" />
 
                   <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-foreground flex items-center gap-2">
-                      <Layers className="w-4 h-4" /> Platform
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                      <Layers className="w-4 h-4 text-primary" /> Platform
                     </h3>
                     <div className="space-y-2">
                       {['Sentinel-1', 'Sentinel-2', 'Landsat 8', 'Landsat 9', 'Terra', 'Aqua'].map(p => (
