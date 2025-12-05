@@ -100,7 +100,7 @@ export default function Home() {
             Map the World's Data.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Satellite imagery from any location on Earth.
+            
           </p>
         </motion.div>
 
