@@ -87,11 +87,18 @@ interface TreeNode {
   children?: TreeNode[];
 }
 
-const FolderTree = ({ nodes, level = 0 }: { nodes: TreeNode[], level?: number }) => {
+const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [] }: { nodes: TreeNode[], level?: number, onSelect?: (id: string, label: string) => void, selectedIds?: string[] }) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
     setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleSelect = (e: React.MouseEvent, node: TreeNode) => {
+    e.stopPropagation();
+    if (onSelect) {
+      onSelect(node.id, node.label);
+    }
   };
 
   return (
@@ -99,15 +106,19 @@ const FolderTree = ({ nodes, level = 0 }: { nodes: TreeNode[], level?: number })
       {nodes.map(node => {
         const hasChildren = node.children && node.children.length > 0;
         const isExpanded = expanded[node.id];
+        const isSelected = selectedIds.includes(node.id);
         
         return (
           <div key={node.id}>
             <div 
-              className="flex items-center py-1.5 px-2 hover:bg-muted/50 rounded-md group transition-colors cursor-pointer select-none"
+              className={cn(
+                "flex items-center py-1.5 px-2 rounded-md group transition-colors cursor-pointer select-none",
+                isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
+              )}
               style={{ paddingLeft: `${level * 16 + 8}px` }}
               onClick={() => hasChildren && toggleExpand(node.id)}
             >
-              <div className="mr-2 text-muted-foreground/70 group-hover:text-primary transition-colors">
+              <div className={cn("mr-2 transition-colors", isSelected ? "text-primary" : "text-muted-foreground/70 group-hover:text-primary")}>
                 {hasChildren ? (
                   isExpanded ? <FolderOpen className="w-3.5 h-3.5" /> : <Folder className="w-3.5 h-3.5" />
                 ) : (
@@ -115,13 +126,19 @@ const FolderTree = ({ nodes, level = 0 }: { nodes: TreeNode[], level?: number })
                 )}
               </div>
               
-              <span className="text-xs font-medium text-foreground/90 flex-1 truncate">
+              <span className={cn("text-xs font-medium flex-1 truncate", isSelected ? "text-primary" : "text-foreground/90")}>
                 {node.label}
               </span>
               
-              {!hasChildren && (
-                 <Checkbox id={`tree-check-${node.id}`} className="w-3.5 h-3.5 ml-2 data-[state=checked]:bg-primary border-muted-foreground/40 group-hover:border-primary/60" onClick={(e) => e.stopPropagation()} />
-              )}
+              <Checkbox 
+                id={`tree-check-${node.id}`} 
+                checked={isSelected}
+                className={cn(
+                  "w-3.5 h-3.5 ml-2 border-muted-foreground/40 group-hover:border-primary/60",
+                  isSelected ? "data-[state=checked]:bg-primary border-primary" : ""
+                )} 
+                onClick={(e) => handleSelect(e, node)} 
+              />
             </div>
             
             {hasChildren && isExpanded && (
@@ -131,7 +148,7 @@ const FolderTree = ({ nodes, level = 0 }: { nodes: TreeNode[], level?: number })
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <FolderTree nodes={node.children!} level={level + 1} />
+                <FolderTree nodes={node.children!} level={level + 1} onSelect={onSelect} selectedIds={selectedIds} />
               </motion.div>
             )}
           </div>
