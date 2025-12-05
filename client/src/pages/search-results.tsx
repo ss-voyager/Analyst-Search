@@ -1031,7 +1031,7 @@ export default function SearchResults() {
                      </div>
                    ))}
                  </div>
-               ) : (
+               ) : filteredResults.length > 0 ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                    {filteredResults.map((result, i) => (
                      <motion.div
@@ -1116,6 +1116,33 @@ export default function SearchResults() {
                         </div>
                      </motion.div>
                    ))}
+                 </div>
+               ) : (
+                 <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in zoom-in-95 duration-300">
+                   <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mb-4">
+                      <Search className="w-8 h-8 text-muted-foreground/40" />
+                   </div>
+                   <h3 className="text-lg font-display font-semibold text-foreground mb-1">No results found</h3>
+                   <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                     No results match your filters. Try expanding your date range or removing your AOI.
+                   </p>
+                   <Button 
+                     variant="outline" 
+                     size="sm" 
+                     className="mt-6"
+                     onClick={() => {
+                        setKeyword("");
+                        setPlace("");
+                        setSpatialFilter(null);
+                        setActiveFilters([]);
+                        setSelectedLocationIds([]);
+                        setSelectedProperties([]);
+                        setSelectedKeywords([]);
+                        setDate(undefined);
+                     }}
+                   >
+                     Clear Filters
+                   </Button>
                  </div>
                )}
                
