@@ -169,17 +169,6 @@ export default function SearchResults() {
               />
             </div>
             <div className="hidden md:flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors relative hover:bg-white/10">
-              <div className="flex items-center mr-2 shrink-0">
-                <Select defaultValue="intersects">
-                  <SelectTrigger className="h-7 w-[100px] text-[10px] bg-white/5 border-white/10 rounded focus:ring-0 focus:ring-offset-0 px-2">
-                    <SelectValue placeholder="Rel" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="intersects">Intersects</SelectItem>
-                    <SelectItem value="within">Within</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <MapPin className="w-4 h-4 text-foreground mr-2 shrink-0" />
               <input 
                   value={place}
