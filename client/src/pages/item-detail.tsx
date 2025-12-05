@@ -81,6 +81,10 @@ export default function ItemDetail() {
   const [, setLocation] = useLocation();
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
+  const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   const id = params?.id ? parseInt(params.id) : null;
   
   const item = getItem(id);
@@ -90,11 +94,11 @@ export default function ItemDetail() {
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Header */}
-      <header className="h-16 border-b border-white/10 bg-black/40 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
+      <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setLocation("/search")}
-            className="p-2 rounded-full hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -116,51 +120,24 @@ export default function ItemDetail() {
              {showMap ? "Hide Map" : "Show Map"}
            </Button>
            <ThemeToggle />
-           <div className="w-8 h-8 rounded-full bg-secondary border border-white/10" />
+           <div className="w-8 h-8 rounded-full bg-secondary border border-border" />
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Details */}
-        <ScrollArea className="flex-1 border-r border-white/10 bg-background/50">
+        <ScrollArea className="flex-1 border-r border-border bg-background/50">
           <div className="p-6 max-w-5xl mx-auto space-y-8">
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Hero Image / Preview */}
                 <div className="col-span-1 md:col-span-1">
-                    <div className="rounded-xl overflow-hidden border border-white/10 bg-black/20 relative aspect-square group shadow-lg">
+                    <div className="rounded-xl overflow-hidden border border-border bg-muted relative aspect-square group shadow-lg">
                     <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                    
-                    <div className="absolute bottom-4 left-4 right-4 flex flex-col gap-2">
-                        <Badge variant="outline" className="w-fit bg-black/50 backdrop-blur border-white/20 text-white">
-                            Preview
-                        </Badge>
-                        <Button size="sm" variant="secondary" className="w-full gap-2">
-                            <ExternalLink className="w-4 h-4" /> Open in Viewer
-                        </Button>
-                    </div>
                     </div>
                     
-                    {/* Sidebar Actions - moved under image for better layout */}
-                    <div className="mt-6 space-y-3">
-                        <div className="bg-card border border-white/10 rounded-xl p-4 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Cloud Cover</span>
-                                <span className="font-mono font-medium">{item.cloudCover}</span>
-                            </div>
-                            <Separator className="bg-white/5" />
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Date</span>
-                                <span className="font-mono font-medium">{item.date}</span>
-                            </div>
-                            <Separator className="bg-white/5" />
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm text-muted-foreground">Size</span>
-                                <span className="font-mono font-medium">~850 MB</span>
-                            </div>
-                        </div>
-
+                    {/* Sidebar Actions - Download & Share */}
+                    <div className="mt-4 space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                             <Button className="w-full gap-2" variant="default">
                                 <Download className="w-4 h-4" /> Download
@@ -192,17 +169,28 @@ export default function ItemDetail() {
                             <TabsTrigger value="relationships">Relationships</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="mt-4">
-                            <div className="rounded-md border border-white/10 overflow-hidden">
+                            <div className="rounded-md border border-border overflow-hidden">
                                 <Table>
                                     <TableBody>
+                                        <TableRow className="bg-muted/30">
+                                            <TableCell className="font-medium text-muted-foreground w-1/3">Cloud Cover</TableCell>
+                                            <TableCell>{item.cloudCover}</TableCell>
+                                        </TableRow>
+                                        <TableRow>
+                                            <TableCell className="font-medium text-muted-foreground">Acquisition Date</TableCell>
+                                            <TableCell>{item.date}</TableCell>
+                                        </TableRow>
+                                        <TableRow className="bg-muted/30">
+                                            <TableCell className="font-medium text-muted-foreground">Size</TableCell>
+                                            <TableCell>~850 MB</TableCell>
+                                        </TableRow>
                                         {Object.entries(item.metadata || {}).map(([key, value], i) => (
-                                            <TableRow key={key} className={i % 2 === 0 ? "bg-white/5" : "bg-transparent"}>
+                                            <TableRow key={key} className={i % 2 === 1 ? "bg-muted/30" : "bg-transparent"}>
                                                 <TableCell className="font-medium text-muted-foreground w-1/3">{key}</TableCell>
                                                 <TableCell>{value as string}</TableCell>
                                             </TableRow>
                                         ))}
-                                        {/* Add extra rows for bands/specs if not in metadata */}
-                                        <TableRow className="bg-white/5">
+                                        <TableRow className="bg-muted/30">
                                             <TableCell className="font-medium text-muted-foreground">Spectral Bands</TableCell>
                                             <TableCell>{item.bands.join(", ")}</TableCell>
                                         </TableRow>
@@ -215,10 +203,10 @@ export default function ItemDetail() {
                             </div>
                         </TabsContent>
                         <TabsContent value="relationships" className="mt-4">
-                            <div className="rounded-md border border-white/10 overflow-hidden">
+                            <div className="rounded-md border border-border overflow-hidden">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="bg-white/5">
+                                        <TableRow className="bg-muted/30">
                                             <TableHead className="w-[200px]">Relationship Type</TableHead>
                                             <TableHead>Related Item</TableHead>
                                             <TableHead className="w-[100px] text-right">Action</TableHead>
@@ -257,7 +245,7 @@ export default function ItemDetail() {
 
         {/* Right Panel - Context Map */}
         {showMap && (
-            <div className="w-[400px] hidden xl:block border-l border-white/10 bg-black/20 relative">
+            <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 relative">
                 <MapContainer 
                     center={item.bounds ? [
                     ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
@@ -265,11 +253,19 @@ export default function ItemDetail() {
                     ] : [34.05, -118.25]} 
                     zoom={10} 
                     style={{ height: '100%', width: '100%' }}
-                    className="z-0 bg-[#1a1a1a]"
+                    className="z-0 bg-muted/20"
                 >
                     <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                        attribution={mapStyle === 'streets' 
+                        ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        : '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }
+                        url={mapStyle === 'streets'
+                        ? (isDark 
+                            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png")
+                        : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                        }
                     />
                     <ImageOverlay
                         url={item.thumbnail}
@@ -285,7 +281,28 @@ export default function ItemDetail() {
                         }} 
                     />
                 </MapContainer>
-                <div className="absolute bottom-4 right-4 z-[400] bg-black/80 backdrop-blur px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono text-white/70">
+                
+                {/* Map Style Toggle */}
+                <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+                    <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1">
+                        <button 
+                        className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`} 
+                        title="Street Map"
+                        onClick={() => setMapStyle('streets')}
+                        >
+                        <MapIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                        className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                        title="Satellite Map"
+                        onClick={() => setMapStyle('satellite')}
+                        >
+                        <Globe className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="absolute bottom-4 right-4 z-[400] bg-background/80 backdrop-blur px-3 py-1.5 rounded-lg border border-border text-xs font-mono text-foreground/70">
                 Footprint Preview
                 </div>
             </div>
@@ -300,16 +317,16 @@ export default function ItemDetail() {
             exit={{opacity: 0}} 
             className="fixed inset-0 z-50 bg-background/95 backdrop-blur flex flex-col"
           >
-             <div className="h-16 border-b border-white/10 flex items-center justify-between px-4 bg-background/50">
+             <div className="h-16 border-b border-border flex items-center justify-between px-4 bg-background/50">
                <div className="flex items-center gap-2">
                   <MapIcon className="w-5 h-5 text-primary" />
                   <h2 className="font-display font-bold text-lg">Extent Preview</h2>
                </div>
-               <Button variant="ghost" size="icon" onClick={() => setIsMapOpen(false)} className="rounded-full hover:bg-white/10">
+               <Button variant="ghost" size="icon" onClick={() => setIsMapOpen(false)} className="rounded-full hover:bg-muted">
                  <X className="w-5 h-5" />
                </Button>
              </div>
-             <div className="flex-1 relative bg-black/20">
+             <div className="flex-1 relative bg-muted/20">
                 <MapContainer 
                      center={item.bounds ? [
                        ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
@@ -317,11 +334,19 @@ export default function ItemDetail() {
                      ] : [34.05, -118.25]} 
                      zoom={10} 
                      style={{ height: '100%', width: '100%' }}
-                     className="z-0 bg-[#1a1a1a]"
+                     className="z-0 bg-muted/20"
                    >
                      <TileLayer
-                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                       url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                       attribution={mapStyle === 'streets' 
+                         ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                         : '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                       }
+                       url={mapStyle === 'streets'
+                         ? (isDark 
+                             ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                             : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png")
+                         : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                       }
                      />
                      <ImageOverlay
                         url={item.thumbnail}
@@ -334,9 +359,29 @@ export default function ItemDetail() {
                           color: '#00ffff', 
                           weight: 2, 
                           fillOpacity: 0,
-                        }} 
+                          }} 
                      />
                 </MapContainer>
+
+                {/* Map Style Toggle - Full Screen */}
+                <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+                    <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1">
+                        <button 
+                        className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`} 
+                        title="Street Map"
+                        onClick={() => setMapStyle('streets')}
+                        >
+                        <MapIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                        className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                        title="Satellite Map"
+                        onClick={() => setMapStyle('satellite')}
+                        >
+                        <Globe className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
              </div>
           </motion.div>
         )}

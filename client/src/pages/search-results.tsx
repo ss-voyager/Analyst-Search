@@ -1626,16 +1626,16 @@ export default function SearchResults() {
              {/* Map Controls Overlay */}
              <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
                 {/* Map Style Toggle */}
-                <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
+                <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1">
                   <button 
-                    className={`p-2 hover:bg-white/10 rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-white' : 'text-white/60'}`} 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`} 
                     title="Street Map"
                     onClick={() => setMapStyle('streets')}
                   >
                     <MapIcon className="w-4 h-4" />
                   </button>
                   <button 
-                    className={`p-2 hover:bg-white/10 rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-white' : 'text-white/60'}`}
+                    className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                     title="Satellite Map"
                     onClick={() => setMapStyle('satellite')}
                   >
@@ -1643,30 +1643,30 @@ export default function SearchResults() {
                   </button>
                 </div>
 
-                <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
+                <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1">
                   <button 
-                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'none' ? 'text-white' : 'text-white/60'}`} 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'none' ? 'text-foreground' : 'text-muted-foreground'}`} 
                     title="Pan/Select"
                     onClick={() => setDrawMode('none')}
                   >
                     <Layers className="w-4 h-4" />
                   </button>
                   <button 
-                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'box' ? 'bg-primary text-white' : 'text-white/80'}`}
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'box' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                     title="Draw Box"
                     onClick={() => setDrawMode('box')}
                   >
                     <div className="w-4 h-4 border-2 border-current rounded-sm" />
                   </button>
                   <button 
-                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'point' ? 'bg-primary text-white' : 'text-white/80'}`}
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'point' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                     title="Select Point"
                     onClick={() => setDrawMode('point')}
                   >
                     <MapPin className="w-4 h-4" />
                   </button>
                   <button 
-                    className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'polygon' ? 'bg-primary text-white' : 'text-white/80'}`}
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'polygon' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
                     title="Draw Polygon"
                     onClick={() => setDrawMode('polygon')}
                   >
