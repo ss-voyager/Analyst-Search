@@ -205,6 +205,16 @@ export default function Home() {
                         <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">PLACE</span>
                     </div>
                 )}
+                {detectedType === 'keyword' && query.length > 0 && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex gap-1 pointer-events-none">
+                        <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">KEYWORD</span>
+                    </div>
+                )}
+                {detectedType === 'place' && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex gap-1 pointer-events-none">
+                        <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">PLACE</span>
+                    </div>
+                )}
               </div>
 
               {/* Map Draw Button */}
