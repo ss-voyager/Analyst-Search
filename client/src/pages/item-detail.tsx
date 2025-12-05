@@ -12,6 +12,7 @@ import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/components/theme-provider";
+import { toast } from "sonner";
 
 // Reusing Mock Data logic (in a real app this would come from an API or store)
 const MOCK_RESULTS = [
@@ -104,6 +105,19 @@ export default function ItemDetail() {
 
   if (!item) return <div>Item not found</div>;
 
+  const handleShare = () => {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard", {
+          description: "Deep link created for authorized users."
+      });
+  };
+
+  const handleDownload = () => {
+      toast.success("Download started", {
+          description: `${item.title}.tif (~850 MB)`
+      });
+  };
+
   return (
     <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Header */}
@@ -152,10 +166,10 @@ export default function ItemDetail() {
                     {/* Sidebar Actions - Download & Share */}
                     <div className="mt-4 space-y-3">
                         <div className="grid grid-cols-2 gap-2">
-                            <Button className="w-full gap-2" variant="default">
+                            <Button className="w-full gap-2" variant="default" onClick={handleDownload}>
                                 <Download className="w-4 h-4" /> Download
                             </Button>
-                            <Button variant="outline" className="w-full gap-2">
+                            <Button variant="outline" className="w-full gap-2" onClick={handleShare}>
                                 <Share2 className="w-4 h-4" /> Share
                             </Button>
                         </div>

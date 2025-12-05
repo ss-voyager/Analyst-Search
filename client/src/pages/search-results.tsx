@@ -371,7 +371,7 @@ export default function SearchResults() {
   const handleSaveSearch = () => {
     setIsSearchSaved(true);
     setIsSaveSearchOpen(false);
-    toast("Search saved successfully", {
+    toast.success("Search saved successfully", {
       description: "You will be notified when new results match this query.",
       action: {
         label: "Share",
