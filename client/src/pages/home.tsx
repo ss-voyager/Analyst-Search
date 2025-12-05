@@ -86,7 +86,14 @@ export default function Home() {
     "San Francisco, USA",
     "Singapore",
     "Dubai, UAE",
-    "Rio de Janeiro, Brazil"
+    "Rio de Janeiro, Brazil",
+    "California",
+    "United States",
+    "Africa",
+    "Amazon Rainforest",
+    "Los Angeles",
+    "China",
+    "India"
   ];
 
   const filteredPlaces = PLACE_SUGGESTIONS.filter(p => 
@@ -202,7 +209,7 @@ export default function Home() {
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex gap-1 pointer-events-none">
                         <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">KEYWORD</span>
                         <span className="text-[10px] text-muted-foreground px-0.5">+</span>
-                        <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">PLACE</span>
+                        <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">LOCATION</span>
                     </div>
                 )}
                 {detectedType === 'keyword' && query.length > 0 && (
@@ -212,7 +219,7 @@ export default function Home() {
                 )}
                 {detectedType === 'place' && (
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex gap-1 pointer-events-none">
-                        <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">PLACE</span>
+                        <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">LOCATION</span>
                     </div>
                 )}
               </div>
