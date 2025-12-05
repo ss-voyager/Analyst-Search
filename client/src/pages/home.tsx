@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Search, MapPin, Globe, Navigation, ArrowRight, Command } from "lucide-react";
+import { Search, MapPin, Globe, Navigation, ArrowRight, Command, Upload, Crosshair, Map as MapIcon } from "lucide-react";
 import heroBg from "@assets/generated_images/dark_earth_night_view.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -142,8 +143,32 @@ export default function Home() {
                     </SelectContent>
                   </Select>
                 </div>
-                <MapPin className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                <div className="w-full relative">
+                
+                <div className="flex items-center flex-1 w-full relative">
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                           <button type="button" className="mr-2 text-muted-foreground hover:text-primary transition-colors outline-none">
+                               <MapPin className="w-5 h-5" />
+                           </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56 bg-black/90 backdrop-blur-xl border-white/10 text-foreground">
+                          <DropdownMenuLabel className="text-xs text-muted-foreground">Location Tools</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => document.getElementById('loc-input')?.focus()} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                              <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setPlace("34.05, -118.25")} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                              <Crosshair className="w-4 h-4" /> <span>Enter Coordinates</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-white/10" />
+                          <DropdownMenuItem className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                              <Upload className="w-4 h-4" /> <span>Upload AOI File</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                              <MapIcon className="w-4 h-4" /> <span>Draw AOI on Map</span>
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
+                  
                   <input
                     id="loc-input"
                     type="text"
@@ -154,7 +179,7 @@ export default function Home() {
                     }}
                     onFocus={() => {
                       setIsLocationFocused(true);
-                      if (!place) setShowLocationOptions(true);
+                      // if (!place) setShowLocationOptions(true); // Disable old dropdown in favor of new menu
                     }}
                     onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
                     placeholder="Where is it located?"
@@ -185,45 +210,6 @@ export default function Home() {
                           ))}
                         </div>
                      </div>
-                  )}
-
-                  {isLocationFocused && showLocationOptions && !place && (
-                    <div className="absolute top-full left-0 w-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
-                      <div className="p-2 space-y-1">
-                        <button
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()} // Prevent blur
-                          onClick={() => {
-                            document.getElementById('loc-input')?.focus();
-                            setShowLocationOptions(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-left group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30 group-hover:border-blue-500/60 transition-colors">
-                            <Search className="w-4 h-4 text-blue-400" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-foreground">Search Place</div>
-                            <div className="text-xs text-muted-foreground">Type address or city name</div>
-                          </div>
-                        </button>
-                        
-                        <button
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()} // Prevent blur
-                          onClick={() => setIsPickerOpen(true)}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors text-left group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30 group-hover:border-primary/60 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-foreground">Draw Bounding Box</div>
-                            <div className="text-xs text-muted-foreground">Define spatial extent on map</div>
-                          </div>
-                        </button>
-                      </div>
-                    </div>
                   )}
                 </div>
               </div>
