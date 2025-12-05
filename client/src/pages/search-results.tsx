@@ -1513,7 +1513,10 @@ export default function SearchResults() {
                               
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors bg-muted/30 hover:bg-muted px-2 py-1 rounded-md">
+                                  <button 
+                                    className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors bg-muted/30 hover:bg-muted px-2 py-1 rounded-md"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
                                     Tools
                                     <ChevronDown className="w-3 h-3" />
                                   </button>
