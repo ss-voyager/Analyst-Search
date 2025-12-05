@@ -51,8 +51,8 @@
   --popover: 0 0% 100%;
   --popover-foreground: 220 40% 10%;
 
-  --primary: 180 70% 35%; /* Darker Teal for contrast on white */
-  --primary-foreground: 210 40% 98%;
+  --primary: 217 91% 60%; /* Logo Blue #3b82f6 */
+  --primary-foreground: 0 0% 100%;
 
   --secondary: 210 20% 94%;
   --secondary-foreground: 220 40% 10%;
@@ -60,17 +60,17 @@
   --muted: 210 20% 94%;
   --muted-foreground: 215 15% 45%;
 
-  --accent: 180 30% 90%;
-  --accent-foreground: 180 70% 30%;
+  --accent: 217 30% 90%;
+  --accent-foreground: 217 91% 60%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 210 40% 98%;
 
   --border: 214 32% 91%;
   --input: 214 32% 91%;
-  --ring: 180 70% 35%;
+  --ring: 217 91% 60%;
 
-  --chart-1: 180 70% 40%;
+  --chart-1: 217 91% 60%;
   --chart-2: 210 70% 50%;
   --chart-3: 280 60% 60%;
   --chart-4: 32 80% 60%;
@@ -78,7 +78,7 @@
 }
 
 .dark {
-  /* Geospatial Dark Theme - Cyan/Teal Focus */
+  /* Geospatial Dark Theme - Logo Blue Focus */
   --background: 220 40% 4%;
   --foreground: 210 40% 98%;
 
@@ -88,7 +88,7 @@
   --popover: 220 40% 6%;
   --popover-foreground: 210 40% 98%;
 
-  --primary: 180 70% 45%; /* Cyan for geospatial feel */
+  --primary: 217 91% 60%; /* Logo Blue #3b82f6 */
   --primary-foreground: 220 40% 4%;
 
   --secondary: 215 25% 20%;
@@ -97,17 +97,17 @@
   --muted: 215 25% 20%;
   --muted-foreground: 215 20% 65%;
 
-  --accent: 180 30% 20%;
-  --accent-foreground: 180 70% 80%;
+  --accent: 217 30% 20%;
+  --accent-foreground: 217 91% 80%;
 
   --destructive: 0 62% 30%;
   --destructive-foreground: 210 40% 98%;
 
   --border: 215 25% 20%;
   --input: 215 25% 20%;
-  --ring: 180 70% 45%;
+  --ring: 217 91% 60%;
 
-  --chart-1: 180 70% 50%;
+  --chart-1: 217 91% 60%;
   --chart-2: 210 70% 50%;
   --chart-3: 280 60% 60%;
   --chart-4: 32 80% 60%;
