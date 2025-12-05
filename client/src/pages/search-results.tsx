@@ -11,6 +11,7 @@ import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
 import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "@/components/theme-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -89,6 +90,27 @@ export default function SearchResults() {
   const [sortBy, setSortBy] = useState("relevance");
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      if (theme === 'system') {
+        setIsDark(window.matchMedia('(prefers-color-scheme: dark)').matches);
+      } else {
+        setIsDark(theme === 'dark');
+      }
+    };
+    checkTheme();
+    
+    // Listener for system changes if theme is system
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (theme === 'system') checkTheme();
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
 
   // Drawing State
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point'>('none');
@@ -419,14 +441,18 @@ export default function SearchResults() {
         {showMap && (
           <div className="w-full md:w-[400px] lg:w-[500px] bg-muted/20 dark:bg-black/20 relative hidden md:block border-l border-border shrink-0">
              <MapContainer 
+                 key={isDark ? 'dark' : 'light'}
                  center={[34.05, -118.25]} 
                  zoom={9} 
                  style={{ height: '100%', width: '100%' }}
-                 className="z-0 bg-[#1a1a1a]"
+                 className="z-0 bg-muted/20 dark:bg-[#1a1a1a]"
                >
                  <TileLayer
                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                   url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                   url={isDark 
+                     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                   }
                  />
                  {!isLoading && MOCK_RESULTS.map(result => (
                    <Rectangle 
