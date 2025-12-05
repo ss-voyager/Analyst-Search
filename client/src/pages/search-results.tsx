@@ -310,6 +310,16 @@ const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
   return null;
 };
 
+const PreviewEffect = ({ result }: { result: any }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (result && result.bounds) {
+      map.flyToBounds(result.bounds, { padding: [20, 20], duration: 1.5 });
+    }
+  }, [result, map]);
+  return null;
+};
+
 export default function SearchResults() {
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
@@ -1688,6 +1698,10 @@ export default function SearchResults() {
 
              {spatialFilter && spatialFilter.type === 'box' && (
                <MapEffect bounds={spatialFilter.data} />
+             )}
+             
+             {previewedResultId && filteredResults.find(r => r.id === previewedResultId) && (
+                <PreviewEffect result={filteredResults.find(r => r.id === previewedResultId)} />
              )}
           </MapContainer>
           </div>
