@@ -314,6 +314,7 @@ export default function SearchResults() {
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const [keywordSearch, setKeywordSearch] = useState("");
+  const [hoveredResultId, setHoveredResultId] = useState<number | null>(null);
 
   const PLACE_SUGGESTIONS = [
     "New York, USA",
@@ -958,11 +959,19 @@ export default function SearchResults() {
                        initial={{ opacity: 0, scale: 0.95 }}
                        animate={{ opacity: 1, scale: 1 }}
                        transition={{ delay: i * 0.05, duration: 0.3 }}
-                       className="group relative aspect-[3/4] bg-card dark:bg-black/40 border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer"
+                       className="group relative bg-card dark:bg-black/40 border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer flex flex-col h-[340px]"
+                       onMouseEnter={() => setHoveredResultId(result.id)}
+                       onMouseLeave={() => setHoveredResultId(null)}
                      >
-                        {/* Thumbnail Area - Square aspect ratio like reference */}
-                        <div className="aspect-square bg-muted relative group-hover:brightness-110 transition-all">
-                          <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
+                        {/* Thumbnail Area - Fixed Height */}
+                        <div className="h-[180px] bg-muted relative group-hover:brightness-110 transition-all overflow-hidden shrink-0">
+                          {result.thumbnail ? (
+                            <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-muted/50">
+                              <Layers className="w-8 h-8 text-muted-foreground/30" />
+                            </div>
+                          )}
                           
                           {/* Selection Checkbox Overlay */}
                           <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -971,37 +980,47 @@ export default function SearchResults() {
                             </div>
                           </div>
 
-                          {/* Properties Badges (On Hover) */}
+                          {/* Properties Badges (On Hover) - Minimal */}
                           <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            {result.properties?.includes("has_spatial") && <Badge variant="secondary" className="h-4 text-[9px] px-1 bg-black/60 text-white border-none">Spatial</Badge>}
-                            {result.properties?.includes("is_downloadable") && <Badge variant="secondary" className="h-4 text-[9px] px-1 bg-black/60 text-white border-none">Download</Badge>}
+                            {result.properties?.includes("is_downloadable") && <Badge variant="secondary" className="h-4 text-[9px] px-1 bg-black/60 text-white border-none backdrop-blur-sm">Download</Badge>}
                           </div>
                         </div>
 
                         {/* Content Area */}
                         <div className="flex-1 p-3 flex flex-col min-w-0 bg-card cursor-pointer" onClick={() => setLocation(`/item/${result.id}`)}>
-                           <h3 className="font-display font-semibold text-sm text-primary truncate mb-1 hover:underline" title={result.title}>
-                             {result.title}
-                           </h3>
+                           <div className="flex items-start justify-between gap-2 mb-1">
+                             <h3 className="font-display font-semibold text-sm text-primary truncate hover:underline" title={result.title}>
+                               {result.title}
+                             </h3>
+                             <span className="text-[10px] font-mono text-muted-foreground shrink-0 border border-border px-1 rounded">
+                               {result.platform}
+                             </span>
+                           </div>
                            
-                           <div className="text-[10px] text-muted-foreground space-y-1 mb-4">
-                              <p>Format: <span className="text-foreground/80">GeoTIFF</span></p>
-                              <p>Date: <span className="text-foreground/80">{result.date}</span></p>
-                              <p>Provider: <span className="text-foreground/80">{result.platform}</span></p>
+                           <div className="text-[11px] text-muted-foreground space-y-1.5 mb-3 mt-1">
+                              <div className="flex items-center gap-2">
+                                <CalendarIcon className="w-3 h-3 opacity-70" />
+                                <span className="text-foreground/80">{result.date}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Layers className="w-3 h-3 opacity-70" />
+                                <span className="text-foreground/80">Cloud Cover: {result.cloudCover}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3 h-3 opacity-70" />
+                                <span className="text-foreground/80 truncate">Lat: {result.bounds[0][0].toFixed(2)}, Lng: {result.bounds[0][1].toFixed(2)}</span>
+                              </div>
                            </div>
 
                            {/* Action Footer */}
-                           <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
-                              <button className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
-                                <div className="w-3 h-3 rounded-full border border-current flex items-center justify-center">
-                                  <span className="text-[8px] leading-none">+</span>
-                                </div>
-                                Add to Cart
+                           <div className="mt-auto pt-2 border-t border-border flex items-center justify-between">
+                              <button className="text-[11px] font-medium text-primary hover:text-primary/80 transition-colors hover:underline">
+                                View details
                               </button>
                               
-                              <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                                Tools
-                                <ChevronDown className="w-3 h-3" />
+                              <button className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors bg-muted/30 hover:bg-muted px-2 py-1 rounded-md">
+                                <Download className="w-3 h-3" />
+                                <span className="sr-only">Download</span>
                               </button>
                            </div>
                         </div>
@@ -1037,9 +1056,9 @@ export default function SearchResults() {
                       key={result.id}
                       bounds={result.bounds} 
                       pathOptions={{ 
-                        color: '#3b82f6', 
-                        weight: 1, 
-                        fillOpacity: 0.1,
+                        color: hoveredResultId === result.id ? '#ef4444' : '#3b82f6', 
+                        weight: hoveredResultId === result.id ? 3 : 1, 
+                        fillOpacity: hoveredResultId === result.id ? 0.2 : 0.1,
                         className: 'hover:fill-opacity-30 transition-all cursor-pointer'
                       }} 
                    />
