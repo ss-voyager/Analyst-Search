@@ -233,6 +233,14 @@ const KEYWORDS = [
   "Infrastructure", "Mining", "Oil & Gas", "Renewable Energy"
 ];
 
+const LEAF_IDS = [
+  "ca", "ny", "tx", "fl", "can", "mex",
+  "eng", "sct", "wls", "fr", "de", "it", "es",
+  "jp", "cn", "in", "sg",
+  "br", "ar", "cl",
+  "eg", "za", "ng", "ke"
+];
+
 const generateMockResults = (count: number) => {
   return Array.from({ length: count }, (_, i) => {
     const platform = PLATFORMS[i % PLATFORMS.length];
@@ -252,6 +260,16 @@ const generateMockResults = (count: number) => {
     const lat = 34.0522 + (Math.random() - 0.5) * 1.0;
     const lng = -118.2437 + (Math.random() - 0.5) * 1.0;
     
+    // Random location ID assignment
+    const locationId = LEAF_IDS[Math.floor(Math.random() * LEAF_IDS.length)];
+
+    // Random properties
+    const possibleProps = ["has_thumbnail", "has_spatial", "has_temporal", "is_downloadable"];
+    const properties = possibleProps.filter(() => Math.random() > 0.5);
+    
+    // Random keywords
+    const itemKeywords = KEYWORDS.filter(() => Math.random() > 0.95);
+    
     return {
       id: i + 1,
       title,
@@ -260,7 +278,10 @@ const generateMockResults = (count: number) => {
       platform: platform.name,
       provider: platform.provider,
       thumbnail: THUMBNAILS[i % THUMBNAILS.length],
-      bounds: [[lat, lng], [lat + 0.05, lng + 0.05]] as LatLngBoundsExpression
+      bounds: [[lat, lng], [lat + 0.05, lng + 0.05]] as LatLngBoundsExpression,
+      locationId,
+      properties,
+      keywords: itemKeywords
     };
   });
 };
@@ -285,6 +306,14 @@ export default function SearchResults() {
   const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [showLocationOptions, setShowLocationOptions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  // Filter States
+  const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+  const [date, setDate] = useState<DateRange | undefined>();
+  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [keywordSearch, setKeywordSearch] = useState("");
 
   const PLACE_SUGGESTIONS = [
     "New York, USA",
@@ -355,26 +384,50 @@ export default function SearchResults() {
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point'>('none');
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point', data: any} | null>(null);
 
-  // Active Filters State (Mock)
-  const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Filter mock results based on selected locations
+  // Filter mock results
   const filteredResults = MOCK_RESULTS.filter(item => {
-    // If no location selected, show all
-    if (selectedLocationIds.length === 0) return true;
+    // Location Filter
+    if (selectedLocationIds.length > 0 && (!item.locationId || !selectedLocationIds.includes(item.locationId))) {
+      return false;
+    }
+
+    // Properties Filter
+    if (selectedProperties.length > 0) {
+      const hasAllProps = selectedProperties.every(prop => item.properties?.includes(prop));
+      if (!hasAllProps) return false;
+    }
+
+    // Keywords Filter
+    if (selectedKeywords.length > 0) {
+      const hasAllKeywords = selectedKeywords.every(kw => item.keywords?.includes(kw));
+      if (!hasAllKeywords) return false;
+    }
+
+    // Date Filter
+    if (date?.from) {
+      const itemDate = new Date(item.date);
+      // Reset time for comparison
+      const fromDate = new Date(date.from);
+      fromDate.setHours(0,0,0,0);
+      
+      const itemDateObj = new Date(itemDate);
+      itemDateObj.setHours(0,0,0,0);
+
+      if (itemDateObj < fromDate) return false;
+      
+      if (date.to) {
+        const toDate = new Date(date.to);
+        toDate.setHours(23,59,59,999);
+        if (itemDateObj > toDate) return false;
+      }
+    }
     
-    // Filter by locationId if it matches any selected ID or its children (mocked by just checking if item.locationId is in selection for now)
-    // In a real app, we'd check if the item's location is a descendant of the selected node
-    // Here we just check direct match for simplicity since we assigned leaf IDs
-    
-    // Simple logic: check if item.locationId is in selectedLocationIds
-    return item.locationId && selectedLocationIds.includes(item.locationId);
+    return true;
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -391,17 +444,34 @@ export default function SearchResults() {
       
       if (isSelected) {
         newSelection = prev.filter(locId => locId !== id);
-        // Remove from active filters chips
         setActiveFilters(curr => curr.filter(f => f.id !== `loc-${id}`));
       } else {
         newSelection = [...prev, id];
-        // Add to active filters chips
         if (!activeFilters.find(f => f.id === `loc-${id}`)) {
           setActiveFilters(curr => [...curr, { type: 'location', value: label, id: `loc-${id}` }]);
         }
       }
-      
       return newSelection;
+    });
+  };
+
+  const toggleProperty = (prop: string) => {
+    setSelectedProperties(prev => {
+      if (prev.includes(prop)) return prev.filter(p => p !== prop);
+      return [...prev, prop];
+    });
+  };
+
+  const toggleKeyword = (kw: string) => {
+    setSelectedKeywords(prev => {
+      if (prev.includes(kw)) {
+        setActiveFilters(curr => curr.filter(f => f.id !== `kw-${kw}`));
+        return prev.filter(k => k !== kw);
+      }
+      if (!activeFilters.find(f => f.id === `kw-${kw}`)) {
+        setActiveFilters(curr => [...curr, { type: 'keyword', value: kw, id: `kw-${kw}` }]);
+      }
+      return [...prev, kw];
     });
   };
 
@@ -421,6 +491,9 @@ export default function SearchResults() {
     if (id.startsWith('loc-')) {
       const locId = id.replace('loc-', '');
       setSelectedLocationIds(prev => prev.filter(lid => locId !== lid));
+    } else if (id.startsWith('kw-')) {
+      const kw = id.replace('kw-', '');
+      setSelectedKeywords(prev => prev.filter(k => k !== kw));
     }
     setActiveFilters(prev => prev.filter(f => f.id !== id));
   };
@@ -655,6 +728,9 @@ export default function SearchResults() {
                   setPlace("");
                   setActiveFilters([]);
                   setSelectedLocationIds([]);
+                  setSelectedProperties([]);
+                  setSelectedKeywords([]);
+                  setDate(undefined);
                   setLocation("/search");
                 }} 
                 className="text-xs text-muted-foreground hover:text-destructive transition-colors whitespace-nowrap px-2"
@@ -708,14 +784,47 @@ export default function SearchResults() {
             >
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-6 pr-4">
+                  {/* Date Range Filter */}
                   <div className="space-y-3">
                     <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
-                      <Calendar className="w-4 h-4 text-primary" /> Date Range
+                      <CalendarIcon className="w-4 h-4 text-primary" /> Date Range
                     </h3>
-                    <div className="grid grid-cols-2 gap-2">
-                       <input type="date" className="text-xs bg-muted/30 border border-border/60 rounded-md p-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
-                       <input type="date" className="text-xs bg-muted/30 border border-border/60 rounded-md p-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 transition-all" />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="date"
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-xs",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {date?.from ? (
+                            date.to ? (
+                              <>
+                                {format(date.from, "LLL dd, y")} -{" "}
+                                {format(date.to, "LLL dd, y")}
+                              </>
+                            ) : (
+                              format(date.from, "LLL dd, y")
+                            )
+                          ) : (
+                            <span>Pick a date range</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          initialFocus
+                          mode="range"
+                          defaultMonth={date?.from}
+                          selected={date}
+                          onSelect={setDate}
+                          numberOfMonths={2}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <Separator className="bg-border/50" />
@@ -731,6 +840,7 @@ export default function SearchResults() {
 
                   <Separator className="bg-border/50" />
 
+                  {/* Keywords Filter - Command style */}
                   <div className="space-y-1">
                     <Accordion type="single" collapsible defaultValue="keywords" className="w-full">
                       <AccordionItem value="keywords" className="border-none">
@@ -738,21 +848,30 @@ export default function SearchResults() {
                           Keywords
                         </AccordionTrigger>
                         <AccordionContent>
-                          <div className="space-y-1 pb-2">
-                            {KEYWORDS.map(k => {
-                              // Generate consistent mock count based on string length
-                              const count = (k.length * 1234) % 10000; 
-                              return (
-                                <button 
-                                  key={k} 
-                                  className="w-full flex items-center justify-between py-1.5 px-2 text-sm hover:bg-muted/50 rounded-md group transition-colors text-left"
-                                >
-                                  <span className="text-foreground/80 group-hover:text-foreground font-medium">{k}</span>
-                                  <span className="text-muted-foreground/60 text-xs">({count})</span>
-                                </button>
-                              );
-                            })}
-                          </div>
+                           <Command className="border rounded-md">
+                              <CommandInput placeholder="Filter keywords..." value={keywordSearch} onValueChange={setKeywordSearch} className="h-8 text-xs" />
+                              <CommandList className="max-h-[200px]">
+                                <CommandEmpty>No keywords found.</CommandEmpty>
+                                <CommandGroup>
+                                  {KEYWORDS.map(k => (
+                                    <CommandItem
+                                      key={k}
+                                      value={k}
+                                      onSelect={() => toggleKeyword(k)}
+                                      className="text-xs cursor-pointer"
+                                    >
+                                      <div className={cn(
+                                        "mr-2 flex h-3 w-3 items-center justify-center rounded-sm border border-primary",
+                                        selectedKeywords.includes(k) ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                      )}>
+                                        <Check className={cn("h-3 w-3")} />
+                                      </div>
+                                      {k}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                           </Command>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -760,6 +879,7 @@ export default function SearchResults() {
 
                   <Separator className="bg-border/50" />
 
+                  {/* Properties Filter - Clickable */}
                   <div className="space-y-1">
                     <Accordion type="single" collapsible defaultValue="properties" className="w-full">
                       <AccordionItem value="properties" className="border-none">
@@ -769,19 +889,26 @@ export default function SearchResults() {
                         <AccordionContent>
                           <div className="space-y-1 pb-2">
                              {[
-                               { name: "has_thumbnail", count: 26308 },
-                               { name: "has_spatial", count: 17695 },
-                               { name: "has_temporal", count: 15432 },
-                               { name: "is_downloadable", count: 12100 }
-                             ].map(prop => (
+                               { name: "has_thumbnail", label: "Has Thumbnail" },
+                               { name: "has_spatial", label: "Has Spatial Info" },
+                               { name: "has_temporal", label: "Has Temporal Info" },
+                               { name: "is_downloadable", label: "Downloadable" }
+                             ].map(prop => {
+                               const isSelected = selectedProperties.includes(prop.name);
+                               return (
                                 <button 
                                   key={prop.name} 
-                                  className="w-full flex items-center justify-between py-1.5 px-2 text-sm hover:bg-muted/50 rounded-md group transition-colors text-left"
+                                  onClick={() => toggleProperty(prop.name)}
+                                  className={cn(
+                                    "w-full flex items-center justify-between py-1.5 px-2 text-sm rounded-md group transition-colors text-left",
+                                    isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/50 text-foreground/80"
+                                  )}
                                 >
-                                  <span className="text-foreground/80 group-hover:text-foreground font-medium">{prop.name}</span>
-                                  <span className="text-muted-foreground/60 text-xs">({prop.count})</span>
+                                  <span className="font-medium">{prop.label}</span>
+                                  {isSelected && <Check className="w-3 h-3" />}
                                 </button>
-                             ))}
+                               )
+                             })}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
@@ -806,17 +933,7 @@ export default function SearchResults() {
 
                   <Separator className="bg-border" />
 
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-medium text-foreground">Cloud Cover</h3>
-                    <div className="space-y-2">
-                      {['0-10%', '10-20%', '20-50%', '50%+'].map(c => (
-                        <div key={c} className="flex items-center space-x-2">
-                          <Checkbox id={`c-${c}`} />
-                          <Label htmlFor={`c-${c}`} className="text-xs font-normal text-muted-foreground">{c}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  {/* Cloud Cover Removed */}
                 </div>
               </ScrollArea>
             </motion.div>
@@ -852,6 +969,12 @@ export default function SearchResults() {
                             <div className="w-5 h-5 rounded border border-white/50 bg-black/50 flex items-center justify-center hover:bg-primary hover:border-primary cursor-pointer">
                               <Check className="w-3 h-3 text-white" />
                             </div>
+                          </div>
+
+                          {/* Properties Badges (On Hover) */}
+                          <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {result.properties?.includes("has_spatial") && <Badge variant="secondary" className="h-4 text-[9px] px-1 bg-black/60 text-white border-none">Spatial</Badge>}
+                            {result.properties?.includes("is_downloadable") && <Badge variant="secondary" className="h-4 text-[9px] px-1 bg-black/60 text-white border-none">Download</Badge>}
                           </div>
                         </div>
 
