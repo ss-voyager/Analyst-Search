@@ -74,26 +74,133 @@ const TITLES: Record<string, string[]> = {
   "Pleiades Neo": ["30cm Imagery", "Panchromatic"]
 };
 
-const HIERARCHY_LOCATIONS = [
+// Tree View Component
+interface TreeNode {
+  id: string;
+  label: string;
+  children?: TreeNode[];
+}
+
+const FolderTree = ({ nodes, level = 0 }: { nodes: TreeNode[], level?: number }) => {
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  return (
+    <div className="space-y-0.5">
+      {nodes.map(node => {
+        const hasChildren = node.children && node.children.length > 0;
+        const isExpanded = expanded[node.id];
+        
+        return (
+          <div key={node.id}>
+            <div 
+              className="flex items-center py-1.5 px-2 hover:bg-muted/50 rounded-md group transition-colors cursor-pointer select-none"
+              style={{ paddingLeft: `${level * 16 + 8}px` }}
+              onClick={() => hasChildren && toggleExpand(node.id)}
+            >
+              <div className="mr-2 text-muted-foreground/70 group-hover:text-primary transition-colors">
+                {hasChildren ? (
+                  isExpanded ? <FolderOpen className="w-3.5 h-3.5" /> : <Folder className="w-3.5 h-3.5" />
+                ) : (
+                  <File className="w-3.5 h-3.5 opacity-50" />
+                )}
+              </div>
+              
+              <span className="text-xs font-medium text-foreground/90 flex-1 truncate">
+                {node.label}
+              </span>
+              
+              {!hasChildren && (
+                 <Checkbox id={`tree-check-${node.id}`} className="w-3.5 h-3.5 ml-2 data-[state=checked]:bg-primary border-muted-foreground/40 group-hover:border-primary/60" onClick={(e) => e.stopPropagation()} />
+              )}
+            </div>
+            
+            {hasChildren && isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <FolderTree nodes={node.children!} level={level + 1} />
+              </motion.div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const HIERARCHY_TREE: TreeNode[] = [
   {
-    region: "North America",
-    countries: ["USA", "Canada", "Mexico"]
+    id: "na",
+    label: "North America",
+    children: [
+      { 
+        id: "usa", 
+        label: "United States",
+        children: [
+          { id: "ca", label: "California" },
+          { id: "ny", label: "New York" },
+          { id: "tx", label: "Texas" },
+          { id: "fl", label: "Florida" }
+        ]
+      },
+      { id: "can", label: "Canada" },
+      { id: "mex", label: "Mexico" }
+    ]
   },
   {
-    region: "Europe",
-    countries: ["UK", "France", "Germany", "Spain", "Italy"]
+    id: "eu",
+    label: "Europe",
+    children: [
+      { 
+        id: "uk", 
+        label: "United Kingdom",
+        children: [
+          { id: "eng", label: "England" },
+          { id: "sct", label: "Scotland" },
+          { id: "wls", label: "Wales" }
+        ]
+      },
+      { id: "fr", label: "France" },
+      { id: "de", label: "Germany" },
+      { id: "it", label: "Italy" },
+      { id: "es", label: "Spain" }
+    ]
   },
   {
-    region: "Asia",
-    countries: ["Japan", "China", "India", "Singapore"]
+    id: "as",
+    label: "Asia",
+    children: [
+      { id: "jp", label: "Japan" },
+      { id: "cn", label: "China" },
+      { id: "in", label: "India" },
+      { id: "sg", label: "Singapore" }
+    ]
   },
   {
-    region: "South America",
-    countries: ["Brazil", "Argentina", "Chile"]
+    id: "sa",
+    label: "South America",
+    children: [
+      { id: "br", label: "Brazil" },
+      { id: "ar", label: "Argentina" },
+      { id: "cl", label: "Chile" }
+    ]
   },
   {
-    region: "Africa",
-    countries: ["Egypt", "South Africa", "Nigeria", "Kenya"]
+    id: "af",
+    label: "Africa",
+    children: [
+      { id: "eg", label: "Egypt" },
+      { id: "za", label: "South Africa" },
+      { id: "ng", label: "Nigeria" },
+      { id: "ke", label: "Kenya" }
+    ]
   }
 ];
 
