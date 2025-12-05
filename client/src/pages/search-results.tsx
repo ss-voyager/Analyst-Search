@@ -24,169 +24,73 @@ import { Separator } from "@/components/ui/separator";
 
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
 
-// Mock Data
-const MOCK_RESULTS = [
-  {
-    id: 1,
-    title: "Sentinel-2B MSI Level-2A",
-    date: "2024-03-15",
-    cloudCover: "12%",
-    platform: "Sentinel-2",
-    provider: "ESA",
-    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.0, -118.3], [34.1, -118.2]] as LatLngBoundsExpression
-  },
-  {
-    id: 2,
-    title: "Landsat 9 OLI/TIRS C2 L2",
-    date: "2024-03-12",
-    cloudCover: "2%",
-    platform: "Landsat 9",
-    provider: "USGS",
-    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[33.9, -118.4], [34.0, -118.3]] as LatLngBoundsExpression
-  },
-  {
-    id: 3,
-    title: "Sentinel-1A SAR GRD",
-    date: "2024-03-10",
-    cloudCover: "N/A",
-    platform: "Sentinel-1",
-    provider: "ESA",
-    thumbnail: stockImage,
-    bounds: [[34.1, -118.5], [34.2, -118.4]] as LatLngBoundsExpression
-  },
-  {
-    id: 4,
-    title: "MODIS Terra Surface Reflectance",
-    date: "2024-03-15",
-    cloudCover: "5%",
-    platform: "Terra",
-    provider: "NASA",
-    thumbnail: "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop",
-    bounds: [[33.8, -118.2], [33.9, -118.1]] as LatLngBoundsExpression
-  },
-  {
-    id: 5,
-    title: "Landsat 8 OLI/TIRS C2 L1",
-    date: "2024-03-08",
-    cloudCover: "0%",
-    platform: "Landsat 8",
-    provider: "USGS",
-    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.2, -118.6], [34.3, -118.5]] as LatLngBoundsExpression
-  },
-  {
-    id: 6,
-    title: "Sentinel-2A MSI Level-1C",
-    date: "2024-03-05",
-    cloudCover: "25%",
-    platform: "Sentinel-2",
-    provider: "ESA",
-    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.3, -118.7], [34.4, -118.6]] as LatLngBoundsExpression
-  },
-  {
-    id: 7,
-    title: "Landsat 7 ETM+ C2 L1",
-    date: "2024-02-28",
-    cloudCover: "8%",
-    platform: "Landsat 7",
-    provider: "USGS",
-    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[33.7, -118.1], [33.8, -118.0]] as LatLngBoundsExpression
-  },
-  {
-    id: 8,
-    title: "Sentinel-1B SAR SLC",
-    date: "2024-02-25",
-    cloudCover: "N/A",
-    platform: "Sentinel-1",
-    provider: "ESA",
-    thumbnail: stockImage,
-    bounds: [[34.4, -118.8], [34.5, -118.7]] as LatLngBoundsExpression
-  },
-  {
-    id: 9,
-    title: "Aqua MODIS Chlorophyll-a",
-    date: "2024-03-14",
-    cloudCover: "15%",
-    platform: "Aqua",
-    provider: "NASA",
-    thumbnail: "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop",
-    bounds: [[33.6, -118.0], [33.7, -117.9]] as LatLngBoundsExpression
-  },
-  {
-    id: 10,
-    title: "Pleiades Neo 30cm Imagery",
-    date: "2024-03-16",
-    cloudCover: "0%",
-    platform: "Pleiades Neo",
-    provider: "Airbus",
-    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.05, -118.25], [34.06, -118.24]] as LatLngBoundsExpression
-  },
-  {
-    id: 11,
-    title: "WorldView-3 SWIR",
-    date: "2024-03-13",
-    cloudCover: "1%",
-    platform: "WorldView-3",
-    provider: "Maxar",
-    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.1, -118.3], [34.11, -118.29]] as LatLngBoundsExpression
-  },
-  {
-    id: 12,
-    title: "Spot 6/7 1.5m Imagery",
-    date: "2024-03-11",
-    cloudCover: "5%",
-    platform: "Spot 7",
-    provider: "Airbus",
-    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[33.95, -118.35], [33.96, -118.34]] as LatLngBoundsExpression
-  },
-  {
-    id: 13,
-    title: "Sentinel-3 OLCI Level-1B",
-    date: "2024-03-15",
-    cloudCover: "40%",
-    platform: "Sentinel-3",
-    provider: "ESA",
-    thumbnail: "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop",
-    bounds: [[33.5, -119.0], [34.5, -118.0]] as LatLngBoundsExpression
-  },
-  {
-    id: 14,
-    title: "PlanetScope 3m Imagery",
-    date: "2024-03-16",
-    cloudCover: "0%",
-    platform: "PlanetScope",
-    provider: "Planet",
-    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.052, -118.243], [34.053, -118.242]] as LatLngBoundsExpression
-  },
-  {
-    id: 15,
-    title: "Capella Space SAR",
-    date: "2024-03-16",
-    cloudCover: "N/A",
-    platform: "Capella-2",
-    provider: "Capella",
-    thumbnail: stockImage,
-    bounds: [[34.04, -118.26], [34.05, -118.25]] as LatLngBoundsExpression
-  },
-  {
-    id: 16,
-    title: "ICEYE SAR X-band",
-    date: "2024-03-14",
-    cloudCover: "N/A",
-    platform: "ICEYE",
-    provider: "ICEYE",
-    thumbnail: stockImage,
-    bounds: [[34.06, -118.23], [34.07, -118.22]] as LatLngBoundsExpression
-  }
+// Mock Data Generators
+const PLATFORMS = [
+  { name: "Sentinel-2", provider: "ESA", type: "Optical" },
+  { name: "Landsat 8", provider: "USGS", type: "Optical" },
+  { name: "Landsat 9", provider: "USGS", type: "Optical" },
+  { name: "WorldView-3", provider: "Maxar", type: "Optical" },
+  { name: "PlanetScope", provider: "Planet", type: "Optical" },
+  { name: "BlackSky Global", provider: "BlackSky", type: "Optical" },
+  { name: "Capella-2", provider: "Capella Space", type: "SAR" },
+  { name: "ICEYE-X", provider: "ICEYE", type: "SAR" },
+  { name: "SPOT 7", provider: "Airbus", type: "Optical" },
+  { name: "Pleiades Neo", provider: "Airbus", type: "Optical" }
 ];
+
+const THUMBNAILS = [
+  stockImage,
+  "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop"
+];
+
+const TITLES: Record<string, string[]> = {
+  "Sentinel-2": ["MSI Level-1C", "MSI Level-2A"],
+  "Landsat 8": ["OLI/TIRS C2 L1", "OLI/TIRS C2 L2"],
+  "Landsat 9": ["OLI/TIRS C2 L1", "OLI/TIRS C2 L2"],
+  "WorldView-3": ["SWIR", "Pan-Sharpened", "Multispectral"],
+  "PlanetScope": ["3m Imagery", "Ortho Scene"],
+  "BlackSky Global": ["Spectra AI", "Standard Imagery"],
+  "Capella-2": ["SAR SLC", "SAR GEO"],
+  "ICEYE-X": ["SAR X-band", "SAR SLC"],
+  "SPOT 7": ["1.5m Imagery", "Panchromatic"],
+  "Pleiades Neo": ["30cm Imagery", "Panchromatic"]
+};
+
+const generateMockResults = (count: number) => {
+  return Array.from({ length: count }, (_, i) => {
+    const platform = PLATFORMS[i % PLATFORMS.length];
+    const titles = TITLES[platform.name] || ["Imagery"];
+    const title = `${platform.name} ${titles[i % titles.length]}`;
+    
+    // Random date within last 30 days
+    const date = new Date();
+    date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+    const dateStr = date.toISOString().split('T')[0];
+    
+    // Random cloud cover (0-100% or N/A for SAR)
+    const isSAR = platform.type === "SAR";
+    const cloudCover = isSAR ? "N/A" : `${Math.floor(Math.random() * 30)}%`;
+    
+    // Random bounds near Los Angeles for demo
+    const lat = 34.0522 + (Math.random() - 0.5) * 1.0;
+    const lng = -118.2437 + (Math.random() - 0.5) * 1.0;
+    
+    return {
+      id: i + 1,
+      title,
+      date: dateStr,
+      cloudCover,
+      platform: platform.name,
+      provider: platform.provider,
+      thumbnail: THUMBNAILS[i % THUMBNAILS.length],
+      bounds: [[lat, lng], [lat + 0.05, lng + 0.05]] as LatLngBoundsExpression
+    };
+  });
+};
+
+const MOCK_RESULTS = generateMockResults(100);
 
 export default function SearchResults() {
   const [location, setLocation] = useLocation();
