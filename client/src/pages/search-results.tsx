@@ -23,6 +23,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
+import desertImage from '@assets/stock_images/satellite_view_of_de_09a0f404.jpg';
+import oceanImage from '@assets/stock_images/satellite_view_of_oc_86576cd8.jpg';
+import forestImage from '@assets/stock_images/satellite_view_of_de_03f9764a.jpg';
+import agriImage from '@assets/stock_images/satellite_view_of_ag_ebac3a20.jpg';
+import snowImage from '@assets/stock_images/satellite_view_of_sn_8f021214.jpg';
+import cityImage from '@assets/stock_images/satellite_view_of_ci_093e163a.jpg';
+import sarImage from '@assets/stock_images/satellite_radar_sar__0ff421fd.jpg';
 
 // Mock Data Generators
 const PLATFORMS = [
@@ -40,6 +47,13 @@ const PLATFORMS = [
 
 const THUMBNAILS = [
   stockImage,
+  desertImage,
+  oceanImage,
+  forestImage,
+  agriImage,
+  snowImage,
+  cityImage,
+  sarImage,
   "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
   "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop"
