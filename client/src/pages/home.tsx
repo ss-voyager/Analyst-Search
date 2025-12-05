@@ -115,7 +115,7 @@ export default function Home() {
               
               {/* Keyword Input */}
               <div className="flex items-center flex-1 w-full px-2">
-                <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                <Search className="w-5 h-5 text-foreground flex-shrink-0" />
                 <input
                   type="text"
                   value={keyword}
@@ -133,7 +133,7 @@ export default function Home() {
                 <div className="flex items-center flex-1 w-full relative">
                   <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                           <button type="button" className="mr-2 text-muted-foreground hover:text-primary transition-colors outline-none">
+                           <button type="button" className="mr-2 text-foreground hover:text-primary transition-colors outline-none">
                                <MapPin className="w-5 h-5" />
                            </button>
                       </DropdownMenuTrigger>

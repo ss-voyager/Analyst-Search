@@ -156,7 +156,7 @@ export default function SearchResults() {
 
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl flex items-center gap-2">
             <div className="flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors hover:bg-white/10">
-              <Search className="w-4 h-4 text-muted-foreground mr-2" />
+              <Search className="w-4 h-4 text-foreground mr-2" />
               <input 
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
@@ -176,7 +176,7 @@ export default function SearchResults() {
                   </SelectContent>
                 </Select>
               </div>
-              <MapPin className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
+              <MapPin className="w-4 h-4 text-foreground mr-2 shrink-0" />
               <input 
                   value={place}
                   onChange={(e) => setPlace(e.target.value)}
