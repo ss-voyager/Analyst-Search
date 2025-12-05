@@ -6,7 +6,7 @@ import {
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
   List, ArrowUpDown, Info, Check, User, Globe, Tag,
   Folder, FolderOpen, File, Star, Share2, Mail, Bell, Copy, Trash, Link as LinkIcon,
-  PanelRightClose, PanelRightOpen
+  PanelRightClose, PanelRightOpen, History, Clock
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -513,6 +513,38 @@ export default function SearchResults() {
     return 0;
   });
 
+  const [searchHistory, setSearchHistory] = useState<string[]>([
+    "Vegetation in California",
+    "Urban Growth in Tokyo",
+    "Deforestation in Amazon",
+    "Floods in Pakistan"
+  ]);
+
+  const handleHistorySelect = (historyItem: string) => {
+      setQuery(historyItem);
+      
+      // Trigger search logic
+      let searchKeyword = historyItem;
+      let searchLocation = "";
+      const lowerQuery = historyItem.toLowerCase();
+      
+      if (lowerQuery.includes(" in ")) {
+          const parts = historyItem.split(/ in /i);
+          searchKeyword = parts[0];
+          searchLocation = parts[1];
+      } else if (PLACE_SUGGESTIONS.some(p => p.toLowerCase().includes(lowerQuery))) {
+          searchKeyword = "";
+          searchLocation = historyItem;
+      }
+
+      setKeyword(searchKeyword);
+      setPlace(searchLocation);
+      setLocation(`/search?q=${encodeURIComponent(searchKeyword)}&loc=${encodeURIComponent(searchLocation)}`);
+      setIsSearchFocused(false);
+      setIsLoading(true);
+      setTimeout(() => setIsLoading(false), 800);
+  };
+
   // Detect input type for visual feedback
   useEffect(() => {
     const lowerQuery = query.toLowerCase();
@@ -749,6 +781,34 @@ export default function SearchResults() {
                   <Search className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Search History Dropdown */}
+              {isSearchFocused && searchHistory.length > 0 && (
+                 <div 
+                    className="absolute top-full left-0 w-full mt-2 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
+                    onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking
+                 >
+                    <div className="px-3 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2 border-b border-border/50">
+                        <History className="w-3 h-3" />
+                        Recent Searches
+                    </div>
+                    <div className="p-1">
+                      {searchHistory.map((item, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => handleHistorySelect(item)}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/80 text-left group transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-background transition-colors border border-transparent group-hover:border-border">
+                             <Clock className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                          <span className="text-sm text-foreground group-hover:text-primary transition-colors">{item}</span>
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+              )}
 
             </div>
           </form>
