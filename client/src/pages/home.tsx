@@ -61,7 +61,7 @@ export default function Home() {
     <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative selection:bg-primary/30">
       {/* Background Asset */}
       <div 
-        className="absolute inset-0 z-0 opacity-100 pointer-events-none"
+        className="absolute inset-0 z-0 opacity-0 dark:opacity-100 pointer-events-none transition-opacity duration-500"
         style={{
           backgroundImage: `url(${heroBg})`,
           backgroundSize: 'cover',
@@ -79,7 +79,7 @@ export default function Home() {
           <span className="font-display font-bold text-3xl tracking-tight text-primary">Voyager</span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-sm px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-medium backdrop-blur-sm">
+          <button className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm">
             Sign In
           </button>
           <ThemeToggle />
@@ -94,7 +94,7 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 tracking-tight text-white drop-shadow-2xl">
+          <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 tracking-tight text-foreground drop-shadow-2xl">
             Map the World's Data.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -111,7 +111,7 @@ export default function Home() {
           <form onSubmit={handleSearch} className="relative group">
             <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
             
-            <div className="relative flex flex-col md:flex-row items-center bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-black/90 divide-y md:divide-y-0 md:divide-x divide-white/10">
+            <div className="relative flex flex-col md:flex-row items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-white/90 dark:focus-within:bg-black/90 divide-y md:divide-y-0 md:divide-x divide-black/10 dark:divide-white/10">
               
               {/* Keyword Input */}
               <div className="flex items-center flex-1 w-full px-2">
@@ -137,16 +137,16 @@ export default function Home() {
                                <MapPin className="w-5 h-5" />
                            </button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 bg-black/90 backdrop-blur-xl border-white/10 text-foreground">
+                      <DropdownMenuContent align="start" className="w-56 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-black/10 dark:border-white/10 text-foreground">
                           <DropdownMenuLabel className="text-xs text-muted-foreground">Location Tools</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => {
                             document.getElementById('loc-input')?.focus();
                             setShowLocationOptions(false);
-                          }} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                          }} className="gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10">
                               <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-white/10" />
-                          <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                          <DropdownMenuSeparator className="bg-black/10 dark:bg-white/10" />
+                          <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10">
                               <MapIcon className="w-4 h-4" /> <span>Select Region on a Map</span>
                           </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -223,7 +223,7 @@ export default function Home() {
                <button
                  key={i}
                  onClick={() => setKeyword(s)}
-                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-black/60 text-sm text-white/90 hover:text-white transition-all duration-300 shadow-lg"
+                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/10 dark:border-white/10 hover:border-primary/40 hover:bg-white/60 dark:hover:bg-black/60 text-sm text-foreground dark:text-white/90 hover:text-foreground dark:hover:text-white transition-all duration-300 shadow-lg"
                >
                  <Navigation className="w-3 h-3" />
                  {s}
