@@ -148,15 +148,12 @@ export default function Home() {
                           }} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
                               <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setPlace("34.05, -118.25")} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                              <Crosshair className="w-4 h-4" /> <span>Enter Coordinates</span>
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-white/10" />
                           <DropdownMenuItem className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
                               <Upload className="w-4 h-4" /> <span>Upload AOI File</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                              <MapIcon className="w-4 h-4" /> <span>Draw AOI on Map</span>
+                              <MapIcon className="w-4 h-4" /> <span>Select Region on a Map</span>
                           </DropdownMenuItem>
                       </DropdownMenuContent>
                   </DropdownMenu>
