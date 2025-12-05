@@ -11,6 +11,7 @@ import { LatLngBoundsExpression } from "leaflet";
 import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTheme } from "@/components/theme-provider";
 
 // Reusing Mock Data logic (in a real app this would come from an API or store)
 const MOCK_RESULTS = [
