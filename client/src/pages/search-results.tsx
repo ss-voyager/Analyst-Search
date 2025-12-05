@@ -5,7 +5,7 @@ import {
   Search, MapPin, Filter, ArrowLeft, Calendar as CalendarIcon, Layers, 
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
   List, ArrowUpDown, Info, Check, User, Globe, Tag,
-  Folder, FolderOpen, File
+  Folder, FolderOpen, File, Star, Share2, Mail, Bell, Copy, Trash, Link as LinkIcon
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -29,6 +29,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
@@ -333,6 +338,31 @@ export default function SearchResults() {
   const [hoveredResultId, setHoveredResultId] = useState<number | null>(null);
   const [previewedResultId, setPreviewedResultId] = useState<number | null>(null);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
+  
+  // Saved Search State
+  const [isSaveSearchOpen, setIsSaveSearchOpen] = useState(false);
+  const [saveSearchName, setSaveSearchName] = useState("");
+  const [saveSearchNotify, setSaveSearchNotify] = useState(true);
+  const [isSearchSaved, setIsSearchSaved] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [savedSearchLink, setSavedSearchLink] = useState("https://voyager.ai/s/a8XkD4");
+
+  const handleSaveSearch = () => {
+    setIsSearchSaved(true);
+    setIsSaveSearchOpen(false);
+    toast("Search saved successfully", {
+      description: "You will be notified when new results match this query.",
+      action: {
+        label: "Share",
+        onClick: () => setShowShareModal(true),
+      },
+    });
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(savedSearchLink);
+    toast.success("Link copied to clipboard");
+  };
 
   const PLACE_SUGGESTIONS = [
     "New York, USA",
@@ -833,6 +863,150 @@ export default function SearchResults() {
              {showMap ? <List className="w-3 h-3" /> : <MapIcon className="w-3 h-3" />}
              <span className="hidden lg:inline text-xs">{showMap ? 'Hide Map' : 'Show Map'}</span>
            </Button>
+
+           <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                   <Button 
+                    variant={isSearchSaved ? "secondary" : "outline"}
+                    size="sm"
+                    className={cn(
+                      "h-8 gap-2 border-dashed border-primary/40",
+                      isSearchSaved ? "bg-primary/10 text-primary border-primary hover:bg-primary/20" : "text-muted-foreground hover:text-foreground"
+                    )}
+                    onClick={() => {
+                      if (isSearchSaved) {
+                        setShowShareModal(true);
+                      } else {
+                        setIsSaveSearchOpen(true);
+                        setSaveSearchName(keyword || place || "New Search");
+                      }
+                    }}
+                   >
+                     {isSearchSaved ? <Star className="w-3.5 h-3.5 fill-primary" /> : <Star className="w-3.5 h-3.5" />}
+                     <span className="hidden sm:inline text-xs font-medium">
+                       {isSearchSaved ? "Saved" : "Save Search"}
+                     </span>
+                   </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isSearchSaved ? "Manage or share this saved search" : "Save this search to get notifications"}
+                </TooltipContent>
+              </Tooltip>
+           </TooltipProvider>
+
+           {/* Save Search Modal */}
+           <Dialog open={isSaveSearchOpen} onOpenChange={setIsSaveSearchOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-primary fill-primary/20" />
+                    Save Search
+                  </DialogTitle>
+                  <DialogDescription>
+                    Save this search configuration to easily access it later and receive updates.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Search Name</Label>
+                    <Input 
+                      id="name" 
+                      value={saveSearchName} 
+                      onChange={(e) => setSaveSearchName(e.target.value)} 
+                      className="col-span-3" 
+                    />
+                  </div>
+                  
+                  {/* Search Preview Summary */}
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2 border border-border/50">
+                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Search Preview</div>
+                     <div className="space-y-1">
+                        <div className="flex items-start gap-2 text-sm">
+                           <Search className="w-3.5 h-3.5 mt-0.5 text-primary" />
+                           <span className="text-foreground/80">{keyword || "All keywords"}</span>
+                        </div>
+                        <div className="flex items-start gap-2 text-sm">
+                           <MapPin className="w-3.5 h-3.5 mt-0.5 text-primary" />
+                           <span className="text-foreground/80">{place || spatialFilter ? (place || "Custom Area") : "Global"}</span>
+                        </div>
+                        {(activeFilters.length > 0 || date) && (
+                           <div className="flex items-start gap-2 text-sm">
+                             <Filter className="w-3.5 h-3.5 mt-0.5 text-primary" />
+                             <span className="text-foreground/80">
+                               {[
+                                 date ? "Date Range" : null,
+                                 ...activeFilters.map(f => f.value),
+                                 ...selectedProperties.map(p => p.replace('has_', '').replace('is_', ''))
+                               ].filter(Boolean).join(", ")}
+                             </span>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between space-x-2 border rounded-lg p-3 bg-muted/10">
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="notify" className="font-medium cursor-pointer">Email Notifications</Label>
+                      <span className="text-xs text-muted-foreground">Get notified when new results appear</span>
+                    </div>
+                    <Switch id="notify" checked={saveSearchNotify} onCheckedChange={setSaveSearchNotify} />
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setIsSaveSearchOpen(false)}>Cancel</Button>
+                  <Button onClick={handleSaveSearch}>Save Search</Button>
+                </DialogFooter>
+              </DialogContent>
+           </Dialog>
+
+           {/* Share Modal */}
+           <Dialog open={showShareModal} onOpenChange={setShowShareModal}>
+             <DialogContent className="sm:max-w-md">
+               <DialogHeader>
+                 <DialogTitle className="flex items-center gap-2">
+                   <Share2 className="w-5 h-5 text-primary" />
+                   Share Search
+                 </DialogTitle>
+                 <DialogDescription>
+                   Anyone with this link can view these search results.
+                 </DialogDescription>
+               </DialogHeader>
+               <div className="flex items-center space-x-2 mt-2">
+                 <div className="grid flex-1 gap-2">
+                   <Label htmlFor="link" className="sr-only">
+                     Link
+                   </Label>
+                   <Input
+                     id="link"
+                     defaultValue={savedSearchLink}
+                     readOnly
+                     className="bg-muted/30 font-mono text-xs"
+                   />
+                 </div>
+                 <Button type="submit" size="sm" className="px-3" onClick={copyLink}>
+                   <span className="sr-only">Copy</span>
+                   <Copy className="h-4 w-4" />
+                 </Button>
+               </div>
+               <div className="flex flex-col gap-2 mt-4">
+                  <Button variant="outline" className="w-full justify-start text-muted-foreground hover:text-foreground">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email to colleague
+                  </Button>
+               </div>
+               <DialogFooter className="sm:justify-start">
+                 <div className="flex items-center space-x-2">
+                    <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      Results may vary based on user permissions
+                    </div>
+                 </div>
+               </DialogFooter>
+             </DialogContent>
+           </Dialog>
          </div>
       </div>
 

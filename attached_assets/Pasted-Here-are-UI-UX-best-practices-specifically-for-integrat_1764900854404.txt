@@ -1,0 +1,219 @@
+Here are **UI/UX best practices** specifically for integrating **Saved Searches** into a geospatial search results page—covering *save, share, notifications,* and *tiny URLs*—while keeping the interface clean, modern, and mission-appropriate.
+
+---
+
+# 🌟 **Best Practices for Adding “Saved Search” Functionality to the Results Page**
+
+---
+
+# **1. Placement of the “Save Search” Action**
+
+The **best location** for a “Save Search” button is close to the **query summary**—typically on the right side of the result summary bar.
+
+### Recommended layout:
+
+```
+[ Results: 2,341 items ]   [ Sort ▼ ]   [ Save Search ★ ]
+-------------------------- QUERY CHIPS --------------------------
+```
+
+### Best practices:
+
+* Use a **star icon** (★) or bookmark icon for familiarity.
+* When clicked, it opens a small modal:
+
+  * Name of saved search
+  * Toggle for notifications
+  * Confirm
+
+**Why:** Users understand this instantly from patterns used by Google, ArcGIS, Amazon, GitHub, etc.
+
+---
+
+# **2. Saving a Search Should Capture the Full Query Context**
+
+A saved search must include:
+
+* Keywords
+* Applied facets
+* Spatial filters (AOI, place name, coordinates)
+* Sort order (optional)
+
+### Best practices:
+
+* Present a “preview” of what will be saved inside the modal:
+
+  ```
+  Keywords: "Bridge damage"
+  Location: Custom Polygon
+  Filters: Sensor=Sentinel-2, Cloud<20%
+  ```
+
+**Why:** Removes ambiguity; users know exactly what will be triggered later.
+
+---
+
+# **3. Sharing a Saved Search**
+
+Every saved search should generate a **share menu** from two places:
+
+1. Inside the “Saved Searches” page/drawer
+2. As an option immediately after saving
+
+### UI pattern:
+
+“Share” button or icon → opens share modal:
+
+* Copy tiny URL
+* Email link to colleague
+* Optional: share to teams (Slack, MS Teams, etc.)
+
+### Best practices:
+
+* Use a **tiny URL format** (short hash or GUID).
+* Provide visual confirmation (e.g., *“Copied to clipboard”*).
+* Include permissions logic if relevant (open to anyone? org-internal?).
+
+**Why:** Sharing should be as frictionless as sharing a Google Map link.
+
+---
+
+# **4. Ability to Receive Email Notifications**
+
+Notifications must be part of the **Save Search** flow.
+
+### Modal should include:
+
+* Toggle: **“Notify me when new results match this search”**
+* Frequency options (if you support it):
+
+  * immediately
+  * daily digest
+  * weekly
+
+### Best practices:
+
+* Keep defaults simple: *“Notify me” (immediate)*.
+* Provide a small note:
+  *“You will receive an email when new items appear that match this query.”*
+
+**Why:** It mirrors the UX of Google Alerts or Earthdata subscription services.
+
+---
+
+# **5. Saved Search Management Area**
+
+Provide a place to view and manage saved searches:
+
+* Accessible via user menu (top-right)
+* Or from a link in the results page
+
+### Each saved search should display:
+
+* Name
+* Query summary (chips)
+* Last run time
+* Number of new results
+* Actions:
+
+  * Run
+  * Share
+  * Edit notifications
+  * Delete
+
+### Best practices:
+
+* Show small data indicators:
+  *“12 new results since last run.”*
+
+**Why:** Users often rely on saved searches as “subscriptions.”
+
+---
+
+# **6. Tiny URL / Small Sharing Link**
+
+To support an easy-to-share link:
+
+### Best practices:
+
+* Use a URL shortener pattern controlled inside the platform (never offload to external services).
+* Example:
+
+  ```
+  https://voyager.ai/s/a8XkD4
+  ```
+* Include encrypted parameters so the full query is not exposed.
+
+### UX guidance:
+
+* Provide a “Copy Link” button in both:
+
+  * Save Search modal
+  * Saved Search management page
+
+* Always use a **toast notification** confirming successful copy.
+
+---
+
+# **7. Inline Feedback After Saving**
+
+Once a search is saved, the UI should update immediately.
+
+### Best practices:
+
+* Change ★ icon to a filled version ★
+* Tooltip changes:
+  *“Search saved. Click to manage or share.”*
+* Offer the share button immediately.
+
+**Why:** Reinforces the action without redirecting the user away from results.
+
+---
+
+# **8. Optional: Quick Access Panel for Saved Searches**
+
+Add a **“Saved Searches” drawer** accessible from the results page (similar to saved filters in enterprise tools).
+
+### Best practices:
+
+* When opened: list all saved searches
+* Allow quick switching to previous saved queries
+* Do not heavily clutter the page—the drawer should hide by default
+
+---
+
+# **9. Respect Minimalism**
+
+Because your landing page and results page aim to be clean and mission-focused, saved-search UI should be:
+
+* Small
+* Non-intrusive
+* Using simple modals and icons
+* Avoiding banner-level UI or persistent toolbars
+
+---
+
+# **10. Messaging & Assistance**
+
+Provide tooltips or small guidance:
+
+* On Save: *“Save searches to get alerts when new matching data is available.”*
+* On Share: *“Anyone with this link can view search results (access permitting).”*
+
+**This ensures transparency, especially for sensitive environments.**
+
+---
+
+# 🎯 **If you want, I can now design the full UI flow:**
+
+* Save Search modal
+* Share Search modal
+* Saved Search list page/drawer
+* Tiny URL pattern
+* How the chip-based query is captured
+
+Just tell me whether you want:
+
+* **Low-fi wireframes**
+* **Mid-fi prototypes**
+* **Finalized text labels + UI copy**
