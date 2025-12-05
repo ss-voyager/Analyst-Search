@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Search, MapPin, Globe, Navigation, ArrowRight, Command } from "lucide-react";
-import heroBg from "@assets/generated_images/dark_cinematic_view_of_earth_from_space_with_data_overlays.png";
+import heroBg from "@assets/generated_images/soft_desaturated_earth_terrain_background.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,14 +60,14 @@ export default function Home() {
     <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative selection:bg-primary/30">
       {/* Background Asset */}
       <div 
-        className="absolute inset-0 z-0 opacity-60 pointer-events-none"
+        className="absolute inset-0 z-0 opacity-100 pointer-events-none"
         style={{
           backgroundImage: `url(${heroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          maskImage: 'linear-gradient(to bottom, black 20%, transparent 100%)'
         }}
       />
+      <div className="absolute inset-0 z-0 bg-background/20 pointer-events-none" />
 
       {/* Overlay Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-0" />
