@@ -132,17 +132,6 @@ export default function Home() {
 
               {/* Location Input */}
               <div className="flex items-center flex-[1.5] w-full px-2 relative">
-                <div className="relative flex items-center mr-2">
-                  <Select defaultValue="intersects">
-                    <SelectTrigger className="h-8 w-[110px] text-xs bg-white/10 border-white/10 rounded-md mr-2 focus:ring-0 focus:ring-offset-0">
-                      <SelectValue placeholder="Spatial Rel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="intersects">Intersects</SelectItem>
-                      <SelectItem value="within">Within</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 
                 <div className="flex items-center flex-1 w-full relative">
                   <DropdownMenu>
