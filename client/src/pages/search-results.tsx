@@ -346,9 +346,78 @@ export default function SearchResults() {
           )}
         </AnimatePresence>
 
-        {/* Map Panel (Left - Movable) */}
+        {/* Results Grid (Left) */}
+        <div className="flex-1 flex flex-col min-w-0 bg-background/50">
+           <ScrollArea className="flex-1">
+             <div className="p-4">
+               {isLoading ? (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                   {Array.from({ length: 8 }).map((_, i) => (
+                     <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse border border-white/5" />
+                   ))}
+                 </div>
+               ) : (
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                   {MOCK_RESULTS.map((result) => (
+                     <motion.div 
+                       key={result.id}
+                       layout
+                       initial={{ opacity: 0, scale: 0.95 }}
+                       animate={{ opacity: 1, scale: 1 }}
+                       className="group flex flex-col bg-card border border-white/10 hover:border-primary/50 rounded-sm overflow-hidden transition-all hover:shadow-xl hover:bg-card/80"
+                     >
+                        {/* Thumbnail Area - Square aspect ratio like reference */}
+                        <div className="aspect-square bg-black/50 relative group-hover:brightness-110 transition-all">
+                          <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
+                          
+                          {/* Selection Checkbox Overlay */}
+                          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="w-5 h-5 rounded border border-white/50 bg-black/50 flex items-center justify-center hover:bg-primary hover:border-primary cursor-pointer">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="flex-1 p-3 flex flex-col min-w-0 bg-card cursor-pointer" onClick={() => setLocation(`/item/${result.id}`)}>
+                           <h3 className="font-display font-semibold text-sm text-primary truncate mb-1 hover:underline" title={result.title}>
+                             {result.title}
+                           </h3>
+                           
+                           <div className="text-[10px] text-muted-foreground space-y-1 mb-4">
+                              <p>Format: <span className="text-foreground/80">GeoTIFF</span></p>
+                              <p>Date: <span className="text-foreground/80">{result.date}</span></p>
+                              <p>Provider: <span className="text-foreground/80">{result.platform}</span></p>
+                           </div>
+
+                           {/* Action Footer */}
+                           <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+                              <button className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
+                                <div className="w-3 h-3 rounded-full border border-current flex items-center justify-center">
+                                  <span className="text-[8px] leading-none">+</span>
+                                </div>
+                                Add to Cart
+                              </button>
+                              
+                              <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+                                Tools
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                           </div>
+                        </div>
+                     </motion.div>
+                   ))}
+                 </div>
+               )}
+               
+               <div className="h-8" />
+             </div>
+           </ScrollArea>
+        </div>
+
+        {/* Map Panel (Right - Movable) */}
         {showMap && (
-          <div className="w-full md:w-[400px] lg:w-[500px] bg-black/20 relative hidden md:block border-r border-white/10 shrink-0">
+          <div className="w-full md:w-[400px] lg:w-[500px] bg-black/20 relative hidden md:block border-l border-white/10 shrink-0">
              <MapContainer 
                  center={[34.05, -118.25]} 
                  zoom={9} 
@@ -420,75 +489,6 @@ export default function SearchResults() {
           </MapContainer>
           </div>
         )}
-
-        {/* Results Grid (Right) */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background/50">
-           <ScrollArea className="flex-1">
-             <div className="p-4">
-               {isLoading ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                   {Array.from({ length: 8 }).map((_, i) => (
-                     <div key={i} className="aspect-[3/4] rounded-xl bg-white/5 animate-pulse border border-white/5" />
-                   ))}
-                 </div>
-               ) : (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                   {MOCK_RESULTS.map((result) => (
-                     <motion.div 
-                       key={result.id}
-                       layout
-                       initial={{ opacity: 0, scale: 0.95 }}
-                       animate={{ opacity: 1, scale: 1 }}
-                       className="group flex flex-col bg-card border border-white/10 hover:border-primary/50 rounded-sm overflow-hidden transition-all hover:shadow-xl hover:bg-card/80"
-                     >
-                        {/* Thumbnail Area - Square aspect ratio like reference */}
-                        <div className="aspect-square bg-black/50 relative group-hover:brightness-110 transition-all">
-                          <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
-                          
-                          {/* Selection Checkbox Overlay */}
-                          <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div className="w-5 h-5 rounded border border-white/50 bg-black/50 flex items-center justify-center hover:bg-primary hover:border-primary cursor-pointer">
-                              <Check className="w-3 h-3 text-white" />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Content Area */}
-                        <div className="flex-1 p-3 flex flex-col min-w-0 bg-card cursor-pointer" onClick={() => setLocation(`/item/${result.id}`)}>
-                           <h3 className="font-display font-semibold text-sm text-primary truncate mb-1 hover:underline" title={result.title}>
-                             {result.title}
-                           </h3>
-                           
-                           <div className="text-[10px] text-muted-foreground space-y-1 mb-4">
-                              <p>Format: <span className="text-foreground/80">GeoTIFF</span></p>
-                              <p>Date: <span className="text-foreground/80">{result.date}</span></p>
-                              <p>Provider: <span className="text-foreground/80">{result.platform}</span></p>
-                           </div>
-
-                           {/* Action Footer */}
-                           <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
-                              <button className="flex items-center gap-1.5 text-[11px] font-medium text-primary hover:text-primary/80 transition-colors">
-                                <div className="w-3 h-3 rounded-full border border-current flex items-center justify-center">
-                                  <span className="text-[8px] leading-none">+</span>
-                                </div>
-                                Add to Cart
-                              </button>
-                              
-                              <button className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                                Tools
-                                <ChevronDown className="w-3 h-3" />
-                              </button>
-                           </div>
-                        </div>
-                     </motion.div>
-                   ))}
-                 </div>
-               )}
-               
-               <div className="h-8" />
-             </div>
-           </ScrollArea>
-        </div>
 
       </div>
 
