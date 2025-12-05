@@ -59,7 +59,7 @@ export function MapDrawControl({ mode, onDrawBox, onDrawPoint }: MapDrawControlP
   });
 
   if (currentBounds) {
-    return <Rectangle bounds={currentBounds} pathOptions={{ color: '#00ffff', weight: 2, fillOpacity: 0.2, dashArray: '5, 5' }} />;
+    return <Rectangle bounds={currentBounds} pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.2, dashArray: '5, 5' }} />;
   }
 
   return null;
@@ -77,7 +77,7 @@ export function SpatialFilterLayer({ type, data }: SpatialFilterLayerProps) {
     return (
       <Rectangle 
         bounds={data} 
-        pathOptions={{ color: '#ff00ff', weight: 2, fillOpacity: 0.1 }} 
+        pathOptions={{ color: '#3b82f6', weight: 2, fillOpacity: 0.1 }} 
       />
     );
   }

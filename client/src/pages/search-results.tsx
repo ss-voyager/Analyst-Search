@@ -532,7 +532,7 @@ export default function SearchResults() {
                       key={result.id}
                       bounds={result.bounds} 
                       pathOptions={{ 
-                        color: '#00ffff', 
+                        color: '#3b82f6', 
                         weight: 1, 
                         fillOpacity: 0.1,
                         className: 'hover:fill-opacity-30 transition-all cursor-pointer'
