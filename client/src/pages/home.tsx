@@ -142,7 +142,10 @@ export default function Home() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56 bg-black/90 backdrop-blur-xl border-white/10 text-foreground">
                           <DropdownMenuLabel className="text-xs text-muted-foreground">Location Tools</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => document.getElementById('loc-input')?.focus()} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
+                          <DropdownMenuItem onClick={() => {
+                            document.getElementById('loc-input')?.focus();
+                            setShowLocationOptions(false);
+                          }} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
                               <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setPlace("34.05, -118.25")} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
@@ -175,7 +178,7 @@ export default function Home() {
                     className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
                     data-testid="input-search-location"
                   />
-                  {isLocationFocused && place && filteredPlaces.length > 0 && (
+                  {isLocationFocused && !showLocationOptions && filteredPlaces.length > 0 && (
                      <div className="absolute top-full left-0 w-full mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
                         <div className="p-2 space-y-1">
                           {filteredPlaces.map((p, i) => (
