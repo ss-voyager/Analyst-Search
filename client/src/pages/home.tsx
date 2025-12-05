@@ -71,9 +71,9 @@ export default function Home() {
 
   const suggestions = [
     { label: "Satellite Imagery", trending: true },
-    { label: "Urban Density", trending: false },
+    { label: "Urban Density", trending: true },
     { label: "Climate Data", trending: true },
-    { label: "Ocean Currents", trending: false }
+    { label: "Ocean Currents", trending: true }
   ];
 
   const PLACE_SUGGESTIONS = [
