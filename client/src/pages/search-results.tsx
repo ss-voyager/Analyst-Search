@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Search, MapPin, Filter, ArrowLeft, Calendar, Layers, 
+  Search, MapPin, Filter, ArrowLeft, Calendar as CalendarIcon, Layers, 
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
   List, ArrowUpDown, Info, Check, User, Globe, Tag,
   Folder, FolderOpen, File
 } from "lucide-react";
+import { format } from "date-fns";
+import { DateRange } from "react-day-picker";
 import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
@@ -23,6 +25,10 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
 import desertImage from '@assets/stock_images/satellite_view_of_de_09a0f404.jpg';
