@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Search, MapPin, Globe, Navigation, ArrowRight, Command } from "lucide-react";
-import heroBg from "@assets/generated_images/soft_desaturated_earth_terrain_background.png";
+import heroBg from "@assets/generated_images/dark_abstract_topographic_map.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -113,7 +113,7 @@ export default function Home() {
           <form onSubmit={handleSearch} className="relative group">
             <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
             
-            <div className="relative flex flex-col md:flex-row items-center bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-black/80 divide-y md:divide-y-0 md:divide-x divide-white/10">
+            <div className="relative flex flex-col md:flex-row items-center bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-black/90 divide-y md:divide-y-0 md:divide-x divide-white/10">
               
               {/* Keyword Input */}
               <div className="flex items-center flex-1 w-full px-2">
