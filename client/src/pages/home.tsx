@@ -81,9 +81,6 @@ export default function Home() {
           <span className="font-display font-bold text-xl tracking-tight">Voyager</span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-sm text-muted-foreground hover:text-foreground transition-colors font-medium">
-            Datasets
-          </button>
           <button className="text-sm px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-medium backdrop-blur-sm">
             Sign In
           </button>
@@ -99,18 +96,11 @@ export default function Home() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-mono mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-            </span>
-            LIVE SATELLITE FEED
-          </div>
           <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 tracking-tight text-white drop-shadow-2xl">
             Map the World's Data.
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Access real-time geospatial intelligence and satellite imagery from any location on Earth.
+            Satellite imagery from any location on Earth.
           </p>
         </motion.div>
 
