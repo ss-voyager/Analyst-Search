@@ -539,27 +539,67 @@ export default function SearchResults() {
 
                   <Separator className="bg-border/50" />
 
-                  <div className="space-y-3">
-                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
-                      <Tag className="w-4 h-4 text-primary" /> Keywords
-                    </h3>
-                    <Select>
-                      <SelectTrigger className="w-full h-9 text-xs bg-muted/30 border-border/60 focus:ring-primary/20 hover:bg-muted/50 transition-colors">
-                        <SelectValue placeholder="Select a keyword..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Keywords</SelectItem>
-                        {KEYWORDS.map(k => (
-                          <SelectItem key={k} value={k.toLowerCase()}>{k}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1">
+                    <Accordion type="single" collapsible defaultValue="keywords" className="w-full">
+                      <AccordionItem value="keywords" className="border-none">
+                        <AccordionTrigger className="py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:no-underline uppercase tracking-wider">
+                          Keywords
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1 pb-2">
+                            {KEYWORDS.map(k => {
+                              // Generate consistent mock count based on string length
+                              const count = (k.length * 1234) % 10000; 
+                              return (
+                                <button 
+                                  key={k} 
+                                  className="w-full flex items-center justify-between py-1.5 px-2 text-sm hover:bg-muted/50 rounded-md group transition-colors text-left"
+                                >
+                                  <span className="text-foreground/80 group-hover:text-foreground font-medium">{k}</span>
+                                  <span className="text-muted-foreground/60 text-xs">({count})</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+
+                  <Separator className="bg-border/50" />
+
+                  <div className="space-y-1">
+                    <Accordion type="single" collapsible defaultValue="properties" className="w-full">
+                      <AccordionItem value="properties" className="border-none">
+                        <AccordionTrigger className="py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:no-underline uppercase tracking-wider">
+                          Properties
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1 pb-2">
+                             {[
+                               { name: "has_thumbnail", count: 26308 },
+                               { name: "has_spatial", count: 17695 },
+                               { name: "has_temporal", count: 15432 },
+                               { name: "is_downloadable", count: 12100 }
+                             ].map(prop => (
+                                <button 
+                                  key={prop.name} 
+                                  className="w-full flex items-center justify-between py-1.5 px-2 text-sm hover:bg-muted/50 rounded-md group transition-colors text-left"
+                                >
+                                  <span className="text-foreground/80 group-hover:text-foreground font-medium">{prop.name}</span>
+                                  <span className="text-muted-foreground/60 text-xs">({prop.count})</span>
+                                </button>
+                             ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
 
                   <Separator className="bg-border/50" />
 
                   <div className="space-y-3">
-                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide mt-3">
                       <Layers className="w-4 h-4 text-primary" /> Platform
                     </h3>
                     <div className="space-y-2">
