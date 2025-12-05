@@ -158,28 +158,35 @@ export default function SearchResults() {
             </span>
           </div>
 
-          <form onSubmit={handleSearch} className="flex-1 max-w-2xl flex items-center gap-2">
-            <div className="flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors hover:bg-white/10">
-              <Search className="w-4 h-4 text-foreground mr-2" />
-              <input 
-                  value={keyword}
-                  onChange={(e) => setKeyword(e.target.value)}
-                  className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50"
-                  placeholder="Search keywords..."
-              />
+          <form onSubmit={handleSearch} className="flex-1 max-w-2xl relative group ml-4">
+            <div className="flex items-center bg-white/80 dark:bg-black/50 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-xl p-1 shadow-sm transition-all duration-300 focus-within:border-primary/50 focus-within:bg-white/90 dark:focus-within:bg-black/80 divide-x divide-black/10 dark:divide-white/10">
+              
+              <div className="flex items-center flex-1 px-3">
+                <input 
+                    value={keyword}
+                    onChange={(e) => setKeyword(e.target.value)}
+                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 h-8 text-foreground"
+                    placeholder="Search keywords..."
+                />
+              </div>
+
+              <div className="hidden md:flex items-center flex-[0.8] px-3 relative">
+                <MapPin className="w-4 h-4 text-muted-foreground mr-2 shrink-0" />
+                <input 
+                    value={place}
+                    onChange={(e) => setPlace(e.target.value)}
+                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 min-w-0 h-8 text-foreground"
+                    placeholder="Where is it located?"
+                />
+              </div>
+
+              <div className="p-0.5">
+                <button type="submit" className="p-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-colors flex items-center justify-center">
+                  <Search className="w-4 h-4" />
+                </button>
+              </div>
+
             </div>
-            <div className="hidden md:flex items-center flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 focus-within:border-primary/50 transition-colors relative hover:bg-white/10">
-              <MapPin className="w-4 h-4 text-foreground mr-2 shrink-0" />
-              <input 
-                  value={place}
-                  onChange={(e) => setPlace(e.target.value)}
-                  className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 min-w-0"
-                  placeholder="Where is it located?"
-              />
-            </div>
-            <button type="submit" className="hidden md:flex p-2 bg-primary rounded-lg text-primary-foreground hover:bg-primary/90">
-              <Search className="w-4 h-4" />
-            </button>
           </form>
         </div>
 
