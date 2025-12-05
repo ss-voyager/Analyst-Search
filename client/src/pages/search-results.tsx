@@ -321,6 +321,7 @@ export default function SearchResults() {
   const [keywordSearch, setKeywordSearch] = useState("");
   const [hoveredResultId, setHoveredResultId] = useState<number | null>(null);
   const [previewedResultId, setPreviewedResultId] = useState<number | null>(null);
+  const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
 
   const PLACE_SUGGESTIONS = [
     "New York, USA",
@@ -1060,10 +1061,15 @@ export default function SearchResults() {
                  className="z-0 bg-muted/20 dark:bg-[#1a1a1a]"
                >
                  <TileLayer
-                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                   url={isDark 
-                     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                   attribution={mapStyle === 'streets' 
+                     ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                     : '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                   }
+                   url={mapStyle === 'streets'
+                     ? (isDark 
+                         ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                         : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png")
+                     : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                    }
                  />
                  {!isLoading && filteredResults.map(result => (
@@ -1090,6 +1096,24 @@ export default function SearchResults() {
              
              {/* Map Controls Overlay */}
              <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+                {/* Map Style Toggle */}
+                <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
+                  <button 
+                    className={`p-2 hover:bg-white/10 rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-white' : 'text-white/60'}`} 
+                    title="Street Map"
+                    onClick={() => setMapStyle('streets')}
+                  >
+                    <MapIcon className="w-4 h-4" />
+                  </button>
+                  <button 
+                    className={`p-2 hover:bg-white/10 rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-white' : 'text-white/60'}`}
+                    title="Satellite Map"
+                    onClick={() => setMapStyle('satellite')}
+                  >
+                    <Globe className="w-4 h-4" />
+                  </button>
+                </div>
+
                 <div className="bg-black/80 backdrop-blur rounded-lg border border-white/10 p-1 flex flex-col gap-1">
                   <button 
                     className={`p-2 hover:bg-white/10 rounded transition-colors ${drawMode === 'none' ? 'text-white' : 'text-white/60'}`} 
