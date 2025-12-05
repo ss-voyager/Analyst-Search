@@ -132,26 +132,9 @@ export default function Home() {
               <div className="flex items-center flex-[1.5] w-full px-2 relative">
                 
                 <div className="flex items-center flex-1 w-full relative">
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                           <button type="button" className="mr-2 text-foreground hover:text-primary transition-colors outline-none">
-                               <MapPin className="w-5 h-5" />
-                           </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 bg-white/90 dark:bg-black/90 backdrop-blur-xl border-black/10 dark:border-white/10 text-foreground">
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">Location Tools</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => {
-                            document.getElementById('loc-input')?.focus();
-                            setShowLocationOptions(false);
-                          }} className="gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10">
-                              <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-black/10 dark:bg-white/10" />
-                          <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/10 focus:bg-black/5 dark:focus:bg-white/10">
-                              <MapIcon className="w-4 h-4" /> <span>Select Region on a Map</span>
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
+                   <div className="mr-2 text-muted-foreground">
+                       <MapPin className="w-5 h-5" />
+                   </div>
                   
                   <input
                     id="loc-input"
@@ -163,10 +146,9 @@ export default function Home() {
                     }}
                     onFocus={() => {
                       setIsLocationFocused(true);
-                      // if (!place) setShowLocationOptions(true); // Disable old dropdown in favor of new menu
                     }}
                     onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
-                    placeholder="Where is it located?"
+                    placeholder="Enter place name"
                     className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none font-medium"
                     data-testid="input-search-location"
                   />

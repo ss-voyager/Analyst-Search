@@ -214,22 +214,9 @@ export default function SearchResults() {
 
               <div className="hidden md:flex items-center flex-[0.8] px-3 relative">
                 <div className="flex items-center flex-1 w-full relative">
-                  <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                           <button type="button" className="mr-2 text-muted-foreground hover:text-primary transition-colors outline-none">
-                               <MapPin className="w-4 h-4" />
-                           </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-xl border-border text-foreground">
-                          <DropdownMenuLabel className="text-xs text-muted-foreground">Location Tools</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => {
-                            document.getElementById('loc-input-results')?.focus();
-                            setShowLocationOptions(false);
-                          }} className="gap-2 cursor-pointer">
-                              <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
-                          </DropdownMenuItem>
-                      </DropdownMenuContent>
-                  </DropdownMenu>
+                   <div className="mr-2 text-muted-foreground">
+                       <MapPin className="w-4 h-4" />
+                   </div>
                   
                   <input
                     id="loc-input-results"
@@ -243,7 +230,7 @@ export default function SearchResults() {
                     }}
                     onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
                     className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/50 min-w-0 h-8 text-foreground"
-                    placeholder="Where is it located?"
+                    placeholder="Enter place name"
                   />
                   {isLocationFocused && !showLocationOptions && filteredPlaces.length > 0 && (
                      <div className="absolute top-full left-0 w-full mt-2 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
