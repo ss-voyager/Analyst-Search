@@ -223,7 +223,6 @@ export default function ItemDetail() {
                                         <TableRow className="bg-muted/30">
                                             <TableHead className="w-[200px]">Relationship Type</TableHead>
                                             <TableHead>Related Item</TableHead>
-                                            <TableHead className="w-[100px] text-right">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -235,15 +234,13 @@ export default function ItemDetail() {
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">{rel.title}</span>
+                                                    <div 
+                                                      className="flex flex-col cursor-pointer hover:underline"
+                                                      onClick={() => setLocation(`/item/1`)}
+                                                    >
+                                                        <span className="font-medium text-primary">{rel.title}</span>
                                                         <span className="text-xs text-muted-foreground font-mono">{rel.id}</span>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                        <ExternalLink className="h-4 w-4" />
-                                                    </Button>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
