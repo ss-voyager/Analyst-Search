@@ -1012,10 +1012,10 @@ export default function SearchResults() {
            <ScrollArea className="flex-1">
              <div className="p-4">
                {isLoading ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                    {Array.from({ length: 8 }).map((_, i) => (
-                     <div key={i} className="flex flex-col h-[340px] rounded-xl border border-border overflow-hidden bg-card">
-                       <Skeleton className="h-[180px] w-full rounded-none" />
+                     <div key={i} className="flex flex-col h-[300px] rounded-xl border border-border overflow-hidden bg-card">
+                       <Skeleton className="h-[160px] w-full rounded-none" />
                        <div className="p-3 flex-1 flex flex-col space-y-2">
                          <Skeleton className="h-4 w-3/4" />
                          <div className="space-y-1 pt-2">
@@ -1032,7 +1032,7 @@ export default function SearchResults() {
                    ))}
                  </div>
                ) : filteredResults.length > 0 ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                    {filteredResults.map((result, i) => (
                      <motion.div
                        key={result.id}
@@ -1040,12 +1040,12 @@ export default function SearchResults() {
                        initial={{ opacity: 0, scale: 0.95 }}
                        animate={{ opacity: 1, scale: 1 }}
                        transition={{ delay: i * 0.05, duration: 0.3 }}
-                       className="group relative bg-card dark:bg-black/40 border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer flex flex-col h-[340px]"
+                       className="group relative bg-card dark:bg-black/40 border border-border rounded-xl overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all cursor-pointer flex flex-col min-h-[280px]"
                        onMouseEnter={() => setHoveredResultId(result.id)}
                        onMouseLeave={() => setHoveredResultId(null)}
                      >
                         {/* Thumbnail Area - Fixed Height */}
-                        <div className="h-[180px] bg-muted relative group-hover:brightness-110 transition-all overflow-hidden shrink-0">
+                        <div className="h-[160px] bg-muted relative group-hover:brightness-110 transition-all overflow-hidden shrink-0">
                           {result.thumbnail ? (
                             <img src={result.thumbnail} className="w-full h-full object-cover" alt="" />
                           ) : (
@@ -1075,18 +1075,18 @@ export default function SearchResults() {
                              </h3>
                            </div>
                            
-                           <div className="text-[11px] text-muted-foreground space-y-1.5 mb-3 mt-1">
+                           <div className="text-xs text-muted-foreground space-y-1 mb-3 mt-1">
                               <div className="flex items-center gap-2">
-                                <CalendarIcon className="w-3 h-3 opacity-70" />
-                                <span className="text-foreground/80">{result.date}</span>
+                                <CalendarIcon className="w-3 h-3 opacity-70 shrink-0" />
+                                <span className="text-foreground/80 truncate">{result.date}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Globe className="w-3 h-3 opacity-70" />
-                                <span className="text-foreground/80">Agency: {result.provider}</span>
+                                <Globe className="w-3 h-3 opacity-70 shrink-0" />
+                                <span className="text-foreground/80 truncate">Agency: {result.provider}</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <File className="w-3 h-3 opacity-70" />
-                                <span className="text-foreground/80">{result.format}</span>
+                                <File className="w-3 h-3 opacity-70 shrink-0" />
+                                <span className="text-foreground/80 truncate">{result.format}</span>
                               </div>
                            </div>
 
