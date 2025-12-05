@@ -541,6 +541,15 @@ export default function SearchResults() {
     });
   };
 
+  const [isSavedSearchesOpen, setIsSavedSearchesOpen] = useState(false);
+  
+  // Mock Saved Searches Data
+  const SAVED_SEARCHES = [
+    { id: 1, name: "California Wildfires 2024", keywords: ["fire", "damage"], location: "California, USA", date: "Last 30 days", newResults: 12 },
+    { id: 2, name: "Ukraine Wheat Fields", keywords: ["agriculture", "wheat"], location: "Ukraine", date: "Jun 2024 - Aug 2024", newResults: 0 },
+    { id: 3, name: "Amazon Deforestation Monitor", keywords: ["forest", "loss"], location: "Amazon Basin", date: "Last 7 days", newResults: 5 },
+  ];
+
   const handleDrawBox = (bounds: LatLngBounds) => {
     setSpatialFilter({ type: 'box', data: bounds });
     setDrawMode('none');
@@ -703,6 +712,137 @@ export default function SearchResults() {
         </div>
 
         <div className="flex items-center gap-3">
+           <Sheet open={isSavedSearchesOpen} onOpenChange={setIsSavedSearchesOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="hidden md:flex gap-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Star className="w-4 h-4" />
+                  <span className="text-sm font-medium">Saved</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0">
+                <SheetHeader className="p-6 pb-2 border-b border-border">
+                  <SheetTitle className="flex items-center gap-2 text-xl">
+                    <Star className="w-5 h-5 text-primary fill-primary/20" />
+                    Saved Searches
+                  </SheetTitle>
+                  <div className="text-sm text-muted-foreground">
+                    Manage and run your saved queries
+                  </div>
+                </SheetHeader>
+                
+                <ScrollArea className="flex-1">
+                  <div className="flex flex-col p-4 gap-3">
+                    {SAVED_SEARCHES.map(search => (
+                      <div key={search.id} className="group flex flex-col gap-3 p-4 rounded-xl border border-border bg-card/50 hover:bg-card hover:border-primary/50 transition-all">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors cursor-pointer" onClick={() => {
+                              setIsSavedSearchesOpen(false);
+                              toast.info(`Running search: ${search.name}`);
+                              // Simulate loading search
+                              setIsLoading(true);
+                              setTimeout(() => setIsLoading(false), 800);
+                            }}>
+                              {search.name}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                              {search.newResults > 0 && (
+                                <Badge variant="secondary" className="h-5 bg-primary/10 text-primary border-primary/20 px-1.5 font-normal">
+                                  {search.newResults} new
+                                </Badge>
+                              )}
+                              <span>Last run: 2 days ago</span>
+                            </div>
+                          </div>
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <Share2 className="w-4 h-4 mr-2" /> Share
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Bell className="w-4 h-4 mr-2" /> Edit Notifications
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                <Trash className="w-4 h-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {search.keywords.map(k => (
+                            <Badge key={k} variant="outline" className="text-[10px] h-5 bg-muted/50 text-muted-foreground border-border">
+                              <Tag className="w-2.5 h-2.5 mr-1 opacity-50" /> {k}
+                            </Badge>
+                          ))}
+                          <Badge variant="outline" className="text-[10px] h-5 bg-muted/50 text-muted-foreground border-border">
+                            <MapPin className="w-2.5 h-2.5 mr-1 opacity-50" /> {search.location}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] h-5 bg-muted/50 text-muted-foreground border-border">
+                             <CalendarIcon className="w-2.5 h-2.5 mr-1 opacity-50" /> {search.date}
+                          </Badge>
+                        </div>
+
+                        <div className="flex items-center justify-end pt-2 mt-1 border-t border-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <Button size="sm" variant="secondary" className="h-7 text-xs bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20" onClick={() => {
+                              setIsSavedSearchesOpen(false);
+                              toast.info(`Running search: ${search.name}`);
+                              setIsLoading(true);
+                              setTimeout(() => setIsLoading(false), 800);
+                           }}>
+                             Run Search
+                           </Button>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {isSearchSaved && (
+                       <div className="flex flex-col gap-3 p-4 rounded-xl border border-primary/30 bg-primary/5">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-primary">
+                              {saveSearchName || "New Saved Search"}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                              <Badge variant="secondary" className="h-5 bg-primary text-primary-foreground px-1.5 font-normal">
+                                Just saved
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                             <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </div>
+                         <div className="flex flex-wrap gap-2 mt-1">
+                            {keyword && (
+                                <Badge variant="outline" className="text-[10px] h-5 bg-background text-foreground border-border">
+                                  <Tag className="w-2.5 h-2.5 mr-1 opacity-50" /> {keyword}
+                                </Badge>
+                            )}
+                            {(place || spatialFilter) && (
+                                <Badge variant="outline" className="text-[10px] h-5 bg-background text-foreground border-border">
+                                  <MapPin className="w-2.5 h-2.5 mr-1 opacity-50" /> {place || "Custom Area"}
+                                </Badge>
+                            )}
+                         </div>
+                       </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </SheetContent>
+           </Sheet>
+           
            <ThemeToggle />
            <button className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center hover:bg-muted transition-colors">
              <User className="w-4 h-4 text-muted-foreground" />
