@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
-import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
+import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
 import { LocationPicker } from "@/components/location-picker";
 import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
@@ -1031,10 +1031,6 @@ export default function SearchResults() {
                                     <Download className="w-3 h-3 mr-2" />
                                     Download
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-xs cursor-pointer">
-                                    <File className="w-3 h-3 mr-2" />
-                                    View raw Solr
-                                  </DropdownMenuItem>
                                   <DropdownMenuItem className="text-xs cursor-pointer" onSelect={() => setPreviewedResultId(result.id)}>
                                     <MapIcon className="w-3 h-3 mr-2" />
                                     Preview on map
@@ -1071,16 +1067,25 @@ export default function SearchResults() {
                    }
                  />
                  {!isLoading && filteredResults.map(result => (
-                   <Rectangle 
-                      key={result.id}
-                      bounds={result.bounds} 
-                      pathOptions={{ 
-                        color: hoveredResultId === result.id || previewedResultId === result.id ? '#ef4444' : '#3b82f6', 
-                        weight: hoveredResultId === result.id || previewedResultId === result.id ? 3 : 1, 
-                        fillOpacity: hoveredResultId === result.id || previewedResultId === result.id ? 0.2 : 0.1,
-                        className: 'hover:fill-opacity-30 transition-all cursor-pointer'
-                      }} 
-                   />
+                   <div key={result.id}>
+                     <Rectangle 
+                        bounds={result.bounds} 
+                        pathOptions={{ 
+                          color: hoveredResultId === result.id || previewedResultId === result.id ? '#ef4444' : '#3b82f6', 
+                          weight: hoveredResultId === result.id || previewedResultId === result.id ? 3 : 1, 
+                          fillOpacity: hoveredResultId === result.id || previewedResultId === result.id ? 0 : 0.1,
+                          className: 'hover:fill-opacity-30 transition-all cursor-pointer'
+                        }} 
+                     />
+                     {previewedResultId === result.id && result.thumbnail && (
+                        <ImageOverlay
+                          url={result.thumbnail}
+                          bounds={result.bounds}
+                          opacity={0.8}
+                          zIndex={100}
+                        />
+                     )}
+                   </div>
                  ))}
              
              {/* Map Controls Overlay */}
