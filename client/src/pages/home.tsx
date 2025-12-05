@@ -117,7 +117,6 @@ export default function Home() {
               
               {/* Keyword Input */}
               <div className="flex items-center flex-1 w-full px-2">
-                <Search className="w-5 h-5 text-foreground flex-shrink-0" />
                 <input
                   type="text"
                   value={keyword}
@@ -206,7 +205,7 @@ export default function Home() {
                   className="w-full md:w-auto p-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors flex items-center justify-center"
                   data-testid="button-search-submit"
                 >
-                  <ArrowRight className="w-5 h-5" />
+                  <Search className="w-5 h-5" />
                 </button>
               </div>
 
