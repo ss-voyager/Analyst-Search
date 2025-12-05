@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, MapPin, Filter, ArrowLeft, Calendar, Layers, 
   Download, MoreVertical, ChevronDown, X, Map as MapIcon, 
-  List, ArrowUpDown, Info, Check
+  List, ArrowUpDown, Info, Check, User
 } from "lucide-react";
 import { MapContainer, TileLayer, Rectangle } from 'react-leaflet';
 import { LatLngBoundsExpression, LatLngBounds, LatLng } from 'leaflet';
@@ -441,7 +441,9 @@ export default function SearchResults() {
 
         <div className="flex items-center gap-3">
            <ThemeToggle />
-           <div className="w-8 h-8 rounded-full bg-secondary border border-border" />
+           <button className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center hover:bg-muted transition-colors">
+             <User className="w-4 h-4 text-muted-foreground" />
+           </button>
         </div>
       </header>
 
