@@ -18,6 +18,8 @@ export default function Home() {
   const [showLocationOptions, setShowLocationOptions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Searching for:", keyword, "in", place);
@@ -86,14 +88,14 @@ export default function Home() {
     <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative selection:bg-primary/30">
       {/* Background Asset */}
       <div 
-        className="absolute inset-0 z-0 opacity-0 dark:opacity-100 pointer-events-none transition-opacity duration-500"
+        className={`absolute inset-0 z-0 pointer-events-none transition-all duration-500 ease-out ${isSearchFocused ? 'opacity-0 dark:opacity-30 scale-105' : 'opacity-0 dark:opacity-100 scale-100'}`}
         style={{
           backgroundImage: `url(${heroBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
       />
-      <div className="absolute inset-0 z-0 bg-background/20 pointer-events-none" />
+      <div className={`absolute inset-0 z-0 bg-background/20 pointer-events-none transition-opacity duration-500 ${isSearchFocused ? 'bg-background/40' : 'bg-background/20'}`} />
 
       {/* Overlay Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none z-0" />
@@ -138,9 +140,9 @@ export default function Home() {
           className="w-full max-w-3xl"
         >
           <form onSubmit={handleSearch} className="relative group">
-            <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
+            <div className={`absolute inset-0 bg-primary/20 rounded-2xl blur-xl transition-opacity duration-500 ${isSearchFocused ? 'opacity-50' : 'opacity-0 group-hover:opacity-30'}`} />
             
-            <div className="relative flex flex-col md:flex-row items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 focus-within:border-primary/50 focus-within:bg-white/90 dark:focus-within:bg-black/90 divide-y md:divide-y-0 md:divide-x divide-black/10 dark:divide-white/10">
+            <div className={`relative flex flex-col md:flex-row items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-500 ease-out ${isSearchFocused ? 'scale-[1.02] border-primary/50 bg-white/90 dark:bg-black/90' : 'scale-100'} divide-y md:divide-y-0 md:divide-x divide-black/10 dark:divide-white/10`}>
               
               {/* Keyword Input */}
               <div className="flex items-center flex-1 w-full px-2">
@@ -150,6 +152,8 @@ export default function Home() {
                   type="text"
                   value={keyword}
                   onChange={(e) => setKeyword(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
                   placeholder="Search keywords..."
                   className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
                   data-testid="input-search-keyword"
@@ -179,8 +183,12 @@ export default function Home() {
                     onKeyDown={handleKeyDown}
                     onFocus={() => {
                       setIsLocationFocused(true);
+                      setIsSearchFocused(true);
                     }}
-                    onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
+                    onBlur={() => {
+                      setTimeout(() => setIsLocationFocused(false), 200);
+                      setIsSearchFocused(false);
+                    }}
                     placeholder="Enter place name"
                     className="w-full bg-transparent border-none text-base md:text-lg px-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
                     data-testid="input-search-location"

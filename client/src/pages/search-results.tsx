@@ -314,7 +314,12 @@ export default function SearchResults() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden"
+    >
       
       {/* 1. Header / Search Bar */}
       <header className="h-16 border-b border-border bg-background/95 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
@@ -745,6 +750,6 @@ export default function SearchResults() {
         onClose={() => setIsPickerOpen(false)} 
         onSelect={(bounds) => setPlace(bounds)} 
       />
-    </div>
+    </motion.div>
   );
 }
