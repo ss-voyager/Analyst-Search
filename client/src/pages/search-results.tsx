@@ -315,6 +315,16 @@ export default function SearchResults() {
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
   
+  const [query, setQuery] = useState(() => {
+    const q = params.get("q") || "";
+    const l = params.get("loc") || "";
+    if (q && l) return `${q} in ${l}`;
+    if (l) return l;
+    return q;
+  });
+  const [detectedType, setDetectedType] = useState<'keyword' | 'place' | 'mixed'>('keyword');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   // Search State
   const [keyword, setKeyword] = useState(params.get("q") || "");
   const [place, setPlace] = useState(params.get("loc") || "");
@@ -375,7 +385,14 @@ export default function SearchResults() {
     "San Francisco, USA",
     "Singapore",
     "Dubai, UAE",
-    "Rio de Janeiro, Brazil"
+    "Rio de Janeiro, Brazil",
+    "California",
+    "United States",
+    "Africa",
+    "Amazon Rainforest",
+    "Los Angeles",
+    "China",
+    "India"
   ];
 
   const filteredPlaces = PLACE_SUGGESTIONS.filter(p => 
@@ -496,9 +513,42 @@ export default function SearchResults() {
     return 0;
   });
 
+  // Detect input type for visual feedback
+  useEffect(() => {
+    const lowerQuery = query.toLowerCase();
+    if (lowerQuery.includes(" in ")) {
+      setDetectedType('mixed');
+    } else if (PLACE_SUGGESTIONS.some(p => p.toLowerCase().includes(lowerQuery)) && query.length > 2) {
+      setDetectedType('place');
+    } else {
+      setDetectedType('keyword');
+    }
+  }, [query]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
+    
+    // Simple "Intelligent" parsing
+    let searchKeyword = query;
+    let searchLocation = "";
+
+    const lowerQuery = query.toLowerCase();
+    
+    // Check for "keyword in location" pattern
+    if (lowerQuery.includes(" in ")) {
+        const parts = query.split(/ in /i);
+        searchKeyword = parts[0];
+        searchLocation = parts[1];
+    } 
+    // Check if the whole query is a known place
+    else if (PLACE_SUGGESTIONS.some(p => p.toLowerCase().includes(lowerQuery))) {
+        searchKeyword = "";
+        searchLocation = query;
+    }
+
+    setKeyword(searchKeyword);
+    setPlace(searchLocation);
+    setLocation(`/search?q=${encodeURIComponent(searchKeyword)}&loc=${encodeURIComponent(searchLocation)}`);
     setIsLoading(true);
     setTimeout(() => setIsLoading(false), 800);
   };
@@ -654,93 +704,44 @@ export default function SearchResults() {
           </div>
 
           <form onSubmit={handleSearch} className="flex-1 max-w-2xl relative group ml-4">
-            <div className="flex items-center bg-muted/50 dark:bg-black/50 backdrop-blur-xl border border-border rounded-xl p-1 shadow-sm transition-all duration-300 focus-within:border-primary/50 focus-within:bg-background dark:focus-within:bg-black/80 divide-x divide-border">
+            <div className={`relative flex items-center bg-muted/50 dark:bg-black/50 backdrop-blur-xl border border-border rounded-xl p-1 shadow-sm transition-all duration-300 ${isSearchFocused ? 'ring-2 ring-primary/20 border-primary/50 bg-background dark:bg-black/80' : 'hover:border-primary/30'}`}>
               
-              <div className="flex items-center flex-1 px-3">
-                <label htmlFor="keyword-input-results" className="sr-only">Search keywords</label>
-                <input 
-                    id="keyword-input-results"
-                    value={keyword}
-                    onChange={(e) => setKeyword(e.target.value)}
-                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70 h-8 text-foreground"
-                    placeholder="Search keywords..."
-                    aria-label="Search keywords"
-                />
-              </div>
-
-              <div className="hidden md:flex items-center flex-[0.8] px-3 relative">
-                <div className="flex items-center flex-1 w-full relative">
-                   <div className="mr-2 text-muted-foreground">
-                       <MapPin className="w-4 h-4" />
-                   </div>
-                  
-                  <label htmlFor="loc-input-results" className="sr-only">Location</label>
-                  <input
-                    id="loc-input-results"
-                    value={place}
-                    onChange={(e) => {
-                      setPlace(e.target.value);
-                      setShowLocationOptions(false);
-                      setSelectedIndex(-1);
-                    }}
-                    onKeyDown={handleKeyDown}
-                    onFocus={() => {
-                      setIsLocationFocused(true);
-                    }}
-                    onBlur={() => setTimeout(() => setIsLocationFocused(false), 200)}
-                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70 min-w-0 h-8 text-foreground"
-                    placeholder="Enter place name"
-                    aria-label="Location"
-                    autoComplete="off"
-                    aria-autocomplete="list"
-                    aria-controls="location-results-suggestions"
-                    aria-activedescendant={selectedIndex >= 0 ? `result-suggestion-${selectedIndex}` : undefined}
-                  />
-                  {isLocationFocused && !showLocationOptions && filteredPlaces.length > 0 && (
-                     <div 
-                        id="location-results-suggestions"
-                        role="listbox"
-                        className="absolute top-full left-0 w-full mt-2 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
-                     >
-                        <div className="p-2 space-y-1">
-                          {filteredPlaces.map((p, i) => (
-                            <button
-                              key={i}
-                              id={`result-suggestion-${i}`}
-                              role="option"
-                              aria-selected={i === selectedIndex}
-                              type="button"
-                              onMouseDown={(e) => e.preventDefault()}
-                              onClick={() => {
-                                setPlace(p);
-                                setIsLocationFocused(false);
-                              }}
-                              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-left group ${
-                                i === selectedIndex 
-                                  ? 'bg-primary/10 text-primary' 
-                                  : 'hover:bg-muted text-foreground'
-                              }`}
-                            >
-                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center border transition-colors ${
-                                i === selectedIndex
-                                  ? 'bg-primary/20 border-primary/30'
-                                  : 'bg-muted border-border group-hover:border-primary/30'
-                              }`}>
-                                <MapPin className={`w-4 h-4 ${
-                                  i === selectedIndex ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
-                                }`} />
-                              </div>
-                              <div>
-                                <div className={`text-sm font-medium ${
-                                  i === selectedIndex ? 'text-primary' : 'text-foreground'
-                                }`}>{p}</div>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                     </div>
-                  )}
+              {/* Intelligent Input */}
+              <div className="flex items-center flex-1 px-3 relative">
+                <label htmlFor="unified-search-input" className="sr-only">Search keywords or location</label>
+                <div className="mr-3 text-muted-foreground transition-colors duration-300">
+                   {detectedType === 'place' ? <MapPin className="w-4 h-4 text-primary" /> : <Search className="w-4 h-4" />}
                 </div>
+                <input 
+                    id="unified-search-input"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70 h-9 text-foreground font-medium"
+                    placeholder="Search keywords or location (e.g. 'Vegetation in California')"
+                    aria-label="Search keywords or location"
+                    autoComplete="off"
+                />
+                
+                {/* Intelligent Labels */}
+                {detectedType === 'mixed' && (
+                    <div className="hidden md:flex items-center gap-1 pointer-events-none mr-2">
+                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-semibold">KEYWORD</span>
+                        <span className="text-[9px] text-muted-foreground px-0.5">+</span>
+                        <span className="text-[9px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono font-semibold">LOCATION</span>
+                    </div>
+                )}
+                {detectedType === 'keyword' && query.length > 0 && (
+                    <div className="hidden md:flex items-center gap-1 pointer-events-none mr-2">
+                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-semibold">KEYWORD</span>
+                    </div>
+                )}
+                {detectedType === 'place' && (
+                    <div className="hidden md:flex items-center gap-1 pointer-events-none mr-2">
+                        <span className="text-[9px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono font-semibold">LOCATION</span>
+                    </div>
+                )}
               </div>
 
               <div className="p-0.5">
