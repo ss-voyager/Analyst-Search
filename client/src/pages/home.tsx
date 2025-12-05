@@ -253,7 +253,7 @@ export default function Home() {
               <button
                 key={i}
                 onClick={() => setKeyword(s)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/5 hover:border-primary/40 hover:bg-white/10 text-sm text-muted-foreground hover:text-foreground transition-all duration-300"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-black/60 text-sm text-white/90 hover:text-white transition-all duration-300 shadow-lg"
               >
                 <Navigation className="w-3 h-3" />
                 {s}
