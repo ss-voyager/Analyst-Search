@@ -149,9 +149,6 @@ export default function Home() {
                               <MapPin className="w-4 h-4" /> <span>Enter Place Name</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-white/10" />
-                          <DropdownMenuItem className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
-                              <Upload className="w-4 h-4" /> <span>Upload AOI File</span>
-                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setIsPickerOpen(true)} className="gap-2 cursor-pointer hover:bg-white/10 focus:bg-white/10">
                               <MapIcon className="w-4 h-4" /> <span>Select Region on a Map</span>
                           </DropdownMenuItem>
