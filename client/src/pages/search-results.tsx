@@ -76,6 +76,116 @@ const MOCK_RESULTS = [
     thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
     bounds: [[34.2, -118.6], [34.3, -118.5]] as LatLngBoundsExpression
   },
+  {
+    id: 6,
+    title: "Sentinel-2A MSI Level-1C",
+    date: "2024-03-05",
+    cloudCover: "25%",
+    platform: "Sentinel-2",
+    provider: "ESA",
+    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[34.3, -118.7], [34.4, -118.6]] as LatLngBoundsExpression
+  },
+  {
+    id: 7,
+    title: "Landsat 7 ETM+ C2 L1",
+    date: "2024-02-28",
+    cloudCover: "8%",
+    platform: "Landsat 7",
+    provider: "USGS",
+    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[33.7, -118.1], [33.8, -118.0]] as LatLngBoundsExpression
+  },
+  {
+    id: 8,
+    title: "Sentinel-1B SAR SLC",
+    date: "2024-02-25",
+    cloudCover: "N/A",
+    platform: "Sentinel-1",
+    provider: "ESA",
+    thumbnail: stockImage,
+    bounds: [[34.4, -118.8], [34.5, -118.7]] as LatLngBoundsExpression
+  },
+  {
+    id: 9,
+    title: "Aqua MODIS Chlorophyll-a",
+    date: "2024-03-14",
+    cloudCover: "15%",
+    platform: "Aqua",
+    provider: "NASA",
+    thumbnail: "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop",
+    bounds: [[33.6, -118.0], [33.7, -117.9]] as LatLngBoundsExpression
+  },
+  {
+    id: 10,
+    title: "Pleiades Neo 30cm Imagery",
+    date: "2024-03-16",
+    cloudCover: "0%",
+    platform: "Pleiades Neo",
+    provider: "Airbus",
+    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[34.05, -118.25], [34.06, -118.24]] as LatLngBoundsExpression
+  },
+  {
+    id: 11,
+    title: "WorldView-3 SWIR",
+    date: "2024-03-13",
+    cloudCover: "1%",
+    platform: "WorldView-3",
+    provider: "Maxar",
+    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[34.1, -118.3], [34.11, -118.29]] as LatLngBoundsExpression
+  },
+  {
+    id: 12,
+    title: "Spot 6/7 1.5m Imagery",
+    date: "2024-03-11",
+    cloudCover: "5%",
+    platform: "Spot 7",
+    provider: "Airbus",
+    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[33.95, -118.35], [33.96, -118.34]] as LatLngBoundsExpression
+  },
+  {
+    id: 13,
+    title: "Sentinel-3 OLCI Level-1B",
+    date: "2024-03-15",
+    cloudCover: "40%",
+    platform: "Sentinel-3",
+    provider: "ESA",
+    thumbnail: "https://images.unsplash.com/photo-1529788295308-1eace6f67388?q=80&w=300&auto=format&fit=crop",
+    bounds: [[33.5, -119.0], [34.5, -118.0]] as LatLngBoundsExpression
+  },
+  {
+    id: 14,
+    title: "PlanetScope 3m Imagery",
+    date: "2024-03-16",
+    cloudCover: "0%",
+    platform: "PlanetScope",
+    provider: "Planet",
+    thumbnail: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=300&auto=format&fit=crop",
+    bounds: [[34.052, -118.243], [34.053, -118.242]] as LatLngBoundsExpression
+  },
+  {
+    id: 15,
+    title: "Capella Space SAR",
+    date: "2024-03-16",
+    cloudCover: "N/A",
+    platform: "Capella-2",
+    provider: "Capella",
+    thumbnail: stockImage,
+    bounds: [[34.04, -118.26], [34.05, -118.25]] as LatLngBoundsExpression
+  },
+  {
+    id: 16,
+    title: "ICEYE SAR X-band",
+    date: "2024-03-14",
+    cloudCover: "N/A",
+    platform: "ICEYE",
+    provider: "ICEYE",
+    thumbnail: stockImage,
+    bounds: [[34.06, -118.23], [34.07, -118.22]] as LatLngBoundsExpression
+  }
 ];
 
 export default function SearchResults() {
