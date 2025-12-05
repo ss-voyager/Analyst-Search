@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
+import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
+
 // Mock Data
 const MOCK_RESULTS = [
   {
@@ -51,7 +53,7 @@ const MOCK_RESULTS = [
     cloudCover: "N/A",
     platform: "Sentinel-1",
     provider: "ESA",
-    thumbnail: "https://images.unsplash.com/photo-1541185933-710f50746b95?q=80&w=300&auto=format&fit=crop",
+    thumbnail: stockImage,
     bounds: [[34.1, -118.5], [34.2, -118.4]] as LatLngBoundsExpression
   },
   {
