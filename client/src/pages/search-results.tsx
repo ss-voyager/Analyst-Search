@@ -320,6 +320,7 @@ export default function SearchResults() {
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const [keywordSearch, setKeywordSearch] = useState("");
   const [hoveredResultId, setHoveredResultId] = useState<number | null>(null);
+  const [previewedResultId, setPreviewedResultId] = useState<number | null>(null);
 
   const PLACE_SUGGESTIONS = [
     "New York, USA",
@@ -1034,7 +1035,7 @@ export default function SearchResults() {
                                     <File className="w-3 h-3 mr-2" />
                                     View raw Solr
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-xs cursor-pointer" onSelect={() => setHoveredResultId(result.id)}>
+                                  <DropdownMenuItem className="text-xs cursor-pointer" onSelect={() => setPreviewedResultId(result.id)}>
                                     <MapIcon className="w-3 h-3 mr-2" />
                                     Preview on map
                                   </DropdownMenuItem>
@@ -1074,9 +1075,9 @@ export default function SearchResults() {
                       key={result.id}
                       bounds={result.bounds} 
                       pathOptions={{ 
-                        color: hoveredResultId === result.id ? '#ef4444' : '#3b82f6', 
-                        weight: hoveredResultId === result.id ? 3 : 1, 
-                        fillOpacity: hoveredResultId === result.id ? 0.2 : 0.1,
+                        color: hoveredResultId === result.id || previewedResultId === result.id ? '#ef4444' : '#3b82f6', 
+                        weight: hoveredResultId === result.id || previewedResultId === result.id ? 3 : 1, 
+                        fillOpacity: hoveredResultId === result.id || previewedResultId === result.id ? 0.2 : 0.1,
                         className: 'hover:fill-opacity-30 transition-all cursor-pointer'
                       }} 
                    />
