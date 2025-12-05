@@ -243,7 +243,7 @@ export default function Home() {
             <span>LNG: 118.2437° W</span>
           </div>
           <div>
-            &copy; 2024 Voyager Geospatial.
+            &copy; 2026 Voyager Search.
           </div>
         </div>
       </footer>
