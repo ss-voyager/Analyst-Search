@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap } from 'react-leaflet';
 import { LatLngBounds, LatLng } from 'leaflet';
 import { Button } from "@/components/ui/button";
@@ -6,22 +6,49 @@ import { Map as MapIcon, Globe, PanelRightClose, PanelRightOpen } from "lucide-r
 import { MapDrawControl } from "@/components/map-draw-control";
 import { SearchResult } from "../types";
 
+// Helper to check if bounds are valid for Leaflet
+function hasValidBounds(result: SearchResult): boolean {
+  try {
+    const bounds = result.bounds as [[number, number], [number, number]];
+    if (!Array.isArray(bounds) || bounds.length !== 2) return false;
+    const [sw, ne] = bounds;
+    if (!Array.isArray(sw) || !Array.isArray(ne)) return false;
+    if (sw.length !== 2 || ne.length !== 2) return false;
+    // Check all values are finite numbers and not both corners at origin (default fallback)
+    const allFinite = [sw[0], sw[1], ne[0], ne[1]].every(v => typeof v === 'number' && isFinite(v));
+    const isDefaultBounds = sw[0] === 0 && sw[1] === 0 && ne[0] === 0 && ne[1] === 0;
+    return allFinite && !isDefaultBounds;
+  } catch {
+    return false;
+  }
+}
+
 // Helper components for map effects
 const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
   const map = useMap();
   useEffect(() => {
-    if (bounds) {
+    if (bounds && bounds.isValid()) {
       map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
     }
   }, [bounds, map]);
   return null;
 };
 
-const PreviewEffect = ({ result }: { result: any }) => {
+const PreviewEffect = ({ result }: { result: SearchResult | undefined }) => {
   const map = useMap();
   useEffect(() => {
-    if (result && result.bounds) {
-      map.flyToBounds(result.bounds, { padding: [20, 20], duration: 1.5 });
+    if (result && hasValidBounds(result)) {
+      try {
+        const bounds = new LatLngBounds(
+          (result.bounds as any)[0],
+          (result.bounds as any)[1]
+        );
+        if (bounds.isValid()) {
+          map.flyToBounds(bounds, { padding: [20, 20], duration: 1.5 });
+        }
+      } catch (e) {
+        console.error("Error flying to preview bounds", e);
+      }
     }
   }, [result, map]);
   return null;
@@ -58,28 +85,36 @@ export function SearchMap({
 }: SearchMapProps) {
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
 
+  // Filter results to only those with valid bounds for map rendering
+  const validResults = useMemo(() => 
+    filteredResults.filter(hasValidBounds), 
+    [filteredResults]
+  );
+
   // Update map bounds when filtered results change
   useEffect(() => {
-    if (filteredResults.length > 0) {
-      // Calculate bounds of all results
+    if (validResults.length > 0) {
       try {
+        const firstResult = validResults[0];
         const bounds = new LatLngBounds(
-            (filteredResults[0].bounds as any)[0],
-            (filteredResults[0].bounds as any)[1]
+            (firstResult.bounds as any)[0],
+            (firstResult.bounds as any)[1]
         );
         
         // Take first 5 results to avoid calculating too much
-        filteredResults.slice(1, 5).forEach(res => {
+        validResults.slice(1, 5).forEach(res => {
             bounds.extend((res.bounds as any)[0]);
             bounds.extend((res.bounds as any)[1]);
         });
         
-        setMapBounds(bounds);
+        if (bounds.isValid()) {
+          setMapBounds(bounds);
+        }
       } catch (e) {
         console.error("Error calculating bounds", e);
       }
     }
-  }, [filteredResults.length]); // Only re-calculate when count changes
+  }, [validResults.length]); // Only re-calculate when count changes
 
   if (!showMap) return null;
 
@@ -135,8 +170,8 @@ export function SearchMap({
             onDrawPolygon={handleDrawPolygon}
          />
 
-         {/* Render Footprints for visible results */}
-         {filteredResults.map(result => (
+         {/* Render Footprints for visible results with valid bounds */}
+         {validResults.map(result => (
             <Rectangle 
               key={`footprint-${result.id}`}
               bounds={result.bounds} 
