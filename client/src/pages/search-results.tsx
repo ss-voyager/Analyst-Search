@@ -22,7 +22,9 @@ import { X } from "lucide-react";
 import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
-import { MOCK_RESULTS, HIERARCHY_TREE, KEYWORDS } from "@/features/search/mock-data";
+import { HIERARCHY_TREE, KEYWORDS } from "@/features/search/mock-data";
+import { useSatelliteItems, useSaveSearch } from "@/features/search/api";
+import { toSearchResult } from "@/features/search/types";
 
 export default function SearchResults() {
   const [location, setLocation] = useLocation();
@@ -70,14 +72,37 @@ export default function SearchResults() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [savedSearchLink, setSavedSearchLink] = useState("https://voyager.ai/s/a8XkD4");
 
+  const saveSearchMutation = useSaveSearch();
+
   const handleSaveSearch = () => {
-    setIsSearchSaved(true);
-    setIsSaveSearchOpen(false);
-    toast.success("Search saved successfully", {
-      description: "You will be notified when new results match this query.",
-      action: {
-        label: "Share",
-        onClick: () => setShowShareModal(true),
+    saveSearchMutation.mutate({
+      userId: "demo-user", // In production, get from auth context
+      name: saveSearchName,
+      keyword,
+      location: place,
+      locationIds: selectedLocationIds.length > 0 ? selectedLocationIds : undefined,
+      keywords: selectedKeywords.length > 0 ? selectedKeywords : undefined,
+      properties: selectedProperties.length > 0 ? selectedProperties : undefined,
+      dateFrom: date?.from,
+      dateTo: date?.to,
+      spatialFilter,
+      notifyOnNewResults: saveSearchNotify ? 1 : 0,
+    }, {
+      onSuccess: () => {
+        setIsSearchSaved(true);
+        setIsSaveSearchOpen(false);
+        toast.success("Search saved successfully", {
+          description: "You will be notified when new results match this query.",
+          action: {
+            label: "Share",
+            onClick: () => setShowShareModal(true),
+          },
+        });
+      },
+      onError: () => {
+        toast.error("Failed to save search", {
+          description: "Please try again later.",
+        });
       },
     });
   };
@@ -142,67 +167,25 @@ export default function SearchResults() {
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point' | 'polygon'>('none');
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
+  // API call to fetch satellite items
+  const { data: satelliteData, isLoading: isApiLoading, error } = useSatelliteItems({
+    keyword,
+    locationIds: selectedLocationIds.length > 0 ? selectedLocationIds : undefined,
+    keywords: selectedKeywords.length > 0 ? selectedKeywords : undefined,
+    properties: selectedProperties.length > 0 ? selectedProperties : undefined,
+    dateFrom: date?.from?.toISOString(),
+    dateTo: date?.to?.toISOString(),
+    sortBy: sortBy === 'relevance' ? undefined : sortBy,
+    limit: 100,
+  });
+
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Filter mock results
-  const filteredResults = MOCK_RESULTS.filter(item => {
-    // Location Filter
-    if (selectedLocationIds.length > 0 && (!item.locationId || !selectedLocationIds.includes(item.locationId))) {
-      return false;
-    }
-
-    // Properties Filter
-    if (selectedProperties.length > 0) {
-      const hasAllProps = selectedProperties.every(prop => item.properties?.includes(prop));
-      if (!hasAllProps) return false;
-    }
-
-    // Keywords Filter
-    if (selectedKeywords.length > 0) {
-      const hasAllKeywords = selectedKeywords.every(kw => item.keywords?.includes(kw));
-      if (!hasAllKeywords) return false;
-    }
-
-    // Date Filter
-    if (date?.from) {
-      const itemDate = new Date(item.date);
-      // Reset time for comparison
-      const fromDate = new Date(date.from);
-      fromDate.setHours(0,0,0,0);
-      
-      const itemDateObj = new Date(itemDate);
-      itemDateObj.setHours(0,0,0,0);
-
-      if (itemDateObj < fromDate) return false;
-      
-      if (date.to) {
-        const toDate = new Date(date.to);
-        toDate.setHours(23,59,59,999);
-        if (itemDateObj > toDate) return false;
-      }
-    }
-    
-    return true;
-  }).sort((a, b) => {
-    if (sortBy === 'relevance') return 0; // Keep original order (randomish)
-    
-    if (sortBy === 'date_desc') {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    }
-    
-    if (sortBy === 'date_asc') {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    }
-    
-    if (sortBy === 'name_asc') {
-      return a.title.localeCompare(b.title);
-    }
-    
-    return 0;
-  });
+  // Convert database results to search results
+  const filteredResults = satelliteData ? satelliteData.map(toSearchResult) : [];
 
   const [searchHistory, setSearchHistory] = useState<string[]>([
     "Vegetation in California",

@@ -1,4 +1,5 @@
 import { LatLngBoundsExpression } from 'leaflet';
+import type { SatelliteItem } from '@shared/schema';
 
 export interface TreeNode {
   id: string;
@@ -6,19 +7,10 @@ export interface TreeNode {
   children?: TreeNode[];
 }
 
-export interface SearchResult {
-  id: number;
-  title: string;
-  date: string;
-  cloudCover: string;
-  platform: string;
-  provider: string;
-  thumbnail: string;
+// Extend database type with UI-specific fields
+export interface SearchResult extends Omit<SatelliteItem, 'bounds' | 'acquisitionDate'> {
   bounds: LatLngBoundsExpression;
-  locationId?: string;
-  properties?: string[];
-  keywords?: string[];
-  format?: string;
+  date: string; // formatted date for display
 }
 
 export interface FilterState {
@@ -26,4 +18,13 @@ export interface FilterState {
   locationIds: string[];
   properties: string[];
   keywords: string[];
+}
+
+// Helper function to convert DB item to search result
+export function toSearchResult(item: SatelliteItem): SearchResult {
+  return {
+    ...item,
+    bounds: item.bounds as LatLngBoundsExpression,
+    date: new Date(item.acquisitionDate).toISOString().split('T')[0],
+  };
 }
