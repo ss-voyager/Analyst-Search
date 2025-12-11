@@ -362,30 +362,11 @@ export default function SearchResultsPage() {
     }
   }, [query]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     
-    // Simple "Intelligent" parsing
-    let searchKeyword = query;
-    let searchLocation = "";
-
-    const lowerQuery = query.toLowerCase();
-    
-    // Check for "keyword in location" pattern
-    if (lowerQuery.includes(" in ")) {
-        const parts = query.split(/ in /i);
-        searchKeyword = parts[0];
-        searchLocation = parts[1];
-    } 
-    // Check if the whole query is a known place
-    else if (PLACE_SUGGESTIONS.some(p => p.toLowerCase().includes(lowerQuery))) {
-        searchKeyword = "";
-        searchLocation = query;
-    }
-
-    setKeyword(searchKeyword);
-    setPlace(searchLocation);
-    setLocation(`/search?q=${encodeURIComponent(searchKeyword)}&loc=${encodeURIComponent(searchLocation)}`);
+    // Use the current keyword and place values directly
+    setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
     setIsLoading(true);
     setTimeout(() => setIsLoading(false), 800);
   };
