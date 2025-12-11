@@ -770,6 +770,8 @@ export default function SearchResultsPage() {
           setHoveredResultId={setHoveredResultId}
           setPreviewedResultId={setPreviewedResultId}
           setLocation={setLocation}
+          onFilterByFormat={(format) => setKeyword(format)}
+          onFilterByProvider={(provider) => setKeyword(provider)}
         />
 
         {/* Right Panel - Map (Refactored) */}

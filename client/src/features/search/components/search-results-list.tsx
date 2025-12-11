@@ -12,6 +12,8 @@ interface SearchResultsListProps {
   setHoveredResultId: (id: number | null) => void;
   setPreviewedResultId: (id: number | null) => void;
   setLocation: (loc: string) => void;
+  onFilterByFormat?: (format: string) => void;
+  onFilterByProvider?: (provider: string) => void;
 }
 
 export function SearchResultsList({
@@ -19,7 +21,9 @@ export function SearchResultsList({
   filteredResults,
   setHoveredResultId,
   setPreviewedResultId,
-  setLocation
+  setLocation,
+  onFilterByFormat,
+  onFilterByProvider
 }: SearchResultsListProps) {
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-muted/30 dark:bg-background/50">
@@ -98,8 +102,24 @@ export function SearchResultsList({
                        {result.title}
                      </h3>
                      <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
-                       <p><span className="text-foreground/70">Format:</span> {result.format}</p>
-                       <p><span className="text-foreground/70">Author:</span> {result.provider}</p>
+                       <p>
+                         <span className="text-foreground/70">Format:</span>{' '}
+                         <button 
+                           className="text-primary hover:underline"
+                           onClick={(e) => { e.stopPropagation(); if (result.format) onFilterByFormat?.(result.format); }}
+                         >
+                           {result.format || 'Unknown'}
+                         </button>
+                       </p>
+                       <p>
+                         <span className="text-foreground/70">Author:</span>{' '}
+                         <button 
+                           className="text-primary hover:underline"
+                           onClick={(e) => { e.stopPropagation(); if (result.provider) onFilterByProvider?.(result.provider); }}
+                         >
+                           {result.provider || 'Unknown'}
+                         </button>
+                       </p>
                      </div>
                      <div className="mt-auto flex justify-end">
                        <DropdownMenu>
