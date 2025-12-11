@@ -896,6 +896,8 @@ export default function SearchResultsPage() {
           setLocation={setLocation}
           onFilterByFormat={(format) => setKeyword(format)}
           onFilterByProvider={(provider) => setKeyword(provider)}
+          showFacets={showFacets}
+          showMap={showMap}
         />
 
         {/* Right Panel - Map (Refactored) */}

@@ -14,6 +14,8 @@ interface SearchResultsListProps {
   setLocation: (loc: string) => void;
   onFilterByFormat?: (format: string) => void;
   onFilterByProvider?: (provider: string) => void;
+  showFacets?: boolean;
+  showMap?: boolean;
 }
 
 export function SearchResultsList({
@@ -23,14 +25,28 @@ export function SearchResultsList({
   setPreviewedResultId,
   setLocation,
   onFilterByFormat,
-  onFilterByProvider
+  onFilterByProvider,
+  showFacets = true,
+  showMap = true
 }: SearchResultsListProps) {
+  // Adjust grid columns based on which panels are visible
+  const getGridCols = () => {
+    if (!showFacets && !showMap) {
+      // Both collapsed - maximum columns
+      return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
+    } else if (!showFacets || !showMap) {
+      // One collapsed - more columns
+      return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+    }
+    // Both visible - default
+    return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4";
+  };
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-muted/30 dark:bg-background/50">
        <ScrollArea className="flex-1">
          <div className="p-4">
            {isLoading ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+             <div className={`grid ${getGridCols()} gap-4`}>
                {Array.from({ length: 8 }).map((_, i) => (
                  <div key={i} className="flex flex-col h-[300px] rounded-xl border border-border overflow-hidden bg-card">
                    <Skeleton className="h-[160px] w-full rounded-none" />
@@ -50,7 +66,7 @@ export function SearchResultsList({
                ))}
              </div>
            ) : filteredResults.length > 0 ? (
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+             <div className={`grid ${getGridCols()} gap-4`}>
                {filteredResults.map((result, i) => (
                  <motion.div
                    key={result.id}
