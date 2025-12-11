@@ -415,52 +415,17 @@ export default function SearchResultsPage() {
           {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* Saved Searches Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-9 gap-2"
-                data-testid="button-saved-searches"
-              >
-                <Bookmark className="w-4 h-4" />
-                <span className="hidden sm:inline">Saved</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-72">
-              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Saved Searches</div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="flex flex-col items-start gap-0.5 cursor-pointer py-2"
-                onClick={() => { setKeyword("vegetation"); setPlace("California"); }}
-              >
-                <span className="font-medium">Vegetation in California</span>
-                <span className="text-xs text-muted-foreground">Saved 2 days ago</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex flex-col items-start gap-0.5 cursor-pointer py-2"
-                onClick={() => { setKeyword("urban"); setPlace("Tokyo"); }}
-              >
-                <span className="font-medium">Urban Growth in Tokyo</span>
-                <span className="text-xs text-muted-foreground">Saved 5 days ago</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                className="flex flex-col items-start gap-0.5 cursor-pointer py-2"
-                onClick={() => { setKeyword("deforestation"); setPlace("Amazon"); }}
-              >
-                <span className="font-medium">Deforestation in Amazon</span>
-                <span className="text-xs text-muted-foreground">Saved 1 week ago</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-xs text-muted-foreground justify-center cursor-pointer"
-                onClick={() => setShowAllSavedSearches(true)}
-              >
-                View all saved searches
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Saved Searches Button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-9 gap-2"
+            onClick={() => setShowAllSavedSearches(true)}
+            data-testid="button-saved-searches"
+          >
+            <Bookmark className="w-4 h-4" />
+            <span className="hidden sm:inline">Saved</span>
+          </Button>
 
           {/* Account / Login */}
           {isAuthenticated && user ? (
