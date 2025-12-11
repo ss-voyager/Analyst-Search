@@ -425,6 +425,25 @@ export default function SearchResultsPage() {
 
         {/* Row 2: Toolbar Row */}
         <div className="h-10 flex items-center px-4 gap-3 border-t border-border/50 bg-muted/30">
+          {/* Filter Panel Toggle - Left Side */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant={showFacets ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2 gap-1 shrink-0"
+                  onClick={() => setShowFacets(!showFacets)}
+                  data-testid="button-toggle-filters"
+                >
+                  {showFacets ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+                  <Filter className="w-3.5 h-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{showFacets ? 'Collapse Filters' : 'Expand Filters'}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           {/* Active Filters Breadcrumb */}
           <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
             {keyword && (
@@ -490,25 +509,6 @@ export default function SearchResultsPage() {
               </button>
             )}
           </div>
-
-          {/* Filter Panel Toggle */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant={showFacets ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 px-2 gap-1"
-                  onClick={() => setShowFacets(!showFacets)}
-                  data-testid="button-toggle-filters"
-                >
-                  {showFacets ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-                  <Filter className="w-3.5 h-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{showFacets ? 'Collapse Filters' : 'Expand Filters'}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
 
           {/* Map Panel Toggle */}
           <TooltipProvider>
