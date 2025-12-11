@@ -133,16 +133,6 @@ export function SearchFilters({
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="border-r border-border/50 bg-background/95 backdrop-blur-xl hidden md:flex flex-col overflow-hidden shrink-0 z-10 shadow-lg"
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-            <h2 className="text-sm font-display font-bold text-foreground tracking-wide">Filters</h2>
-            <button 
-              onClick={() => setShowFacets(false)}
-              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-              title="Hide filters"
-            >
-              <PanelLeftClose className="w-4 h-4" />
-            </button>
-          </div>
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-6 pr-4">
               {/* Date Range Filter */}
