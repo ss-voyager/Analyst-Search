@@ -153,7 +153,10 @@ export function SearchMap({
          zoom={6} 
          style={{ height: '100%', width: '100%' }}
          className="z-0 bg-muted/20"
-         zoomControl={false}
+         zoomControl={true}
+         scrollWheelZoom={true}
+         doubleClickZoom={true}
+         dragging={true}
        >
          <TileLayer
            attribution={mapStyle === 'streets' 
