@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn
+  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -485,6 +485,32 @@ export default function SearchResultsPage() {
                 <span className="opacity-50 capitalize">{filter.type}:</span>
                 {filter.value}
                 <button onClick={() => removeFilter(filter.id)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+
+            {selectedProperties.map(prop => {
+              const label = prop === 'has_thumbnail' ? 'Has Thumbnail' : 
+                           prop === 'has_spatial' ? 'Has Spatial' : 
+                           prop === 'has_temporal' ? 'Has Temporal' : 
+                           prop === 'is_downloadable' ? 'Downloadable' : prop;
+              return (
+                <Badge key={prop} variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
+                  <Check className="w-3 h-3 opacity-50" />
+                  {label}
+                  <button onClick={() => toggleProperty(prop)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              );
+            })}
+
+            {selectedKeywords.map(kw => (
+              <Badge key={kw} variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
+                <Tag className="w-3 h-3 opacity-50" />
+                {kw}
+                <button onClick={() => toggleKeyword(kw)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
