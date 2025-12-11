@@ -63,6 +63,7 @@ export default function SearchResultsPage() {
   const [date, setDate] = useState<DateRange | undefined>();
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [keywordSearch, setKeywordSearch] = useState("");
   const [hoveredResultId, setHoveredResultId] = useState<number | null>(null);
   const [previewedResultId, setPreviewedResultId] = useState<number | null>(null);
@@ -301,6 +302,13 @@ export default function SearchResultsPage() {
     });
   };
 
+  const togglePlatform = (platform: string) => {
+    setSelectedPlatforms(prev => {
+      if (prev.includes(platform)) return prev.filter(p => p !== platform);
+      return [...prev, platform];
+    });
+  };
+
   const removeFilter = (id: string) => {
     if (id.startsWith('loc-')) {
       const locId = id.replace('loc-', '');
@@ -516,7 +524,17 @@ export default function SearchResultsPage() {
               </Badge>
             ))}
 
-            {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0 || spatialFilter) && (
+            {selectedPlatforms.map(platform => (
+              <Badge key={platform} variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
+                <Check className="w-3 h-3 opacity-50" />
+                {platform}
+                <button onClick={() => togglePlatform(platform)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            ))}
+
+            {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0 || selectedPlatforms.length > 0 || spatialFilter) && (
               <button 
                 onClick={() => {
                   setKeyword("");
@@ -526,6 +544,7 @@ export default function SearchResultsPage() {
                   setSelectedLocationIds([]);
                   setSelectedProperties([]);
                   setSelectedKeywords([]);
+                  setSelectedPlatforms([]);
                   setDate(undefined);
                   setLocation("/search");
                 }} 
@@ -742,6 +761,8 @@ export default function SearchResultsPage() {
           selectedKeywords={selectedKeywords}
           selectedProperties={selectedProperties}
           toggleProperty={toggleProperty}
+          selectedPlatforms={selectedPlatforms}
+          togglePlatform={togglePlatform}
         />
 
         {/* Results Grid (Refactored) */}

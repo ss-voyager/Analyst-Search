@@ -105,6 +105,8 @@ interface SearchFiltersProps {
   selectedKeywords: string[];
   selectedProperties: string[];
   toggleProperty: (prop: string) => void;
+  selectedPlatforms: string[];
+  togglePlatform: (platform: string) => void;
 }
 
 export function SearchFilters({
@@ -121,7 +123,9 @@ export function SearchFilters({
   toggleKeyword,
   selectedKeywords,
   selectedProperties,
-  toggleProperty
+  toggleProperty,
+  selectedPlatforms,
+  togglePlatform
 }: SearchFiltersProps) {
   return (
     <AnimatePresence mode="wait">
@@ -275,8 +279,20 @@ export function SearchFilters({
                 <div className="space-y-2">
                   {['Sentinel-1', 'Sentinel-2', 'Landsat 8', 'Landsat 9', 'Terra', 'Aqua'].map(p => (
                     <div key={p} className="flex items-center space-x-2">
-                      <Checkbox id={`p-${p}`} />
-                      <Label htmlFor={`p-${p}`} className="text-xs font-normal text-muted-foreground">{p}</Label>
+                      <Checkbox 
+                        id={`p-${p}`} 
+                        checked={selectedPlatforms.includes(p)}
+                        onCheckedChange={() => togglePlatform(p)}
+                      />
+                      <Label 
+                        htmlFor={`p-${p}`} 
+                        className={cn(
+                          "text-xs font-normal cursor-pointer",
+                          selectedPlatforms.includes(p) ? "text-foreground" : "text-muted-foreground"
+                        )}
+                      >
+                        {p}
+                      </Label>
                     </div>
                   ))}
                 </div>
