@@ -498,14 +498,15 @@ export default function SearchResultsPage() {
                 <Button 
                   variant={showFacets ? "secondary" : "ghost"}
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-7 px-2 gap-1"
                   onClick={() => setShowFacets(!showFacets)}
                   data-testid="button-toggle-filters"
                 >
-                  <Filter className="w-4 h-4" />
+                  {showFacets ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+                  <Filter className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{showFacets ? 'Hide Filters' : 'Show Filters'}</TooltipContent>
+              <TooltipContent>{showFacets ? 'Collapse Filters' : 'Expand Filters'}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
@@ -516,14 +517,15 @@ export default function SearchResultsPage() {
                 <Button 
                   variant={showMap ? "secondary" : "ghost"}
                   size="sm"
-                  className="h-7 w-7 p-0"
+                  className="h-7 px-2 gap-1"
                   onClick={() => setShowMap(!showMap)}
                   data-testid="button-toggle-map"
                 >
-                  <Map className="w-4 h-4" />
+                  <Map className="w-3.5 h-3.5" />
+                  {showMap ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{showMap ? 'Hide Map' : 'Show Map'}</TooltipContent>
+              <TooltipContent>{showMap ? 'Collapse Map' : 'Expand Map'}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
