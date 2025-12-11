@@ -75,6 +75,19 @@ export default function SearchResultsPage() {
   const [isSearchSaved, setIsSearchSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [savedSearchLink, setSavedSearchLink] = useState("https://voyager.ai/s/a8XkD4");
+  const [showAllSavedSearches, setShowAllSavedSearches] = useState(false);
+  
+  // Mock saved searches data
+  const allSavedSearches = [
+    { id: 1, name: "Vegetation in California", keyword: "vegetation", place: "California", savedAt: "2 days ago" },
+    { id: 2, name: "Urban Growth in Tokyo", keyword: "urban", place: "Tokyo", savedAt: "5 days ago" },
+    { id: 3, name: "Deforestation in Amazon", keyword: "deforestation", place: "Amazon", savedAt: "1 week ago" },
+    { id: 4, name: "Coastal Erosion in Florida", keyword: "coastal erosion", place: "Florida", savedAt: "2 weeks ago" },
+    { id: 5, name: "Agricultural Land in Iowa", keyword: "agriculture", place: "Iowa", savedAt: "3 weeks ago" },
+    { id: 6, name: "Glacier Retreat in Alaska", keyword: "glacier", place: "Alaska", savedAt: "1 month ago" },
+    { id: 7, name: "Urban Heat Islands in Phoenix", keyword: "heat island", place: "Phoenix", savedAt: "1 month ago" },
+    { id: 8, name: "Wetland Changes in Louisiana", keyword: "wetland", place: "Louisiana", savedAt: "2 months ago" },
+  ];
 
   const saveSearchMutation = useSaveSearch();
 
@@ -440,7 +453,10 @@ export default function SearchResultsPage() {
                 <span className="text-xs text-muted-foreground">Saved 1 week ago</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-xs text-muted-foreground justify-center cursor-pointer">
+              <DropdownMenuItem 
+                className="text-xs text-muted-foreground justify-center cursor-pointer"
+                onClick={() => setShowAllSavedSearches(true)}
+              >
                 View all saved searches
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -796,6 +812,55 @@ export default function SearchResultsPage() {
                     </div>
                  </div>
                </DialogFooter>
+             </DialogContent>
+           </Dialog>
+
+           {/* All Saved Searches Dialog */}
+           <Dialog open={showAllSavedSearches} onOpenChange={setShowAllSavedSearches}>
+             <DialogContent className="sm:max-w-lg">
+               <DialogHeader>
+                 <DialogTitle className="flex items-center gap-2">
+                   <Bookmark className="w-5 h-5" />
+                   All Saved Searches
+                 </DialogTitle>
+                 <DialogDescription>
+                   Select a saved search to load its results.
+                 </DialogDescription>
+               </DialogHeader>
+               <div className="max-h-[400px] overflow-y-auto">
+                 <div className="flex flex-col gap-1">
+                   {allSavedSearches.map((search) => (
+                     <button
+                       key={search.id}
+                       className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center justify-between group"
+                       onClick={() => {
+                         setKeyword(search.keyword);
+                         setPlace(search.place);
+                         setShowAllSavedSearches(false);
+                         toast.success(`Loaded "${search.name}"`);
+                       }}
+                       data-testid={`saved-search-${search.id}`}
+                     >
+                       <div className="flex flex-col gap-0.5">
+                         <span className="font-medium text-sm">{search.name}</span>
+                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                           <span className="flex items-center gap-1">
+                             <Search className="w-3 h-3" />
+                             {search.keyword}
+                           </span>
+                           <span className="flex items-center gap-1">
+                             <MapPin className="w-3 h-3" />
+                             {search.place}
+                           </span>
+                         </div>
+                       </div>
+                       <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                         {search.savedAt}
+                       </span>
+                     </button>
+                   ))}
+                 </div>
+               </div>
              </DialogContent>
            </Dialog>
       </header>
