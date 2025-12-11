@@ -202,26 +202,15 @@ export function SearchResultsList({
                  ))}
                </div>
                
-               {/* Load More Trigger / Loading Indicator */}
+               {/* Load More Trigger */}
                {hasMore && (
                  <div ref={loadMoreRef} className="flex justify-center items-center py-8">
-                   {isLoadingMore ? (
+                   {isLoadingMore && (
                      <div className="flex items-center gap-2 text-muted-foreground">
                        <Loader2 className="w-5 h-5 animate-spin" />
-                       <span className="text-sm">Loading more results...</span>
-                     </div>
-                   ) : (
-                     <div className="text-sm text-muted-foreground">
-                       Scroll for more results ({visibleCount} of {filteredResults.length})
+                       <span className="text-sm">Loading more...</span>
                      </div>
                    )}
-                 </div>
-               )}
-               
-               {/* End of Results */}
-               {!hasMore && filteredResults.length > ITEMS_PER_PAGE && (
-                 <div className="flex justify-center items-center py-6 text-sm text-muted-foreground">
-                   Showing all {filteredResults.length} results
                  </div>
                )}
              </>
