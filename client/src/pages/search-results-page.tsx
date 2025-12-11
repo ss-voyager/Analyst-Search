@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose
+  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn
 } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useTheme } from "@/components/theme-provider";
@@ -30,6 +33,7 @@ export default function SearchResultsPage() {
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
   const [query, setQuery] = useState(() => {
     const q = params.get("q") || "";
@@ -319,139 +323,129 @@ export default function SearchResultsPage() {
       className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden"
     >
       
-      {/* 1. Header / Search Bar */}
-      <header className="h-16 border-b border-border bg-background/95 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
-        <div className="flex items-center gap-4 flex-1">
+      {/* Row 1: Search Bar Row */}
+      <header className="border-b border-border bg-background/95 backdrop-blur-md z-20 shrink-0">
+        <div className="h-14 flex items-center px-4 gap-3">
+          {/* Logo */}
           <button 
             onClick={() => setLocation("/")}
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
+            className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          <div className="flex items-center gap-2 mr-4 shrink-0">
-            <span className="font-display font-bold text-lg tracking-tight hidden lg:block">
+            <span className="font-display font-bold text-lg tracking-tight">
               <span className="text-[#3b82f6]">V</span>
               <span className="text-[#0c3a6d] dark:text-white">o</span>
               <span className="text-[#3b82f6]">yager</span>
             </span>
-          </div>
+          </button>
 
-          <form onSubmit={handleSearch} className="flex-1 max-w-2xl relative group ml-4">
-            <div className={`relative flex items-center bg-muted/50 dark:bg-black/50 backdrop-blur-xl border border-border rounded-xl p-1 shadow-sm transition-all duration-300 ${isSearchFocused ? 'ring-2 ring-primary/20 border-primary/50 bg-background dark:bg-black/80' : 'hover:border-primary/30'}`}>
-              
-              {/* Intelligent Input */}
-              <div className="flex items-center flex-1 px-3 relative">
-                <label htmlFor="unified-search-input" className="sr-only">Search keywords or location</label>
-                <div className="mr-3 text-muted-foreground transition-colors duration-300">
-                   {detectedType === 'place' ? <MapPin className="w-4 h-4 text-primary" /> : <Search className="w-4 h-4" />}
-                </div>
-                <input 
-                    id="unified-search-input"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
-                    onBlur={() => setIsSearchFocused(false)}
-                    className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70 h-9 text-foreground font-medium"
-                    placeholder="Search keywords or location (e.g. 'Vegetation in California')"
-                    aria-label="Search keywords or location"
-                    autoComplete="off"
-                />
-                
-                {/* Intelligent Labels */}
-                {detectedType === 'mixed' && (
-                    <div className="hidden md:flex items-center gap-1 pointer-events-none mr-2">
-                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-semibold">KEYWORD</span>
-                        <span className="text-[9px] text-muted-foreground px-0.5">+</span>
-                        <span className="text-[9px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono font-semibold">LOCATION</span>
-                    </div>
-                )}
-                {detectedType === 'keyword' && query.length > 0 && (
-                    <div className="hidden md:flex items-center gap-1 pointer-events-none mr-2">
-                        <span className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono font-semibold">KEYWORD</span>
-                    </div>
-                )}
-                {detectedType === 'place' && (
-                    <div className="hidden md:flex items-center gap-1 pointer-events-none mr-2">
-                        <span className="text-[9px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono font-semibold">LOCATION</span>
-                    </div>
-                )}
-              </div>
-
-              <div className="p-0.5">
-                <button type="submit" className="p-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-colors flex items-center justify-center">
-                  <Search className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Search History Dropdown */}
-              {isSearchFocused && searchHistory.length > 0 && (
-                 <div 
-                    className="absolute top-full left-0 w-full mt-2 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2"
-                    onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking
-                 >
-                    <div className="px-3 py-2 text-xs font-medium text-muted-foreground flex items-center gap-2 border-b border-border/50">
-                        <History className="w-3 h-3" />
-                        Recent Searches
-                    </div>
-                    <div className="p-1">
-                      {searchHistory.map((item, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() => handleHistorySelect(item)}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/80 text-left group transition-colors"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-background transition-colors border border-transparent group-hover:border-border">
-                             <Clock className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                          </div>
-                          <span className="text-sm text-foreground group-hover:text-primary transition-colors">{item}</span>
-                        </button>
-                      ))}
-                    </div>
-                 </div>
-              )}
-
+          {/* Keyword Search Bar */}
+          <form onSubmit={handleSearch} className="flex-1 max-w-md relative">
+            <div className="relative flex items-center bg-muted/50 dark:bg-black/50 border border-border rounded-lg px-3 h-9 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/50 transition-all">
+              <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+              <input 
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70 text-foreground font-medium ml-2"
+                placeholder="Search keywords..."
+                data-testid="input-keyword-search"
+              />
             </div>
           </form>
 
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="hidden md:flex gap-2 h-8 border border-border"
-            onClick={() => setShowFacets(!showFacets)}
-          >
-            {showFacets ? <PanelLeftClose className="w-3 h-3" /> : <PanelLeftOpen className="w-3 h-3" />}
-            <span className="hidden lg:inline text-xs">{showFacets ? 'Hide Filters' : 'Filters'}</span>
-          </Button>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowFacets(!showFacets)}>
-            <Filter className="w-5 h-5" />
+          {/* Place Search Bar */}
+          <div className="flex-1 max-w-sm relative">
+            <div className={`relative flex items-center bg-muted/50 dark:bg-black/50 border border-border rounded-lg px-3 h-9 transition-all ${isLocationFocused ? 'ring-2 ring-primary/20 border-primary/50' : ''}`}>
+              <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+              <input 
+                value={place}
+                onChange={(e) => setPlace(e.target.value)}
+                onFocus={() => setIsLocationFocused(true)}
+                onBlur={() => setTimeout(() => setIsLocationFocused(false), 150)}
+                className="bg-transparent border-none outline-none text-sm w-full placeholder:text-muted-foreground/70 text-foreground font-medium ml-2"
+                placeholder="Location..."
+                data-testid="input-location-search"
+              />
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs text-primary hover:text-primary/80 shrink-0"
+                onClick={() => setDrawMode('box')}
+              >
+                <Map className="w-3 h-3 mr-1" />
+                Draw
+              </Button>
+            </div>
+            {/* Location Suggestions */}
+            {isLocationFocused && place.length > 0 && filteredPlaces.length > 0 && (
+              <div className="absolute top-full left-0 w-full mt-1 bg-background border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                {filteredPlaces.slice(0, 6).map((p, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => { setPlace(p); setIsLocationFocused(false); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                  >
+                    <MapPin className="w-3 h-3 text-muted-foreground" />
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Search Button */}
+          <Button type="submit" size="sm" className="h-9 px-4" onClick={handleSearch}>
+            <Search className="w-4 h-4" />
           </Button>
 
-          {/* Active Filters Bar (Mobile/Desktop) */}
-          <div className="hidden md:flex items-center gap-2 overflow-x-auto no-scrollbar max-w-[300px] xl:max-w-none">
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
+          {/* Account / Login */}
+          {isAuthenticated && user ? (
+            <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 p-0">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
+                <AvatarFallback className="text-xs">
+                  {user.firstName?.[0] || user.email?.[0] || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => window.location.href = '/api/login'}>
+              <LogIn className="w-4 h-4" />
+              <span className="hidden sm:inline">Login</span>
+            </Button>
+          )}
+        </div>
+
+        {/* Row 2: Toolbar Row */}
+        <div className="h-10 flex items-center px-4 gap-3 border-t border-border/50 bg-muted/30">
+          {/* Active Filters Breadcrumb */}
+          <div className="flex-1 flex items-center gap-2 overflow-x-auto no-scrollbar">
             {keyword && (
-              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal border-primary/30 bg-primary/5 text-primary">
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
                 <Search className="w-3 h-3 opacity-50" />
                 {keyword}
-                <button onClick={() => {setKeyword(""); handleSearch({preventDefault:()=>{}} as any)}} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                <button onClick={() => setKeyword("")} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
             )}
             
             {place && (
-              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal border-primary/30 bg-primary/5 text-primary">
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
                 <MapPin className="w-3 h-3 opacity-50" />
                 {place}
-                <button onClick={clearLocation} className="ml-1 hover:bg-primary/20 rounded-full p-0.5">
+                <button onClick={clearLocation} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
             )}
 
             {date?.from && (
-              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+              <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
                 <Clock className="w-3 h-3 opacity-50" />
                 {date.to ? (
                   <>{format(date.from, "MMM dd")} - {format(date.to, "MMM dd")}</>
@@ -465,7 +459,7 @@ export default function SearchResultsPage() {
             )}
 
             {activeFilters.map(filter => (
-              <Badge key={filter.id} variant="secondary" className="gap-1 pl-2 pr-1 py-1 font-normal">
+              <Badge key={filter.id} variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
                 <span className="opacity-50 capitalize">{filter.type}:</span>
                 {filter.value}
                 <button onClick={() => removeFilter(filter.id)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
@@ -487,86 +481,103 @@ export default function SearchResultsPage() {
                   setDate(undefined);
                   setLocation("/search");
                 }} 
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors whitespace-nowrap px-2"
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors whitespace-nowrap"
               >
                 Clear all
               </button>
             )}
-         </div>
-         </div>
+          </div>
 
-         <div className="flex items-center gap-2 md:ml-auto">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {filteredResults.length} results
-              {spatialFilter && <span className="hidden lg:inline"> within your AOI</span>}
-            </span>
-            
-            {spatialFilter && (
+          {/* Filter Panel Toggle */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button 
-                 variant="outline" 
-                 size="sm" 
-                 className="h-8 text-xs border-dashed border-primary/50 text-primary bg-primary/5 hover:bg-primary/10"
-                 onClick={() => setDrawMode('box')}
-               >
-                 Modify AOI
-               </Button>
-            )}
+                  variant="ghost" 
+                  size="icon"
+                  className={cn("h-7 w-7", showFacets && "bg-accent")}
+                  onClick={() => setShowFacets(!showFacets)}
+                  data-testid="button-toggle-filters"
+                >
+                  <Filter className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{showFacets ? 'Hide Filters' : 'Show Filters'}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[160px] h-8 text-xs bg-transparent border-border">
-                <div className="flex items-center gap-2">
-                   <ArrowUpDown className="w-3 h-3" />
-                   <SelectValue />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="relevance">Relevance</SelectItem>
-                <SelectItem value="date_desc">Newest → Oldest</SelectItem>
-                <SelectItem value="date_asc">Oldest → Newest</SelectItem>
-                <SelectItem value="name_asc">Name A–Z</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Map Panel Toggle */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className={cn("h-7 w-7", showMap && "bg-accent")}
+                  onClick={() => setShowMap(!showMap)}
+                  data-testid="button-toggle-map"
+                >
+                  <Map className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{showMap ? 'Hide Map' : 'Show Map'}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-           <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                   <Button 
-                    variant={isSearchSaved ? "secondary" : "outline"}
-                    size="sm"
-                    className={cn(
-                      "h-8 gap-2 border-dashed border-primary/40",
-                      isSearchSaved ? "bg-primary/10 text-primary border-primary hover:bg-primary/20" : "text-muted-foreground hover:text-foreground"
-                    )}
-                    onClick={() => {
-                      if (isSearchSaved) {
-                        setShowShareModal(true);
-                      } else {
-                        setIsSaveSearchOpen(true);
-                        setSaveSearchName(keyword || place || "New Search");
-                      }
-                    }}
-                   >
-                     {isSearchSaved ? <Star className="w-3.5 h-3.5 fill-primary" /> : <Star className="w-3.5 h-3.5" />}
-                     <span className="hidden sm:inline text-xs font-medium">
-                       {isSearchSaved ? "Saved" : "Save Search"}
-                     </span>
-                   </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {isSearchSaved ? "Manage or share this saved search" : "Save this search to get notifications"}
-                </TooltipContent>
-              </Tooltip>
-           </TooltipProvider>
+          <div className="w-px h-5 bg-border" />
 
-            <Button 
-             variant="ghost" 
-             size="sm" 
-             className={`hidden md:flex gap-2 h-8 border border-border ${!showMap ? 'bg-accent text-accent-foreground' : ''}`}
-             onClick={() => setShowMap(!showMap)}
-           >
-             {showMap ? <PanelRightClose className="w-3 h-3" /> : <PanelRightOpen className="w-3 h-3" />}
-             <span className="hidden lg:inline text-xs">{showMap ? 'Hide Map' : 'Show Map'}</span>
-           </Button>
+          {/* Results Count */}
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {filteredResults.length} results
+          </span>
+
+          {/* Sort Options */}
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[140px] h-7 text-xs bg-transparent border-border">
+              <div className="flex items-center gap-2">
+                <ArrowUpDown className="w-3 h-3" />
+                <SelectValue />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="relevance">Relevance</SelectItem>
+              <SelectItem value="date_desc">Newest first</SelectItem>
+              <SelectItem value="date_asc">Oldest first</SelectItem>
+              <SelectItem value="name_asc">Name A-Z</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Save Search */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant={isSearchSaved ? "secondary" : "ghost"}
+                  size="sm"
+                  className={cn(
+                    "h-7 gap-1.5 text-xs",
+                    isSearchSaved && "bg-primary/10 text-primary"
+                  )}
+                  onClick={() => {
+                    if (isSearchSaved) {
+                      setShowShareModal(true);
+                    } else {
+                      setIsSaveSearchOpen(true);
+                      setSaveSearchName(keyword || place || "New Search");
+                    }
+                  }}
+                  data-testid="button-save-search"
+                >
+                  {isSearchSaved ? <Star className="w-3.5 h-3.5 fill-primary" /> : <Star className="w-3.5 h-3.5" />}
+                  <span className="hidden sm:inline">{isSearchSaved ? "Saved" : "Save"}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isSearchSaved ? "Manage saved search" : "Save this search"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
 
            {/* Save Search Modal */}
            <Dialog open={isSaveSearchOpen} onOpenChange={setIsSaveSearchOpen}>
@@ -680,7 +691,6 @@ export default function SearchResultsPage() {
                </DialogFooter>
              </DialogContent>
            </Dialog>
-         </div>
       </header>
 
       {/* Main Split Layout */}
