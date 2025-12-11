@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark
+  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark, Settings, LogOut
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -448,16 +448,40 @@ export default function SearchResultsPage() {
 
           {/* Account / Login */}
           {isAuthenticated && user ? (
-            <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 p-0">
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
-                <AvatarFallback className="text-xs">
-                  {user.firstName?.[0] || user.email?.[0] || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 p-0" data-testid="button-account">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
+                    <AvatarFallback className="text-xs">
+                      {user.firstName?.[0] || user.email?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5 text-sm font-medium">{user.firstName || user.email || "User"}</div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer gap-2">
+                  <User className="w-4 h-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer gap-2">
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="cursor-pointer gap-2 text-destructive focus:text-destructive"
+                  onClick={() => window.location.href = '/api/logout'}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => window.location.href = '/api/login'}>
+            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => window.location.href = '/api/login'} data-testid="button-login">
               <LogIn className="w-4 h-4" />
               <span className="hidden sm:inline">Login</span>
             </Button>
