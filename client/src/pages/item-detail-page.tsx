@@ -174,10 +174,10 @@ export default function ItemDetailPage() {
               variant="outline" 
               size="sm"
               onClick={() => setShowMap(!showMap)}
-              className="absolute top-6 right-6 hidden xl:flex gap-2 text-xs z-10"
+              className="absolute top-6 right-6 hidden xl:flex gap-1 text-xs z-10"
             >
+              <MapIcon className="w-3.5 h-3.5" />
               {showMap ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-              {showMap ? "Hide Map" : "Show Map"}
             </Button>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
