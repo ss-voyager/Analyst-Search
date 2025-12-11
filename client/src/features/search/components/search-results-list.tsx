@@ -68,21 +68,6 @@ export function SearchResultsList({
                      />
                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
                      
-                     <div className="absolute top-2 right-2 flex gap-1">
-                        <Badge variant="secondary" className="text-[10px] h-5 bg-background/80 backdrop-blur border-border/50 text-foreground font-mono">
-                          {result.platform}
-                        </Badge>
-                     </div>
-
-                     <div className="absolute bottom-2 left-3 right-3 flex justify-between items-end">
-                        <div className="flex flex-col">
-                           <span className="text-white text-xs font-medium drop-shadow-md flex items-center gap-1">
-                             <Calendar className="w-3 h-3 text-primary-foreground" />
-                             {result.date}
-                           </span>
-                        </div>
-                     </div>
-                     
                      {/* Quick Actions Overlay */}
                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
                         <button 
