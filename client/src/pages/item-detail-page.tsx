@@ -90,7 +90,7 @@ const getItem = (id: number | null) => {
     return item;
 }
 
-export default function ItemDetail() {
+export default function ItemDetailPage() {
   const [, params] = useRoute("/item/:id");
   const [, setLocation] = useLocation();
   const [isMapOpen, setIsMapOpen] = useState(false);

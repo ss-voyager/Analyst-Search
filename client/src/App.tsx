@@ -5,17 +5,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import NotFound from "@/pages/not-found";
-import Home from "@/pages/home";
-import SearchResults from "@/pages/search-results";
-import ItemDetail from "@/pages/item-detail";
+import LandingPage from "@/pages/landing-page";
+import SearchResultsPage from "@/pages/search-results-page";
+import ItemDetailPage from "@/pages/item-detail-page";
 import "leaflet/dist/leaflet.css";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/search" component={SearchResults} />
-      <Route path="/item/:id" component={ItemDetail} />
+      <Route path="/" component={LandingPage} />
+      <Route path="/search" component={SearchResultsPage} />
+      <Route path="/item/:id" component={ItemDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );

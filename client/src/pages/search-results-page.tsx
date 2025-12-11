@@ -26,7 +26,7 @@ import { HIERARCHY_TREE, KEYWORDS } from "@/features/search/mock-data";
 import { useSatelliteItems, useSaveSearch } from "@/features/search/api";
 import { toSearchResult } from "@/features/search/types";
 
-export default function SearchResults() {
+export default function SearchResultsPage() {
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);

@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function Home() {
+export default function LandingPage() {
   const [, setLocation] = useLocation();
   const [query, setQuery] = useState("");
   const [place, setPlace] = useState(""); // Keep place state for Map picker
