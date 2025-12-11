@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X
+  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -400,6 +400,18 @@ export default function SearchResultsPage() {
 
           {/* Theme Toggle */}
           <ThemeToggle />
+
+          {/* Saved Searches Button */}
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-9 gap-2"
+            onClick={() => toast.info("Saved Searches", { description: "You have 3 saved searches" })}
+            data-testid="button-saved-searches"
+          >
+            <Bookmark className="w-4 h-4" />
+            <span className="hidden sm:inline">Saved</span>
+          </Button>
 
           {/* Account / Login */}
           {isAuthenticated && user ? (
