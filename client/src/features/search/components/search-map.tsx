@@ -143,11 +143,11 @@ export function SearchMap({
   };
 
   return (
-    <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 relative shrink-0 transition-all duration-300 flex flex-col">
+    <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 shrink-0 transition-all duration-300 flex flex-col h-full">
        <div className="flex items-center px-4 py-3 border-b border-border/50 bg-background/95 backdrop-blur-xl shrink-0">
          <h2 className="text-sm font-display font-bold text-foreground tracking-wide">Map</h2>
        </div>
-       <div className="flex-1 relative">
+       <div className="flex-1 relative min-h-0">
        <MapContainer 
          center={[34.0522, -118.2437]} 
          zoom={6} 

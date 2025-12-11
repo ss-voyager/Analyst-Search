@@ -744,7 +744,7 @@ export default function SearchResultsPage() {
       </header>
 
       {/* Main Split Layout */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 flex overflow-hidden relative min-h-0">
         {/* Facets Panel (Refactored) */}
         <SearchFilters
           showFacets={showFacets}
