@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MapPin, MoreHorizontal, Download, Share2, Bookmark } from "lucide-react";
+import { MapPin, MoreHorizontal, Download, Share2 } from "lucide-react";
 import { SearchResult } from "../types";
 
 interface SearchResultsListProps {
@@ -137,10 +137,6 @@ export function SearchResultsList({
                            <DropdownMenuItem className="gap-2 cursor-pointer">
                              <Share2 className="w-4 h-4" />
                              Share
-                           </DropdownMenuItem>
-                           <DropdownMenuItem className="gap-2 cursor-pointer">
-                             <Bookmark className="w-4 h-4" />
-                             Save
                            </DropdownMenuItem>
                          </DropdownMenuContent>
                        </DropdownMenu>
