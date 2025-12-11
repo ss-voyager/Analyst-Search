@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Search, MapPin, Globe, Navigation, ArrowRight, Command, Upload, Crosshair, Map as MapIcon, TrendingUp } from "lucide-react";
+import { Search, MapPin, ArrowRight, Map as MapIcon } from "lucide-react";
 import heroBg from "@assets/generated_images/dark_earth_night_view.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
@@ -30,13 +28,6 @@ export default function LandingPage() {
   const handleLocationSelect = (bounds: string) => {
     setPlace(bounds);
   };
-
-  const suggestions = [
-    { label: "Satellite Imagery", trending: true },
-    { label: "Urban Density", trending: true },
-    { label: "Climate Data", trending: true },
-    { label: "Ocean Currents", trending: true }
-  ];
 
   return (
     <div className="min-h-screen w-full bg-background text-foreground overflow-hidden relative selection:bg-primary/30">
@@ -93,129 +84,82 @@ export default function LandingPage() {
           transition={{ delay: 0.2, duration: 0.6 }}
           className="w-full max-w-3xl"
         >
-          <form onSubmit={handleSearch} className="relative group space-y-3">
-            <div className={`absolute inset-0 bg-primary/20 rounded-2xl blur-xl transition-opacity duration-500 ${isSearchFocused ? 'opacity-50' : 'opacity-0 group-hover:opacity-30'}`} />
+          <form onSubmit={handleSearch} className="relative group">
+            <div className={`absolute inset-0 bg-primary/20 rounded-2xl blur-xl transition-opacity duration-500 ${(isSearchFocused || isLocationFocused) ? 'opacity-50' : 'opacity-0 group-hover:opacity-30'}`} />
             
-            {/* Keyword Search Bar */}
-            <div className={`relative flex items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 ${isSearchFocused ? 'border-primary/50 bg-white/90 dark:bg-black/90' : ''}`}>
-              <div className="flex items-center flex-1 px-2 relative">
-                <label htmlFor="keyword-input" className="sr-only">Search keywords</label>
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  <Search className="w-5 h-5" />
-                </div>
-                <input
-                  id="keyword-input"
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  placeholder="Search keywords (e.g., vegetation, urban, coastal...)"
-                  className="w-full bg-transparent border-none text-base md:text-lg pl-10 pr-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
-                  data-testid="input-search-keyword"
-                  autoFocus
-                  aria-label="Search keywords"
-                />
-                {query.length > 0 && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex gap-1 pointer-events-none">
-                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-mono">KEYWORD</span>
+            <div className="relative flex flex-col md:flex-row items-stretch gap-2">
+              {/* Keyword Search Bar */}
+              <div className={`flex-1 flex items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 ${isSearchFocused ? 'border-primary/50 bg-white/90 dark:bg-black/90' : ''}`}>
+                <div className="flex items-center flex-1 px-2 relative">
+                  <label htmlFor="keyword-input" className="sr-only">Search keywords</label>
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    <Search className="w-5 h-5" />
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* Location Search Bar with Map Controls */}
-            <div className={`relative flex items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 ${isLocationFocused ? 'border-green-500/50 bg-white/90 dark:bg-black/90' : ''}`}>
-              <div className="flex items-center flex-1 px-2 relative">
-                <label htmlFor="location-input" className="sr-only">Search location</label>
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400">
-                  <MapPin className="w-5 h-5" />
+                  <input
+                    id="keyword-input"
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    placeholder="Keywords..."
+                    className="w-full bg-transparent border-none text-base pl-10 pr-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
+                    data-testid="input-search-keyword"
+                    autoFocus
+                    aria-label="Search keywords"
+                  />
                 </div>
-                <input
-                  id="location-input"
-                  type="text"
-                  value={place}
-                  onChange={(e) => setPlace(e.target.value)}
-                  onFocus={() => setIsLocationFocused(true)}
-                  onBlur={() => setIsLocationFocused(false)}
-                  placeholder="Enter location (e.g., California, Amazon Basin...)"
-                  className="w-full bg-transparent border-none text-base md:text-lg pl-10 pr-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
-                  data-testid="input-search-location"
-                  aria-label="Search location"
-                />
-                {place.length > 0 && (
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden md:flex gap-1 pointer-events-none">
-                    <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded font-mono">LOCATION</span>
-                  </div>
-                )}
               </div>
 
-              {/* Divider */}
-              <div className="h-8 w-[1px] bg-black/10 dark:bg-white/10 mx-2" />
+              {/* Location Search Bar with Map Controls */}
+              <div className={`flex-1 flex items-center bg-white/80 dark:bg-black/80 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-2 shadow-2xl transition-all duration-300 ${isLocationFocused ? 'border-green-500/50 bg-white/90 dark:bg-black/90' : ''}`}>
+                <div className="flex items-center flex-1 px-2 relative">
+                  <label htmlFor="location-input" className="sr-only">Search location</label>
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <input
+                    id="location-input"
+                    type="text"
+                    value={place}
+                    onChange={(e) => setPlace(e.target.value)}
+                    onFocus={() => setIsLocationFocused(true)}
+                    onBlur={() => setIsLocationFocused(false)}
+                    placeholder="Location..."
+                    className="w-full bg-transparent border-none text-base pl-10 pr-3 py-3 text-foreground placeholder:text-muted-foreground/70 focus:outline-none font-medium"
+                    data-testid="input-search-location"
+                    aria-label="Search location"
+                  />
+                </div>
 
-              {/* Map Draw Button */}
-              <button
-                type="button"
-                onClick={openPicker}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 border ${place ? 'text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/30' : 'text-muted-foreground hover:text-foreground border-transparent hover:border-black/10 dark:hover:border-white/10'}`}
-                title="Draw area on map"
-                data-testid="button-open-map-picker"
-              >
-                <MapIcon className="w-5 h-5" />
-                <span className="text-sm font-medium hidden sm:inline">{place ? 'Area Set' : 'Draw on Map'}</span>
-                {place && <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />}
-              </button>
+                {/* Divider */}
+                <div className="h-8 w-[1px] bg-black/10 dark:bg-white/10 mx-1" />
 
-              {/* Clear Location Button */}
-              {place && (
+                {/* Map Draw Button */}
                 <button
                   type="button"
-                  onClick={() => setPlace("")}
-                  className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-muted-foreground hover:text-foreground ml-1"
-                  title="Clear location"
-                  data-testid="button-clear-location"
+                  onClick={openPicker}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 ${place ? 'text-green-600 dark:text-green-400 bg-green-500/10' : 'text-muted-foreground hover:text-foreground'}`}
+                  title="Draw area on map"
+                  data-testid="button-open-map-picker"
                 >
-                  <Globe className="w-4 h-4" />
+                  <MapIcon className="w-4 h-4" />
+                  <span className="text-xs font-medium hidden lg:inline">{place ? 'Area Set' : 'Draw'}</span>
+                  {place && <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />}
                 </button>
-              )}
+              </div>
+
+              {/* Search Button */}
+              <button 
+                type="submit"
+                className="p-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors flex items-center justify-center shadow-lg"
+                data-testid="button-search-submit"
+                title="Search"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
             </div>
-
-            {/* Search Button */}
-            <button 
-              type="submit"
-              className="w-full p-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors flex items-center justify-center gap-3 font-semibold text-lg shadow-lg"
-              data-testid="button-search-submit"
-            >
-              <Search className="w-5 h-5" />
-              Search Imagery
-              <ArrowRight className="w-5 h-5" />
-            </button>
           </form>
-
-          {/* Suggestions */}
-          {!isLocationFocused && (
-             <motion.div 
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             transition={{ delay: 0.5 }}
-             className="mt-6 flex flex-wrap justify-center gap-3"
-           >
-             {suggestions.map((s, i) => (
-               <button
-                 key={i}
-                 onClick={() => setQuery(s.label)}
-                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/40 dark:bg-black/40 backdrop-blur-md border border-black/10 dark:border-white/10 hover:border-primary/40 hover:bg-white/60 dark:hover:bg-black/60 text-sm text-foreground dark:text-white/90 hover:text-foreground dark:hover:text-white transition-all duration-300 shadow-lg"
-               >
-                 {s.trending ? (
-                    <TrendingUp className="w-3 h-3 text-primary" />
-                 ) : (
-                    <Navigation className="w-3 h-3" />
-                 )}
-                 {s.label}
-               </button>
-             ))}
-           </motion.div>
-          )}
         </motion.div>
       </main>
 
