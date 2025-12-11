@@ -1,9 +1,10 @@
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MapPin, MoreHorizontal, Download, Share2 } from "lucide-react";
+import { MapPin, MoreHorizontal, Download, Share2, Search, Loader2 } from "lucide-react";
 import { SearchResult } from "../types";
 
 interface SearchResultsListProps {
@@ -18,6 +19,8 @@ interface SearchResultsListProps {
   showMap?: boolean;
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export function SearchResultsList({
   isLoading,
   filteredResults,
@@ -29,18 +32,51 @@ export function SearchResultsList({
   showFacets = true,
   showMap = true
 }: SearchResultsListProps) {
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Reset visible count when results change
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [filteredResults.length]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && visibleCount < filteredResults.length && !isLoadingMore) {
+          setIsLoadingMore(true);
+          // Simulate loading delay for smooth UX
+          setTimeout(() => {
+            setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredResults.length));
+            setIsLoadingMore(false);
+          }, 300);
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [visibleCount, filteredResults.length, isLoadingMore]);
+
+  const visibleResults = filteredResults.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredResults.length;
+
   // Adjust grid columns based on which panels are visible
   const getGridCols = () => {
     if (!showFacets && !showMap) {
-      // Both collapsed - maximum columns
       return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6";
     } else if (!showFacets || !showMap) {
-      // One collapsed - more columns
       return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
     }
-    // Both visible - default
     return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4";
   };
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-muted/30 dark:bg-background/50">
        <ScrollArea className="flex-1">
@@ -66,104 +102,129 @@ export function SearchResultsList({
                ))}
              </div>
            ) : filteredResults.length > 0 ? (
-             <div className={`grid ${getGridCols()} gap-4`}>
-               {filteredResults.map((result, i) => (
-                 <motion.div
-                   key={result.id}
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   transition={{ delay: i * 0.05, duration: 0.3 }}
-                   className="group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all duration-300 cursor-pointer h-[320px]"
-                   onMouseEnter={() => setHoveredResultId(result.id)}
-                   onMouseLeave={() => setHoveredResultId(null)}
-                   onClick={() => setLocation(`/item/${result.id}`)}
-                 >
-                   {/* Image Thumbnail */}
-                   <div className="relative h-[160px] overflow-hidden bg-muted">
-                     <img 
-                       src={result.thumbnail} 
-                       alt={result.title}
-                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                       loading="lazy"
-                     />
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
-                     
-                     {/* Quick Actions Overlay */}
-                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
-                        <button 
-                          className="px-3 py-1.5 bg-white text-black text-xs font-bold rounded-full hover:bg-gray-200 transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocation(`/item/${result.id}`);
-                          }}
-                        >
-                          View Details
-                        </button>
-                        <button 
-                          className="p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors border border-white/20 transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPreviewedResultId(result.id);
-                          }}
-                          title="Locate on Map"
-                        >
-                          <MapPin className="w-4 h-4" />
-                        </button>
+             <>
+               <div className={`grid ${getGridCols()} gap-4`}>
+                 {visibleResults.map((result, i) => (
+                   <motion.div
+                     key={result.id}
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.3 }}
+                     className="group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all duration-300 cursor-pointer h-[320px]"
+                     onMouseEnter={() => setHoveredResultId(result.id)}
+                     onMouseLeave={() => setHoveredResultId(null)}
+                     onClick={() => setLocation(`/item/${result.id}`)}
+                   >
+                     {/* Image Thumbnail */}
+                     <div className="relative h-[160px] overflow-hidden bg-muted">
+                       <img 
+                         src={result.thumbnail} 
+                         alt={result.title}
+                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                         loading="lazy"
+                       />
+                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
+                       
+                       {/* Quick Actions Overlay */}
+                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
+                          <button 
+                            className="px-3 py-1.5 bg-white text-black text-xs font-bold rounded-full hover:bg-gray-200 transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocation(`/item/${result.id}`);
+                            }}
+                          >
+                            View Details
+                          </button>
+                          <button 
+                            className="p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors border border-white/20 transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewedResultId(result.id);
+                            }}
+                            title="Locate on Map"
+                          >
+                            <MapPin className="w-4 h-4" />
+                          </button>
+                       </div>
                      </div>
-                   </div>
 
-                   {/* Content */}
-                   <div className="p-4 flex-1 flex flex-col gap-1.5">
-                     <h3 className="font-display font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2" title={result.title}>
-                       {result.title}
-                     </h3>
-                     <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
-                       <p>
-                         <span className="text-foreground/70">Format:</span>{' '}
-                         <button 
-                           className="text-primary hover:underline"
-                           onClick={(e) => { e.stopPropagation(); if (result.format) onFilterByFormat?.(result.format); }}
-                         >
-                           {result.format || 'Unknown'}
-                         </button>
-                       </p>
-                       <p>
-                         <span className="text-foreground/70">Author:</span>{' '}
-                         <button 
-                           className="text-primary hover:underline"
-                           onClick={(e) => { e.stopPropagation(); if (result.provider) onFilterByProvider?.(result.provider); }}
-                         >
-                           {result.provider || 'Unknown'}
-                         </button>
-                       </p>
+                     {/* Content */}
+                     <div className="p-4 flex-1 flex flex-col gap-1.5">
+                       <h3 className="font-display font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2" title={result.title}>
+                         {result.title}
+                       </h3>
+                       <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                         <p>
+                           <span className="text-foreground/70">Format:</span>{' '}
+                           <button 
+                             className="text-primary hover:underline"
+                             onClick={(e) => { e.stopPropagation(); if (result.format) onFilterByFormat?.(result.format); }}
+                           >
+                             {result.format || 'Unknown'}
+                           </button>
+                         </p>
+                         <p>
+                           <span className="text-foreground/70">Author:</span>{' '}
+                           <button 
+                             className="text-primary hover:underline"
+                             onClick={(e) => { e.stopPropagation(); if (result.provider) onFilterByProvider?.(result.provider); }}
+                           >
+                             {result.provider || 'Unknown'}
+                           </button>
+                         </p>
+                       </div>
+                       <div className="mt-auto flex justify-end">
+                         <DropdownMenu>
+                           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground">
+                               <MoreHorizontal className="w-4 h-4" />
+                               Tools
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                             <DropdownMenuItem className="gap-2 cursor-pointer">
+                               <Download className="w-4 h-4" />
+                               Download
+                             </DropdownMenuItem>
+                             <DropdownMenuItem className="gap-2 cursor-pointer">
+                               <Share2 className="w-4 h-4" />
+                               Share
+                             </DropdownMenuItem>
+                           </DropdownMenuContent>
+                         </DropdownMenu>
+                       </div>
                      </div>
-                     <div className="mt-auto flex justify-end">
-                       <DropdownMenu>
-                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground">
-                             <MoreHorizontal className="w-4 h-4" />
-                             Tools
-                           </Button>
-                         </DropdownMenuTrigger>
-                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                           <DropdownMenuItem className="gap-2 cursor-pointer">
-                             <Download className="w-4 h-4" />
-                             Download
-                           </DropdownMenuItem>
-                           <DropdownMenuItem className="gap-2 cursor-pointer">
-                             <Share2 className="w-4 h-4" />
-                             Share
-                           </DropdownMenuItem>
-                         </DropdownMenuContent>
-                       </DropdownMenu>
+                     
+                     {/* Hover Border Effect */}
+                     <div className="absolute inset-0 border-2 border-primary opacity-0 group-hover:opacity-100 rounded-xl pointer-events-none transition-opacity duration-300" />
+                   </motion.div>
+                 ))}
+               </div>
+               
+               {/* Load More Trigger / Loading Indicator */}
+               {hasMore && (
+                 <div ref={loadMoreRef} className="flex justify-center items-center py-8">
+                   {isLoadingMore ? (
+                     <div className="flex items-center gap-2 text-muted-foreground">
+                       <Loader2 className="w-5 h-5 animate-spin" />
+                       <span className="text-sm">Loading more results...</span>
                      </div>
-                   </div>
-                   
-                   {/* Hover Border Effect */}
-                   <div className="absolute inset-0 border-2 border-primary opacity-0 group-hover:opacity-100 rounded-xl pointer-events-none transition-opacity duration-300" />
-                 </motion.div>
-               ))}
-             </div>
+                   ) : (
+                     <div className="text-sm text-muted-foreground">
+                       Scroll for more results ({visibleCount} of {filteredResults.length})
+                     </div>
+                   )}
+                 </div>
+               )}
+               
+               {/* End of Results */}
+               {!hasMore && filteredResults.length > ITEMS_PER_PAGE && (
+                 <div className="flex justify-center items-center py-6 text-sm text-muted-foreground">
+                   Showing all {filteredResults.length} results
+                 </div>
+               )}
+             </>
            ) : (
              <div className="flex flex-col items-center justify-center h-[50vh] text-center p-8 border border-dashed border-border rounded-xl bg-muted/10">
                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -181,6 +242,3 @@ export function SearchResultsList({
     </div>
   );
 }
-
-// Helper icons needed since I removed imports
-import { Search } from "lucide-react";
