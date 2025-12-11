@@ -695,19 +695,6 @@ export default function SearchResultsPage() {
 
       {/* Main Split Layout */}
       <div className="flex-1 flex overflow-hidden relative">
-        
-        {/* Left Edge Toggle - Show when filters hidden */}
-        {!showFacets && (
-          <button
-            onClick={() => setShowFacets(true)}
-            className="hidden md:flex items-center justify-center w-8 bg-background/95 border-r border-border/50 hover:bg-muted transition-colors shrink-0"
-            title="Show filters"
-            data-testid="button-show-filters"
-          >
-            <PanelLeftOpen className="w-4 h-4 text-muted-foreground" />
-          </button>
-        )}
-
         {/* Facets Panel (Refactored) */}
         <SearchFilters
           showFacets={showFacets}
@@ -750,18 +737,6 @@ export default function SearchResultsPage() {
            setSpatialFilter={setSpatialFilter}
            setPlace={setPlace}
         />
-
-        {/* Right Edge Toggle - Show when map hidden */}
-        {!showMap && (
-          <button
-            onClick={() => setShowMap(true)}
-            className="hidden xl:flex items-center justify-center w-8 bg-background/95 border-l border-border/50 hover:bg-muted transition-colors shrink-0"
-            title="Show map"
-            data-testid="button-show-map"
-          >
-            <PanelRightOpen className="w-4 h-4 text-muted-foreground" />
-          </button>
-        )}
       </div>
     </div>
   );
