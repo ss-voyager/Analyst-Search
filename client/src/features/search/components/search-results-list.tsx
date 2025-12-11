@@ -93,33 +93,13 @@ export function SearchResultsList({
                    </div>
 
                    {/* Content */}
-                   <div className="p-4 flex-1 flex flex-col gap-2">
-                     <div>
-                       <h3 className="font-display font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-1" title={result.title}>
-                         {result.title}
-                       </h3>
-                       <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                         {result.provider} • {result.format}
-                       </p>
-                     </div>
-
-                     <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px] py-0 h-5 border-border/50 bg-muted/50 text-muted-foreground font-normal gap-1">
-                          <Cloud className="w-3 h-3" /> {result.cloudCover}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px] py-0 h-5 border-border/50 bg-muted/50 text-muted-foreground font-normal gap-1">
-                          <HardDrive className="w-3 h-3" /> ~850MB
-                        </Badge>
-                     </div>
-                     
-                     <div className="mt-auto pt-3 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                           <Database className="w-3 h-3" />
-                           Level-2A
-                        </div>
-                        <div className="font-mono opacity-50">
-                           #{result.id.toString().padStart(4, '0')}
-                        </div>
+                   <div className="p-4 flex-1 flex flex-col gap-1.5">
+                     <h3 className="font-display font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2" title={result.title}>
+                       {result.title}
+                     </h3>
+                     <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
+                       <p><span className="text-foreground/70">Format:</span> {result.format}</p>
+                       <p><span className="text-foreground/70">Author:</span> {result.provider}</p>
                      </div>
                    </div>
                    
