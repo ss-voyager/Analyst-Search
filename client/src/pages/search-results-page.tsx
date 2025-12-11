@@ -371,16 +371,6 @@ export default function SearchResultsPage() {
                 placeholder="Location..."
                 data-testid="input-location-search"
               />
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 px-2 text-xs text-primary hover:text-primary/80 shrink-0"
-                onClick={() => setDrawMode('box')}
-              >
-                <Map className="w-3 h-3 mr-1" />
-                Draw
-              </Button>
             </div>
             {/* Location Suggestions */}
             {isLocationFocused && place.length > 0 && filteredPlaces.length > 0 && (
