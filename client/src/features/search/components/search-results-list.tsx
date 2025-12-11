@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Cloud, Calendar, Database, HardDrive, MapPin } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MapPin, MoreHorizontal, Download, Share2, Bookmark } from "lucide-react";
 import { SearchResult } from "../types";
 
 interface SearchResultsListProps {
@@ -100,6 +100,30 @@ export function SearchResultsList({
                      <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
                        <p><span className="text-foreground/70">Format:</span> {result.format}</p>
                        <p><span className="text-foreground/70">Author:</span> {result.provider}</p>
+                     </div>
+                     <div className="mt-auto flex justify-end">
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground">
+                             <MoreHorizontal className="w-4 h-4" />
+                             Tools
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                           <DropdownMenuItem className="gap-2 cursor-pointer">
+                             <Download className="w-4 h-4" />
+                             Download
+                           </DropdownMenuItem>
+                           <DropdownMenuItem className="gap-2 cursor-pointer">
+                             <Share2 className="w-4 h-4" />
+                             Share
+                           </DropdownMenuItem>
+                           <DropdownMenuItem className="gap-2 cursor-pointer">
+                             <Bookmark className="w-4 h-4" />
+                             Save
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
                      </div>
                    </div>
                    
