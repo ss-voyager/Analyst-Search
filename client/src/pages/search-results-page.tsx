@@ -496,9 +496,9 @@ export default function SearchResultsPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className={cn("h-7 w-7", showFacets && "bg-accent")}
+                  variant={showFacets ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 w-7 p-0"
                   onClick={() => setShowFacets(!showFacets)}
                   data-testid="button-toggle-filters"
                 >
@@ -514,9 +514,9 @@ export default function SearchResultsPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className={cn("h-7 w-7", showMap && "bg-accent")}
+                  variant={showMap ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 w-7 p-0"
                   onClick={() => setShowMap(!showMap)}
                   data-testid="button-toggle-map"
                 >
