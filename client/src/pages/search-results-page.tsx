@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, Layout, X
+  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +26,6 @@ import { HIERARCHY_TREE, KEYWORDS } from "@/features/search/mock-data";
 import { useSatelliteItems, useSaveSearch } from "@/features/search/api";
 import { toSearchResult } from "@/features/search/types";
 
-export type MapDisplayMode = 'fullbleed' | 'expandable' | 'stacked' | 'mini';
 
 export default function SearchResultsPage() {
   const [location, setLocation] = useLocation();
@@ -55,7 +54,6 @@ export default function SearchResultsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [mapDisplayMode, setMapDisplayMode] = useState<MapDisplayMode>('fullbleed');
 
   // Filter States
   const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
@@ -409,22 +407,6 @@ export default function SearchResultsPage() {
 
           {/* Spacer to push right items */}
           <div className="flex-1" />
-
-          {/* Map Layout Mode Dropdown */}
-          <Select value={mapDisplayMode} onValueChange={(v) => setMapDisplayMode(v as MapDisplayMode)}>
-            <SelectTrigger className="w-[130px] h-9 text-xs bg-transparent border-border" data-testid="select-map-layout">
-              <div className="flex items-center gap-2">
-                <Layout className="w-3 h-3" />
-                <SelectValue />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fullbleed">Full-bleed</SelectItem>
-              <SelectItem value="expandable">Expandable</SelectItem>
-              <SelectItem value="stacked">Stacked</SelectItem>
-              <SelectItem value="mini">Mini-map</SelectItem>
-            </SelectContent>
-          </Select>
 
           {/* Theme Toggle */}
           <ThemeToggle />
@@ -805,8 +787,6 @@ export default function SearchResultsPage() {
            setSpatialFilter={setSpatialFilter}
            setPlace={setPlace}
            spatialFilter={spatialFilter}
-           mapDisplayMode={mapDisplayMode}
-           showFacets={showFacets}
         />
       </div>
     </div>
