@@ -168,7 +168,17 @@ export default function ItemDetailPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Details */}
         <ScrollArea className="flex-1 border-r border-border bg-background/50">
-          <div className="p-6 max-w-5xl mx-auto space-y-8">
+          <div className="p-6 max-w-5xl mx-auto space-y-8 relative">
+            {/* Map Toggle Button - top right of content */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowMap(!showMap)}
+              className="absolute top-6 right-6 hidden xl:flex gap-2 text-xs z-10"
+            >
+              {showMap ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+              {showMap ? "Hide Map" : "Show Map"}
+            </Button>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Hero Image / Preview */}
@@ -307,19 +317,6 @@ export default function ItemDetailPage() {
             </div>
           </div>
         </ScrollArea>
-
-        {/* Map Toggle Button - positioned at edge */}
-        <div className="hidden xl:flex items-center">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={() => setShowMap(!showMap)}
-            className="h-10 w-6 rounded-none border-y border-l border-border bg-background/80 hover:bg-muted"
-            title={showMap ? "Hide Map" : "Show Map"}
-          >
-            {showMap ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-          </Button>
-        </div>
 
         {/* Right Panel - Context Map */}
         {showMap && (
