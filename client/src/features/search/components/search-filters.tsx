@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar as CalendarIcon, Globe, Check, Layers } from "lucide-react";
+import { Calendar as CalendarIcon, Globe, Check, Layers, PanelLeftClose } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -92,6 +92,7 @@ const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [] }: { nodes: T
 // --- SearchFilters Component ---
 interface SearchFiltersProps {
   showFacets: boolean;
+  setShowFacets: (show: boolean) => void;
   date: DateRange | undefined;
   setDate: (date: DateRange | undefined) => void;
   hierarchyTree: TreeNode[];
@@ -108,6 +109,7 @@ interface SearchFiltersProps {
 
 export function SearchFilters({
   showFacets,
+  setShowFacets,
   date,
   setDate,
   hierarchyTree,
@@ -131,6 +133,16 @@ export function SearchFilters({
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="border-r border-border/50 bg-background/95 backdrop-blur-xl hidden md:flex flex-col overflow-hidden shrink-0 z-10 shadow-lg"
         >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+            <h2 className="text-sm font-display font-bold text-foreground tracking-wide">Filters</h2>
+            <button 
+              onClick={() => setShowFacets(false)}
+              className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              title="Hide filters"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          </div>
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-6 pr-4">
               {/* Date Range Filter */}

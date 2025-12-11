@@ -140,7 +140,18 @@ export function SearchMap({
   };
 
   return (
-    <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 relative shrink-0 transition-all duration-300">
+    <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 relative shrink-0 transition-all duration-300 flex flex-col">
+       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/95 backdrop-blur-xl shrink-0">
+         <h2 className="text-sm font-display font-bold text-foreground tracking-wide">Map</h2>
+         <button 
+           onClick={() => setShowMap(false)}
+           className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+           title="Hide map"
+         >
+           <PanelRightClose className="w-4 h-4" />
+         </button>
+       </div>
+       <div className="flex-1 relative">
        <MapContainer 
          center={[34.0522, -118.2437]} 
          zoom={6} 
@@ -224,16 +235,7 @@ export function SearchMap({
             </button>
          </div>
        </div>
-
-       {/* Hide Button (Absolute) */}
-       <Button 
-         variant="secondary" 
-         size="sm" 
-         className="absolute bottom-4 right-4 z-[400] shadow-lg bg-background/90 backdrop-blur"
-         onClick={() => setShowMap(false)}
-       >
-         <PanelRightClose className="w-4 h-4 mr-2" /> Hide Map
-       </Button>
+       </div>
     </div>
   );
 }

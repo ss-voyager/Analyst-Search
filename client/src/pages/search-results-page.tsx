@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose
+  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose
 } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
@@ -47,7 +47,7 @@ export default function SearchResultsPage() {
   
   // UI State
   const [showMap, setShowMap] = useState(true);
-  const [showFacets, setShowFacets] = useState(false);
+  const [showFacets, setShowFacets] = useState(true);
   const [sortBy, setSortBy] = useState("relevance");
   const [isLoading, setIsLoading] = useState(true);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
@@ -415,6 +415,15 @@ export default function SearchResultsPage() {
             </div>
           </form>
 
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="hidden md:flex gap-2 h-8 border border-border"
+            onClick={() => setShowFacets(!showFacets)}
+          >
+            {showFacets ? <PanelLeftClose className="w-3 h-3" /> : <PanelLeftOpen className="w-3 h-3" />}
+            <span className="hidden lg:inline text-xs">{showFacets ? 'Hide Filters' : 'Filters'}</span>
+          </Button>
           <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowFacets(!showFacets)}>
             <Filter className="w-5 h-5" />
           </Button>
@@ -680,6 +689,7 @@ export default function SearchResultsPage() {
         {/* Facets Panel (Refactored) */}
         <SearchFilters
           showFacets={showFacets}
+          setShowFacets={setShowFacets}
           date={date}
           setDate={setDate}
           hierarchyTree={HIERARCHY_TREE}
