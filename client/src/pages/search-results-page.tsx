@@ -510,25 +510,6 @@ export default function SearchResultsPage() {
             )}
           </div>
 
-          {/* Map Panel Toggle */}
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  variant={showMap ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 px-2 gap-1"
-                  onClick={() => setShowMap(!showMap)}
-                  data-testid="button-toggle-map"
-                >
-                  <Map className="w-3.5 h-3.5" />
-                  {showMap ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{showMap ? 'Collapse Map' : 'Expand Map'}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
           <div className="w-px h-5 bg-border" />
 
           {/* Results Count */}
@@ -580,6 +561,25 @@ export default function SearchResultsPage() {
               <TooltipContent>
                 {isSearchSaved ? "Manage saved search" : "Save this search"}
               </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Map Panel Toggle - Right Side */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  variant={showMap ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2 gap-1 shrink-0"
+                  onClick={() => setShowMap(!showMap)}
+                  data-testid="button-toggle-map"
+                >
+                  <Map className="w-3.5 h-3.5" />
+                  {showMap ? <PanelRightClose className="w-4 h-4" /> : <PanelRightOpen className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{showMap ? 'Collapse Map' : 'Expand Map'}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         </div>
