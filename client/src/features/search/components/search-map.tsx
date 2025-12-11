@@ -276,17 +276,6 @@ export function SearchMap({
           </div>
         </div>
 
-        {/* Stats Overlay */}
-        <div className="absolute bottom-3 left-3 z-[600] bg-background/90 backdrop-blur rounded-lg border border-border px-3 py-2 shadow-lg pointer-events-auto">
-          <div className="flex items-center gap-3 text-xs">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-muted-foreground">{validResults.length} visible</span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <span className="font-medium">{filteredResults.length} total</span>
-          </div>
-        </div>
       </div>
     </div>
   );
