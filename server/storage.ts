@@ -5,7 +5,7 @@ import {
   provenanceEvents,
   savedSearches,
   type User, 
-  type InsertUser,
+  type UpsertUser,
   type SatelliteItem,
   type InsertSatelliteItem,
   type RelatedItem,
@@ -19,10 +19,9 @@ import { db } from "./db";
 import { eq, and, gte, lte, or, inArray, sql, desc, asc } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
+  // User methods (for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   // Satellite Items methods
   searchSatelliteItems(filters: {
@@ -58,21 +57,23 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User methods
+  // User methods (for Replit Auth)
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async upsertUser(userData: UpsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
       .returning();
     return user;
   }

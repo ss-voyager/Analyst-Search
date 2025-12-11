@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Search, MapPin, ArrowRight, Map as MapIcon } from "lucide-react";
+import { Search, MapPin, ArrowRight, Map as MapIcon, LogOut } from "lucide-react";
 import heroBg from "@assets/generated_images/dark_earth_night_view.png";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [query, setQuery] = useState("");
   const [place, setPlace] = useState("");
 
@@ -55,9 +57,38 @@ export default function LandingPage() {
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm">
-            Sign In
-          </button>
+          {isLoading ? (
+            <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+          ) : isAuthenticated && user ? (
+            <div className="flex items-center gap-3">
+              {user.profileImageUrl && (
+                <img 
+                  src={user.profileImageUrl} 
+                  alt="Profile" 
+                  className="w-8 h-8 rounded-full object-cover border border-border"
+                />
+              )}
+              <span className="text-sm font-medium hidden sm:inline">
+                {user.firstName || user.email?.split('@')[0] || 'User'}
+              </span>
+              <a
+                href="/api/logout"
+                className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm flex items-center gap-2"
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Sign Out</span>
+              </a>
+            </div>
+          ) : (
+            <a
+              href="/api/login"
+              className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm"
+              data-testid="button-login"
+            >
+              Sign In
+            </a>
+          )}
           <ThemeToggle />
         </div>
       </nav>
