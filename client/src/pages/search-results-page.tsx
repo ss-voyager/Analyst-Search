@@ -399,6 +399,9 @@ export default function SearchResultsPage() {
             <Search className="w-4 h-4" />
           </Button>
 
+          {/* Spacer to push right items */}
+          <div className="flex-1" />
+
           {/* Theme Toggle */}
           <ThemeToggle />
 
