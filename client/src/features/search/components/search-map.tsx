@@ -143,16 +143,16 @@ export function SearchMap({
   };
 
   return (
-    <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 shrink-0 transition-all duration-300 flex flex-col h-full">
-       <div className="flex items-center px-4 py-3 border-b border-border/50 bg-background/95 backdrop-blur-xl shrink-0">
+    <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 shrink-0 transition-all duration-300 relative">
+       <div className="absolute top-0 left-0 right-0 flex items-center px-4 py-3 border-b border-border/50 bg-background/95 backdrop-blur-xl z-[500]">
          <h2 className="text-sm font-display font-bold text-foreground tracking-wide">Map</h2>
        </div>
-       <div className="flex-1 relative min-h-0">
+       <div className="absolute inset-0 pt-12">
        <MapContainer 
          center={[34.0522, -118.2437]} 
-         zoom={6} 
+         zoom={4} 
          style={{ height: '100%', width: '100%' }}
-         className="z-0 bg-muted/20"
+         className="z-0"
          zoomControl={true}
          scrollWheelZoom={true}
          doubleClickZoom={true}
@@ -221,9 +221,9 @@ export function SearchMap({
        </MapContainer>
 
        {/* Map Controls Overlay */}
-       <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+       <div className="absolute top-16 right-4 z-[600] flex flex-col gap-2 pointer-events-none">
          {/* Map Style Controls */}
-         <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1 shadow-lg">
+         <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1 shadow-lg pointer-events-auto">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -253,7 +253,7 @@ export function SearchMap({
          </div>
 
          {/* Drawing Tools */}
-         <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1 shadow-lg">
+         <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1 shadow-lg pointer-events-auto">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
