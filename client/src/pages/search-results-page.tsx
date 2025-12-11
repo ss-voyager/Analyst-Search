@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { SearchFilters } from "@/features/search/components/search-filters";
@@ -401,17 +402,49 @@ export default function SearchResultsPage() {
           {/* Theme Toggle */}
           <ThemeToggle />
 
-          {/* Saved Searches Button */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-9 gap-2"
-            onClick={() => toast.info("Saved Searches", { description: "You have 3 saved searches" })}
-            data-testid="button-saved-searches"
-          >
-            <Bookmark className="w-4 h-4" />
-            <span className="hidden sm:inline">Saved</span>
-          </Button>
+          {/* Saved Searches Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-9 gap-2"
+                data-testid="button-saved-searches"
+              >
+                <Bookmark className="w-4 h-4" />
+                <span className="hidden sm:inline">Saved</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-72">
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Saved Searches</div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="flex flex-col items-start gap-0.5 cursor-pointer py-2"
+                onClick={() => { setKeyword("vegetation"); setPlace("California"); }}
+              >
+                <span className="font-medium">Vegetation in California</span>
+                <span className="text-xs text-muted-foreground">Saved 2 days ago</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="flex flex-col items-start gap-0.5 cursor-pointer py-2"
+                onClick={() => { setKeyword("urban"); setPlace("Tokyo"); }}
+              >
+                <span className="font-medium">Urban Growth in Tokyo</span>
+                <span className="text-xs text-muted-foreground">Saved 5 days ago</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="flex flex-col items-start gap-0.5 cursor-pointer py-2"
+                onClick={() => { setKeyword("deforestation"); setPlace("Amazon"); }}
+              >
+                <span className="font-medium">Deforestation in Amazon</span>
+                <span className="text-xs text-muted-foreground">Saved 1 week ago</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-xs text-muted-foreground justify-center cursor-pointer">
+                View all saved searches
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Account / Login */}
           {isAuthenticated && user ? (
