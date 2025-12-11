@@ -788,6 +788,7 @@ export default function SearchResultsPage() {
            setDrawMode={setDrawMode}
            setSpatialFilter={setSpatialFilter}
            setPlace={setPlace}
+           spatialFilter={spatialFilter}
         />
       </div>
     </div>

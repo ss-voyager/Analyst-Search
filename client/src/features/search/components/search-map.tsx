@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap, ZoomControl } from 'react-leaflet';
 import { LatLngBounds, LatLng } from 'leaflet';
 import { Button } from "@/components/ui/button";
-import { Map as MapIcon, Globe, PanelRightClose, PanelRightOpen } from "lucide-react";
-import { MapDrawControl } from "@/components/map-draw-control";
+import { Map as MapIcon, Globe, Square, MapPin, Pentagon, MousePointer } from "lucide-react";
+import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
 import { SearchResult } from "../types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Helper to check if bounds are valid for Leaflet
 function hasValidBounds(result: SearchResult): boolean {
@@ -67,6 +68,7 @@ interface SearchMapProps {
   setDrawMode: (mode: 'none' | 'box' | 'point' | 'polygon') => void;
   setSpatialFilter: (filter: any) => void;
   setPlace: (place: string) => void;
+  spatialFilter?: { type: 'box' | 'point' | 'polygon'; data: any } | null;
 }
 
 export function SearchMap({
@@ -81,7 +83,8 @@ export function SearchMap({
   drawMode,
   setDrawMode,
   setSpatialFilter,
-  setPlace
+  setPlace,
+  spatialFilter
 }: SearchMapProps) {
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
 
@@ -207,25 +210,99 @@ export function SearchMap({
               zIndex={90}
             />
          )}
+
+         {/* Spatial Filter Layer */}
+         {spatialFilter && (
+            <SpatialFilterLayer type={spatialFilter.type} data={spatialFilter.data} />
+         )}
        </MapContainer>
 
        {/* Map Controls Overlay */}
        <div className="absolute top-4 right-4 z-[400] flex flex-col gap-2">
+         {/* Map Style Controls */}
          <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1 shadow-lg">
-            <button 
-              className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`} 
-              title="Street Map"
-              onClick={() => setMapStyle('streets')}
-            >
-              <MapIcon className="w-4 h-4" />
-            </button>
-            <button 
-              className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
-              title="Satellite Map"
-              onClick={() => setMapStyle('satellite')}
-            >
-              <Globe className="w-4 h-4" />
-            </button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'streets' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`} 
+                    onClick={() => setMapStyle('streets')}
+                  >
+                    <MapIcon className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Street Map</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${mapStyle === 'satellite' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                    onClick={() => setMapStyle('satellite')}
+                  >
+                    <Globe className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Satellite View</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+         </div>
+
+         {/* Drawing Tools */}
+         <div className="bg-background/80 backdrop-blur rounded-lg border border-border p-1 flex flex-col gap-1 shadow-lg">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'none' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                    onClick={() => setDrawMode('none')}
+                  >
+                    <MousePointer className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Select Mode</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'box' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                    onClick={() => setDrawMode('box')}
+                  >
+                    <Square className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Draw Rectangle</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'point' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                    onClick={() => setDrawMode('point')}
+                  >
+                    <MapPin className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Drop Pin</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className={`p-2 hover:bg-muted rounded transition-colors ${drawMode === 'polygon' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}
+                    onClick={() => setDrawMode('polygon')}
+                  >
+                    <Pentagon className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="left">Draw Polygon</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
          </div>
        </div>
        </div>
