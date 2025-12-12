@@ -22,6 +22,15 @@ function hasValidBounds(result: SearchResult): boolean {
   }
 }
 
+// Convert bounds from [lng, lat] to Leaflet's [lat, lng] format
+function toLeafletBounds(bounds: [[number, number], [number, number]]): LatLngBounds {
+  // bounds is [[lng1, lat1], [lng2, lat2]] - swap to [lat, lng]
+  return new LatLngBounds(
+    [bounds[0][1], bounds[0][0]],
+    [bounds[1][1], bounds[1][0]]
+  );
+}
+
 const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
   const map = useMap();
   useEffect(() => {
@@ -30,11 +39,12 @@ const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
         if (isFinite(sw.lat) && isFinite(sw.lng) && isFinite(ne.lat) && isFinite(ne.lng)) {
-          map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+          // Use fitBounds without animation to avoid NaN errors during animation
+          map.fitBounds(bounds, { padding: [50, 50], animate: false });
         }
       }
     } catch (e) {
-      console.error("Error in MapEffect flyToBounds", e);
+      console.error("Error in MapEffect fitBounds", e);
     }
   }, [bounds, map]);
   return null;
@@ -45,15 +55,16 @@ const PreviewEffect = ({ result }: { result: SearchResult | undefined }) => {
   useEffect(() => {
     if (result && hasValidBounds(result)) {
       try {
-        const bounds = new LatLngBounds(
-          (result.bounds as any)[0],
-          (result.bounds as any)[1]
-        );
+        const bounds = toLeafletBounds(result.bounds as [[number, number], [number, number]]);
         if (bounds.isValid()) {
-          map.flyToBounds(bounds, { padding: [20, 20], duration: 1.5 });
+          const sw = bounds.getSouthWest();
+          const ne = bounds.getNorthEast();
+          if (isFinite(sw.lat) && isFinite(sw.lng) && isFinite(ne.lat) && isFinite(ne.lng)) {
+            map.fitBounds(bounds, { padding: [20, 20], animate: false });
+          }
         }
       } catch (e) {
-        console.error("Error flying to preview bounds", e);
+        console.error("Error fitting to preview bounds", e);
       }
     }
   }, [result, map]);
@@ -102,13 +113,10 @@ export function SearchMap({
     if (validResults.length > 0) {
       try {
         const firstResult = validResults[0];
-        const bounds = new LatLngBounds(
-            (firstResult.bounds as any)[0],
-            (firstResult.bounds as any)[1]
-        );
+        const bounds = toLeafletBounds(firstResult.bounds as [[number, number], [number, number]]);
         validResults.slice(1, 5).forEach(res => {
-            bounds.extend((res.bounds as any)[0]);
-            bounds.extend((res.bounds as any)[1]);
+            const resBounds = toLeafletBounds(res.bounds as [[number, number], [number, number]]);
+            bounds.extend(resBounds);
         });
         if (bounds.isValid()) {
           setMapBounds(bounds);
@@ -180,7 +188,7 @@ export function SearchMap({
           {validResults.map(result => (
             <Rectangle 
               key={`footprint-${result.id}`}
-              bounds={result.bounds} 
+              bounds={toLeafletBounds(result.bounds as [[number, number], [number, number]])} 
               pathOptions={{ 
                 color: hoveredResultId === result.id ? '#00ffff' : '#3b82f6', 
                 weight: hoveredResultId === result.id ? 2 : 1, 
@@ -190,10 +198,10 @@ export function SearchMap({
             />
           ))}
           {hoveredResult && hasValidBounds(hoveredResult) && (
-            <ImageOverlay url={hoveredResult.thumbnail} bounds={hoveredResult.bounds} opacity={0.9} zIndex={100} />
+            <ImageOverlay url={hoveredResult.thumbnail} bounds={toLeafletBounds(hoveredResult.bounds as [[number, number], [number, number]])} opacity={0.9} zIndex={100} />
           )}
           {previewedResult && previewedResult.id !== hoveredResultId && hasValidBounds(previewedResult) && (
-            <ImageOverlay url={previewedResult.thumbnail} bounds={previewedResult.bounds} opacity={0.9} zIndex={90} />
+            <ImageOverlay url={previewedResult.thumbnail} bounds={toLeafletBounds(previewedResult.bounds as [[number, number], [number, number]])} opacity={0.9} zIndex={90} />
           )}
           {spatialFilter && <SpatialFilterLayer type={spatialFilter.type} data={spatialFilter.data} />}
         </MapContainer>
