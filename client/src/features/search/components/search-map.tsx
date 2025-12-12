@@ -25,8 +25,16 @@ function hasValidBounds(result: SearchResult): boolean {
 const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
   const map = useMap();
   useEffect(() => {
-    if (bounds && bounds.isValid()) {
-      map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+    try {
+      if (bounds && bounds.isValid()) {
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        if (isFinite(sw.lat) && isFinite(sw.lng) && isFinite(ne.lat) && isFinite(ne.lng)) {
+          map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+        }
+      }
+    } catch (e) {
+      console.error("Error in MapEffect flyToBounds", e);
     }
   }, [bounds, map]);
   return null;
