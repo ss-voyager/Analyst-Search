@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar as CalendarIcon, Globe, Check, Layers, PanelLeftClose } from "lucide-react";
+import { Calendar as CalendarIcon, Globe, Check, Layers, ChevronDown, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -14,8 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Folder, FolderOpen, File } from "lucide-react";
 import { TreeNode } from "../types";
+import type { FacetCategory } from "../voyager-api";
 
 // --- FolderTree Component ---
 const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [] }: { nodes: TreeNode[], level?: number, onSelect?: (id: string, label: string) => void, selectedIds?: string[] }) => {
@@ -107,6 +108,10 @@ interface SearchFiltersProps {
   toggleProperty: (prop: string) => void;
   selectedPlatforms: string[];
   togglePlatform: (platform: string) => void;
+  // Voyager facets
+  voyagerFacets?: FacetCategory[];
+  selectedFacets?: Record<string, string[]>;
+  onFacetToggle?: (field: string, value: string) => void;
 }
 
 export function SearchFilters({
@@ -125,8 +130,20 @@ export function SearchFilters({
   selectedProperties,
   toggleProperty,
   selectedPlatforms,
-  togglePlatform
+  togglePlatform,
+  voyagerFacets = [],
+  selectedFacets = {},
+  onFacetToggle,
 }: SearchFiltersProps) {
+  const [expandedFacets, setExpandedFacets] = useState<Record<string, boolean>>({});
+
+  const toggleFacetExpanded = (field: string) => {
+    setExpandedFacets(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const isFacetValueSelected = (field: string, value: string) => {
+    return selectedFacets[field]?.includes(value) || false;
+  };
   return (
     <AnimatePresence mode="wait">
       {showFacets && (
@@ -272,31 +289,111 @@ export function SearchFilters({
 
               <Separator className="bg-border/50" />
 
-              <div className="space-y-3">
-                <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide mt-3">
-                  <Layers className="w-4 h-4 text-primary" /> Platform
-                </h3>
+              {/* Dynamic Voyager Facets */}
+              {voyagerFacets.length > 0 && (
                 <div className="space-y-2">
-                  {['Sentinel-1', 'Sentinel-2', 'Landsat 8', 'Landsat 9', 'Terra', 'Aqua'].map(p => (
-                    <div key={p} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`p-${p}`} 
-                        checked={selectedPlatforms.includes(p)}
-                        onCheckedChange={() => togglePlatform(p)}
-                      />
-                      <Label 
-                        htmlFor={`p-${p}`} 
-                        className={cn(
-                          "text-xs font-normal cursor-pointer",
-                          selectedPlatforms.includes(p) ? "text-foreground" : "text-muted-foreground"
-                        )}
+                  <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                    <Layers className="w-4 h-4 text-primary" /> Filters from API
+                  </h3>
+                  {voyagerFacets.map((category) => {
+                    const isExpanded = expandedFacets[category.field] || false;
+                    const selectedCount = selectedFacets[category.field]?.length || 0;
+
+                    return (
+                      <Collapsible
+                        key={category.field}
+                        open={isExpanded}
+                        onOpenChange={() => toggleFacetExpanded(category.field)}
                       >
-                        {p}
-                      </Label>
-                    </div>
-                  ))}
+                        <CollapsibleTrigger className="flex items-center justify-between w-full p-2 hover:bg-muted/50 rounded-lg text-left group">
+                          <span className="text-xs font-medium flex items-center gap-2">
+                            {category.displayName}
+                            {selectedCount > 0 && (
+                              <span className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                                {selectedCount}
+                              </span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] text-muted-foreground">
+                              {category.values.length}
+                            </span>
+                            {isExpanded ? (
+                              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                            )}
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pl-2 pt-1 pb-2">
+                          <div className="space-y-0.5 max-h-40 overflow-y-auto pr-2">
+                            {category.values.slice(0, 20).map((value) => {
+                              const isSelected = isFacetValueSelected(category.field, value.name);
+                              return (
+                                <label
+                                  key={`${category.field}-${value.name}`}
+                                  className={cn(
+                                    "flex items-center gap-2 text-xs cursor-pointer py-1 px-1.5 rounded transition-colors",
+                                    isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
+                                  )}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => onFacetToggle?.(category.field, value.name)}
+                                    className="h-3 w-3"
+                                  />
+                                  <span className="flex-1 truncate" title={value.name}>
+                                    {value.name}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                                    {value.count.toLocaleString()}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                            {category.values.length > 20 && (
+                              <p className="text-[10px] text-muted-foreground pl-5 pt-1">
+                                +{category.values.length - 20} more...
+                              </p>
+                            )}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
+
+              {/* Static Platform section - fallback when no Voyager facets */}
+              {voyagerFacets.length === 0 && (
+                <>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide mt-3">
+                      <Layers className="w-4 h-4 text-primary" /> Platform
+                    </h3>
+                    <div className="space-y-2">
+                      {['Sentinel-1', 'Sentinel-2', 'Landsat 8', 'Landsat 9', 'Terra', 'Aqua'].map(p => (
+                        <div key={p} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`p-${p}`}
+                            checked={selectedPlatforms.includes(p)}
+                            onCheckedChange={() => togglePlatform(p)}
+                          />
+                          <Label
+                            htmlFor={`p-${p}`}
+                            className={cn(
+                              "text-xs font-normal cursor-pointer",
+                              selectedPlatforms.includes(p) ? "text-foreground" : "text-muted-foreground"
+                            )}
+                          >
+                            {p}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <Separator className="bg-border" />
             </div>

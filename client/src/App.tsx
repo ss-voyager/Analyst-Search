@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing-page";
 import SearchResultsPage from "@/pages/search-results-page";
 import ItemDetailPage from "@/pages/item-detail-page";
+import VoyagerSearchPage from "@/pages/voyager-search-page";
 import "leaflet/dist/leaflet.css";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={LandingPage} />
       <Route path="/search" component={SearchResultsPage} />
       <Route path="/item/:id" component={ItemDetailPage} />
+      <Route path="/voyager" component={VoyagerSearchPage} />
       <Route component={NotFound} />
     </Switch>
   );

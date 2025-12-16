@@ -5,13 +5,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MapPin, MoreHorizontal, Download, Share2, Search, Loader2 } from "lucide-react";
-import { SearchResult } from "../types";
+import { SearchResult, VoyagerSearchResult } from "../types";
+
+// Generic result type that works with both local and Voyager results
+type GenericResult = SearchResult | VoyagerSearchResult;
 
 interface SearchResultsListProps {
   isLoading: boolean;
-  filteredResults: SearchResult[];
-  setHoveredResultId: (id: number | null) => void;
-  setPreviewedResultId: (id: number | null) => void;
+  filteredResults: GenericResult[];
+  setHoveredResultId: (id: number | string | null) => void;
+  setPreviewedResultId: (id: number | string | null) => void;
   setLocation: (loc: string) => void;
   onFilterByFormat?: (format: string) => void;
   onFilterByProvider?: (provider: string) => void;
@@ -157,7 +160,7 @@ export function SearchResultsList({
                        <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
                          <p>
                            <span className="text-foreground/70">Format:</span>{' '}
-                           <button 
+                           <button
                              className="text-primary hover:underline"
                              onClick={(e) => { e.stopPropagation(); if (result.format) onFilterByFormat?.(result.format); }}
                            >
@@ -166,11 +169,15 @@ export function SearchResultsList({
                          </p>
                          <p>
                            <span className="text-foreground/70">Author:</span>{' '}
-                           <button 
+                           <button
                              className="text-primary hover:underline"
-                             onClick={(e) => { e.stopPropagation(); if (result.provider) onFilterByProvider?.(result.provider); }}
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               const provider = 'provider' in result ? result.provider : ('agency' in result ? result.agency : undefined);
+                               if (provider) onFilterByProvider?.(provider);
+                             }}
                            >
-                             {result.provider || 'Unknown'}
+                             {'provider' in result ? result.provider : ('agency' in result ? result.agency : 'Unknown')}
                            </button>
                          </p>
                        </div>

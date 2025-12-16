@@ -24,8 +24,9 @@ import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
 import { HIERARCHY_TREE, KEYWORDS } from "@/features/search/mock-data";
-import { useSatelliteItems, useSaveSearch } from "@/features/search/api";
-import { toSearchResult } from "@/features/search/types";
+import { useSaveSearch } from "@/features/search/api";
+import { useVoyagerSearch, useVoyagerFacets, parseFacetFields, buildFilterQuery, toSearchResultFromVoyager, type FacetCategory } from "@/features/search/voyager-api";
+import type { VoyagerSearchResult } from "@/features/search/types";
 
 
 export default function SearchResultsPage() {
@@ -64,8 +65,8 @@ export default function SearchResultsPage() {
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [keywordSearch, setKeywordSearch] = useState("");
-  const [hoveredResultId, setHoveredResultId] = useState<number | null>(null);
-  const [previewedResultId, setPreviewedResultId] = useState<number | null>(null);
+  const [hoveredResultId, setHoveredResultId] = useState<number | string | null>(null);
+  const [previewedResultId, setPreviewedResultId] = useState<number | string | null>(null);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
   
   // Saved Search State
@@ -298,25 +299,72 @@ export default function SearchResultsPage() {
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point' | 'polygon'>('none');
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
-  // API call to fetch satellite items
-  const { data: satelliteData, isLoading: isApiLoading, error } = useSatelliteItems({
-    keyword,
-    locationIds: selectedLocationIds.length > 0 ? selectedLocationIds : undefined,
-    keywords: selectedKeywords.length > 0 ? selectedKeywords : undefined,
-    properties: selectedProperties.length > 0 ? selectedProperties : undefined,
-    dateFrom: date?.from?.toISOString(),
-    dateTo: date?.to?.toISOString(),
-    sortBy: sortBy === 'relevance' ? undefined : sortBy,
-    limit: 100,
+  // Voyager facet state
+  const [facets, setFacets] = useState<FacetCategory[]>([]);
+  const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
+
+  // Build filter queries from selected facets
+  const filterQueries = Object.entries(selectedFacets)
+    .filter(([_, values]) => values.length > 0)
+    .map(([field, values]) => buildFilterQuery(field, values))
+    .filter((fq): fq is string => fq !== null);
+
+  // Build search query from keyword
+  const searchQuery = keyword ? keyword : undefined;
+
+  // Voyager API calls
+  const { data: searchData, isLoading: isSearchLoading } = useVoyagerSearch({
+    q: searchQuery,
+    fq: filterQueries,
+    rows: 48,
+    sort: sortBy === 'relevance' ? 'score desc' : sortBy === 'date_desc' ? 'modified desc' : sortBy === 'date_asc' ? 'modified asc' : 'score desc',
   });
+
+  const { data: facetData, isLoading: isFacetLoading } = useVoyagerFacets({
+    q: searchQuery,
+    fq: filterQueries,
+  });
+
+  // Parse facets from API response
+  useEffect(() => {
+    if (facetData?.facet_counts?.facet_fields) {
+      const parsedFacets = parseFacetFields(facetData.facet_counts.facet_fields);
+      setFacets(parsedFacets);
+    }
+  }, [facetData]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Convert database results to search results
-  const filteredResults = satelliteData ? satelliteData.map(toSearchResult) : [];
+  // Convert Voyager results to UI format
+  const filteredResults: VoyagerSearchResult[] = searchData?.response?.docs
+    ? searchData.response.docs.map(toSearchResultFromVoyager)
+    : [];
+
+  // Total results count from Voyager
+  const totalResults = searchData?.response?.numFound || 0;
+
+  // Handle facet toggle
+  const handleFacetToggle = (field: string, value: string) => {
+    setSelectedFacets(prev => {
+      const currentValues = prev[field] || [];
+      const isSelected = currentValues.includes(value);
+
+      if (isSelected) {
+        return {
+          ...prev,
+          [field]: currentValues.filter(v => v !== value)
+        };
+      } else {
+        return {
+          ...prev,
+          [field]: [...currentValues, value]
+        };
+      }
+    });
+  };
 
   const [searchHistory, setSearchHistory] = useState<string[]>([
     "Vegetation in California",
@@ -692,7 +740,7 @@ export default function SearchResultsPage() {
 
           {/* Results Count */}
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {filteredResults.length} results
+            {totalResults.toLocaleString()} results
           </span>
 
           {/* Sort Options */}
@@ -945,6 +993,9 @@ export default function SearchResultsPage() {
           toggleProperty={toggleProperty}
           selectedPlatforms={selectedPlatforms}
           togglePlatform={togglePlatform}
+          voyagerFacets={facets}
+          selectedFacets={selectedFacets}
+          onFacetToggle={handleFacetToggle}
         />
 
         {/* Results Grid (Refactored) */}

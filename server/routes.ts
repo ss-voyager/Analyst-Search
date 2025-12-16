@@ -5,12 +5,18 @@ import { insertSatelliteItemSchema, insertSavedSearchSchema } from "@shared/sche
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
+const VOYAGER_BASE_URL = "https://ogc-sdi.voyagersearch.com/solr/v0/select";
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Setup Replit Auth
-  await setupAuth(app);
+  // Setup Replit Auth (skip if REPL_ID not set - local development)
+  if (process.env.REPL_ID) {
+    await setupAuth(app);
+  } else {
+    console.log("Skipping Replit auth setup (REPL_ID not set - local dev mode)");
+  }
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -167,6 +173,92 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting saved search:", error);
       res.status(500).json({ error: "Failed to delete saved search" });
+    }
+  });
+
+  // Voyager API proxy - Search (GET)
+  app.get("/api/voyager/search", async (req, res) => {
+    try {
+      const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+      const url = `${VOYAGER_BASE_URL}?${queryString}`;
+
+      console.log("Voyager search URL:", url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Voyager API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying Voyager search:", error);
+      res.status(500).json({ error: "Failed to fetch from Voyager API" });
+    }
+  });
+
+  // Voyager API proxy - Search (POST for large queries)
+  app.post("/api/voyager/search", async (req, res) => {
+    try {
+      const params = req.body;
+      const queryString = new URLSearchParams(params).toString();
+      const url = `${VOYAGER_BASE_URL}?${queryString}`;
+
+      console.log("Voyager search POST URL:", url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Voyager API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying Voyager search:", error);
+      res.status(500).json({ error: "Failed to fetch from Voyager API" });
+    }
+  });
+
+  // Voyager API proxy - Facets (GET)
+  app.get("/api/voyager/facets", async (req, res) => {
+    try {
+      const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+      const url = `${VOYAGER_BASE_URL}?${queryString}`;
+
+      console.log("Voyager facets URL:", url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Voyager API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying Voyager facets:", error);
+      res.status(500).json({ error: "Failed to fetch facets from Voyager API" });
+    }
+  });
+
+  // Voyager API proxy - Facets (POST for large queries)
+  app.post("/api/voyager/facets", async (req, res) => {
+    try {
+      const params = req.body;
+      const queryString = new URLSearchParams(params).toString();
+      const url = `${VOYAGER_BASE_URL}?${queryString}`;
+
+      console.log("Voyager facets POST URL:", url);
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Voyager API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error proxying Voyager facets:", error);
+      res.status(500).json({ error: "Failed to fetch facets from Voyager API" });
     }
   });
 

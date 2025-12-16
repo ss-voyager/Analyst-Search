@@ -3,11 +3,14 @@ import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap } from 'react-
 import { LatLngBounds, LatLng } from 'leaflet';
 import { Map as MapIcon, Globe, Square, MapPin, Pentagon, MousePointer } from "lucide-react";
 import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
-import { SearchResult } from "../types";
+import { SearchResult, VoyagerSearchResult } from "../types";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-function hasValidBounds(result: SearchResult): boolean {
+// Generic result type that works with both local and Voyager results
+type GenericResult = SearchResult | VoyagerSearchResult;
+
+function hasValidBounds(result: GenericResult): boolean {
   try {
     const bounds = result.bounds as [[number, number], [number, number]];
     if (!Array.isArray(bounds) || bounds.length !== 2) return false;
@@ -50,7 +53,7 @@ const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
   return null;
 };
 
-const PreviewEffect = ({ result }: { result: SearchResult | undefined }) => {
+const PreviewEffect = ({ result }: { result: GenericResult | undefined }) => {
   const map = useMap();
   useEffect(() => {
     if (result && hasValidBounds(result)) {
@@ -77,9 +80,9 @@ interface SearchMapProps {
   mapStyle: 'streets' | 'satellite';
   setMapStyle: (style: 'streets' | 'satellite') => void;
   isDark: boolean;
-  filteredResults: SearchResult[];
-  hoveredResultId: number | null;
-  previewedResultId: number | null;
+  filteredResults: GenericResult[];
+  hoveredResultId: number | string | null;
+  previewedResultId: number | string | null;
   drawMode: 'none' | 'box' | 'point' | 'polygon';
   setDrawMode: (mode: 'none' | 'box' | 'point' | 'polygon') => void;
   setSpatialFilter: (filter: any) => void;
