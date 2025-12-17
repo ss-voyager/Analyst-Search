@@ -138,7 +138,8 @@ export function SearchMap({
   const handleDrawBox = (bounds: LatLngBounds) => {
     setSpatialFilter({ type: 'box', data: bounds });
     setDrawMode('none');
-    setPlace(`[${bounds.getWest().toFixed(2)}, ${bounds.getSouth().toFixed(2)}, ${bounds.getEast().toFixed(2)}, ${bounds.getNorth().toFixed(2)}]`);
+    // Format: west,south,east,north (no brackets, no spaces) for Voyager API compatibility
+    setPlace(`${bounds.getWest().toFixed(4)},${bounds.getSouth().toFixed(4)},${bounds.getEast().toFixed(4)},${bounds.getNorth().toFixed(4)}`);
   };
 
   const handleDrawPoint = (point: LatLng) => {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
-import { 
-  Search, MapPin, Filter, ArrowLeft, History, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark, Settings, LogOut
+import {
+  Search, MapPin, Filter, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark, Settings, LogOut
 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,9 +23,9 @@ import { cn } from "@/lib/utils";
 import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
-import { HIERARCHY_TREE, KEYWORDS } from "@/features/search/mock-data";
+import { HIERARCHY_TREE, KEYWORDS, LOCATION_TO_VOYAGER, expandSelectedLocations } from "@/features/search/mock-data";
 import { useSaveSearch } from "@/features/search/api";
-import { useVoyagerSearch, useVoyagerFacets, parseFacetFields, buildFilterQuery, toSearchResultFromVoyager, type FacetCategory } from "@/features/search/voyager-api";
+import { useInfiniteVoyagerSearch, buildLocationFilterQueries, buildKeywordFilterQuery, buildPropertyFilterQueries, toSearchResultFromVoyager } from "@/features/search/voyager-api";
 import type { VoyagerSearchResult } from "@/features/search/types";
 
 
@@ -299,72 +299,68 @@ export default function SearchResultsPage() {
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point' | 'polygon'>('none');
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
-  // Voyager facet state
-  const [facets, setFacets] = useState<FacetCategory[]>([]);
-  const [selectedFacets, setSelectedFacets] = useState<Record<string, string[]>>({});
+  // Build location filter queries from selected hierarchy locations
+  // Expand parent selections to include all descendants (e.g., "North America" includes USA, Canada, Mexico, and all states)
+  const expandedLocationIds = expandSelectedLocations(selectedLocationIds, HIERARCHY_TREE);
+  const locationFilterQueries = buildLocationFilterQueries(expandedLocationIds, LOCATION_TO_VOYAGER);
 
-  // Build filter queries from selected facets
-  const filterQueries = Object.entries(selectedFacets)
-    .filter(([_, values]) => values.length > 0)
-    .map(([field, values]) => buildFilterQuery(field, values))
-    .filter((fq): fq is string => fq !== null);
+  // Build keyword filter query from selected keywords
+  const keywordFilterQuery = buildKeywordFilterQuery(selectedKeywords);
+
+  // Build property filter queries from selected properties
+  const propertyFilterQueries = buildPropertyFilterQueries(selectedProperties);
+
+  // Combine all filter queries
+  const filterQueries = [
+    ...locationFilterQueries,
+    ...(keywordFilterQuery ? [keywordFilterQuery] : []),
+    ...propertyFilterQueries,
+  ];
 
   // Build search query from keyword
   const searchQuery = keyword ? keyword : undefined;
 
-  // Voyager API calls
-  const { data: searchData, isLoading: isSearchLoading } = useVoyagerSearch({
+  // Extract bbox from spatialFilter for map-based search
+  // spatialFilter.data is a Leaflet LatLngBounds object with methods getWest(), getSouth(), getEast(), getNorth()
+  const bboxFilter: [number, number, number, number] | undefined =
+    spatialFilter?.type === 'box' && spatialFilter.data
+      ? [
+          spatialFilter.data.getWest(), // west (minLng)
+          spatialFilter.data.getSouth(), // south (minLat)
+          spatialFilter.data.getEast(), // east (maxLng)
+          spatialFilter.data.getNorth(), // north (maxLat)
+        ]
+      : undefined;
+
+  // Voyager API calls with infinite pagination
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteVoyagerSearch({
     q: searchQuery,
     fq: filterQueries,
-    rows: 48,
     sort: sortBy === 'relevance' ? 'score desc' : sortBy === 'date_desc' ? 'modified desc' : sortBy === 'date_asc' ? 'modified asc' : 'score desc',
+    dateFrom: date?.from,
+    dateTo: date?.to,
+    bbox: bboxFilter,
+    place: place || undefined,
   });
-
-  const { data: facetData, isLoading: isFacetLoading } = useVoyagerFacets({
-    q: searchQuery,
-    fq: filterQueries,
-  });
-
-  // Parse facets from API response
-  useEffect(() => {
-    if (facetData?.facet_counts?.facet_fields) {
-      const parsedFacets = parseFacetFields(facetData.facet_counts.facet_fields);
-      setFacets(parsedFacets);
-    }
-  }, [facetData]);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
 
-  // Convert Voyager results to UI format
-  const filteredResults: VoyagerSearchResult[] = searchData?.response?.docs
-    ? searchData.response.docs.map(toSearchResultFromVoyager)
+  // Convert Voyager results to UI format (flatten all pages)
+  const filteredResults: VoyagerSearchResult[] = searchData?.pages
+    ? searchData.pages.flatMap(page => page.response.docs.map(toSearchResultFromVoyager))
     : [];
 
-  // Total results count from Voyager
-  const totalResults = searchData?.response?.numFound || 0;
-
-  // Handle facet toggle
-  const handleFacetToggle = (field: string, value: string) => {
-    setSelectedFacets(prev => {
-      const currentValues = prev[field] || [];
-      const isSelected = currentValues.includes(value);
-
-      if (isSelected) {
-        return {
-          ...prev,
-          [field]: currentValues.filter(v => v !== value)
-        };
-      } else {
-        return {
-          ...prev,
-          [field]: [...currentValues, value]
-        };
-      }
-    });
-  };
+  // Total results count from Voyager (from first page)
+  const totalResults = searchData?.pages?.[0]?.response?.numFound || 0;
 
   const [searchHistory, setSearchHistory] = useState<string[]>([
     "Vegetation in California",
@@ -978,7 +974,6 @@ export default function SearchResultsPage() {
         {/* Facets Panel (Refactored) */}
         <SearchFilters
           showFacets={showFacets}
-          setShowFacets={setShowFacets}
           date={date}
           setDate={setDate}
           hierarchyTree={HIERARCHY_TREE}
@@ -991,16 +986,11 @@ export default function SearchResultsPage() {
           selectedKeywords={selectedKeywords}
           selectedProperties={selectedProperties}
           toggleProperty={toggleProperty}
-          selectedPlatforms={selectedPlatforms}
-          togglePlatform={togglePlatform}
-          voyagerFacets={facets}
-          selectedFacets={selectedFacets}
-          onFacetToggle={handleFacetToggle}
         />
 
         {/* Results Grid (Refactored) */}
         <SearchResultsList
-          isLoading={isLoading}
+          isLoading={isLoading || isSearchLoading}
           filteredResults={filteredResults}
           setHoveredResultId={setHoveredResultId}
           setPreviewedResultId={setPreviewedResultId}
@@ -1009,6 +999,9 @@ export default function SearchResultsPage() {
           onFilterByProvider={(provider) => setKeyword(provider)}
           showFacets={showFacets}
           showMap={showMap}
+          onLoadMore={fetchNextPage}
+          hasMore={hasNextPage}
+          isLoadingMore={isFetchingNextPage}
         />
 
         {/* Right Panel - Map (Refactored) */}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 
 // Voyager API configuration
 const VOYAGER_CONFIG = {
@@ -83,6 +83,11 @@ export interface VoyagerSearchFilters {
   start?: number;
   rows?: number;
   sort?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  dateField?: string; // field to filter on, defaults to 'modified'
+  bbox?: [number, number, number, number]; // [west, south, east, north] / [minLng, minLat, maxLng, maxLat]
+  place?: string; // text-based place search
 }
 
 export interface VoyagerDoc {
@@ -135,6 +140,31 @@ export interface FacetCategory {
   field: string;
   displayName: string;
   values: FacetValue[];
+}
+
+// Internal helper to format date range query for Solr
+function formatDateRangeQuery(
+  dateFrom?: Date,
+  dateTo?: Date,
+  field: string = "modified"
+): string | null {
+  if (!dateFrom && !dateTo) return null;
+
+  const formatDate = (date: Date, isEnd: boolean = false): string => {
+    if (isEnd) {
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      return endOfDay.toISOString();
+    }
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    return startOfDay.toISOString();
+  };
+
+  const from = dateFrom ? formatDate(dateFrom, false) : "*";
+  const to = dateTo ? formatDate(dateTo, true) : "*";
+
+  return `${field}:[${from} TO ${to}]`;
 }
 
 // Parse facet response into structured data
@@ -190,6 +220,28 @@ function buildSearchUrl(filters: VoyagerSearchFilters): string {
     });
   }
 
+  // Add date range filter
+  if (filters.dateFrom || filters.dateTo) {
+    const dateField = filters.dateField || "modified";
+    const dateQuery = formatDateRangeQuery(filters.dateFrom, filters.dateTo, dateField);
+    if (dateQuery) {
+      url.searchParams.append("fq", dateQuery);
+    }
+  }
+
+  // Add bounding box filter for spatial search
+  // Voyager uses place parameter with place.op=within for bbox filtering
+  if (filters.bbox) {
+    const [west, south, east, north] = filters.bbox;
+    url.searchParams.append("place", `${west},${south},${east},${north}`);
+    url.searchParams.append("place.op", "within");
+  }
+  // Add place text search (Voyager's placefinder will geocode location names)
+  else if (filters.place) {
+    url.searchParams.append("place", filters.place);
+    url.searchParams.append("place.op", "within");
+  }
+
   // Add pagination
   url.searchParams.append("start", String(filters.start || 0));
   url.searchParams.append("rows", String(filters.rows || 48));
@@ -230,6 +282,15 @@ function buildFacetUrl(filters: VoyagerSearchFilters): string {
     filters.fq.forEach((fq) => {
       url.searchParams.append("fq", fq);
     });
+  }
+
+  // Add date range filter
+  if (filters.dateFrom || filters.dateTo) {
+    const dateField = filters.dateField || "modified";
+    const dateQuery = formatDateRangeQuery(filters.dateFrom, filters.dateTo, dateField);
+    if (dateQuery) {
+      url.searchParams.append("fq", dateQuery);
+    }
   }
 
   // No results needed, just facets
@@ -314,6 +375,28 @@ export function useVoyagerSearch(filters: VoyagerSearchFilters) {
   });
 }
 
+// React Query infinite query hook for Voyager search with pagination
+const ITEMS_PER_PAGE = 48;
+
+export function useInfiniteVoyagerSearch(filters: Omit<VoyagerSearchFilters, 'start' | 'rows'>) {
+  return useInfiniteQuery({
+    queryKey: ["voyagerSearchInfinite", filters],
+    queryFn: ({ pageParam = 0 }) => fetchVoyagerSearch({
+      ...filters,
+      start: pageParam,
+      rows: ITEMS_PER_PAGE,
+    }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      const totalLoaded = allPages.length * ITEMS_PER_PAGE;
+      const totalAvailable = lastPage.response.numFound;
+      // Return next start offset if more results available
+      return totalLoaded < totalAvailable ? totalLoaded : undefined;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
 // React Query hook for Voyager facets
 export function useVoyagerFacets(filters: VoyagerSearchFilters) {
   return useQuery({
@@ -332,6 +415,105 @@ export function buildFilterQuery(
 
   const escaped = values.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(" OR ");
   return `{!tag=${field}}${field}:(${escaped})`;
+}
+
+// Helper to build date range filter query for Solr (exported wrapper)
+export function buildDateRangeQuery(
+  dateFrom?: Date,
+  dateTo?: Date,
+  field: string = "modified"
+): string | null {
+  return formatDateRangeQuery(dateFrom, dateTo, field);
+}
+
+// Helper to build keyword filter query for Solr
+// Filters on the 'keywords' field which contains an array of keyword strings
+export function buildKeywordFilterQuery(
+  selectedKeywords: string[],
+  field: string = "keywords"
+): string | null {
+  if (!selectedKeywords || selectedKeywords.length === 0) return null;
+
+  const escaped = selectedKeywords.map((k) => `"${k.replace(/"/g, '\\"')}"`).join(" OR ");
+  return `${field}:(${escaped})`;
+}
+
+// Mapping of property names to Solr field existence queries
+// Using different strategies based on field type:
+// - For indexed fields: use field:* or _exists_:field
+// - For special cases: use related facetable fields
+const PROPERTY_TO_SOLR_QUERY: Record<string, string> = {
+  // Has Thumbnail - filter by format types that typically have thumbnails
+  "has_thumbnail": "format_category:(GIS OR Image OR Map OR Document)",
+  // Has Spatial Info - filter by geometry_type existing
+  "has_spatial": "geometry_type:*",
+  // Has Temporal Info - filter by year field existing
+  "has_temporal": "fi_year:*",
+  // Is Downloadable - filter by format types that are downloadable
+  "is_downloadable": "format_type:(File OR Dataset OR Record OR Layer)",
+};
+
+// Helper to build property filter queries for Solr
+// Properties filter on field existence (e.g., has thumbnail, has spatial data)
+export function buildPropertyFilterQueries(
+  selectedProperties: string[]
+): string[] {
+  if (!selectedProperties || selectedProperties.length === 0) return [];
+
+  const queries: string[] = [];
+  for (const prop of selectedProperties) {
+    const solrQuery = PROPERTY_TO_SOLR_QUERY[prop];
+    if (solrQuery) {
+      // Wrap in parentheses if it contains OR
+      queries.push(solrQuery.includes(" OR ") ? `(${solrQuery})` : solrQuery);
+    }
+  }
+
+  return queries;
+}
+
+// Location mapping type (imported from mock-data or defined here)
+interface LocationMapping {
+  field: string;
+  value: string;
+}
+
+// Helper to build location filter queries from selected hierarchy IDs
+// Creates a single OR query across all location fields so results match ANY selected location
+export function buildLocationFilterQueries(
+  selectedIds: string[],
+  locationMapping: Record<string, LocationMapping>
+): string[] {
+  if (!selectedIds || selectedIds.length === 0) return [];
+
+  // Group selected locations by their Voyager field
+  const groupedByField: Record<string, string[]> = {};
+
+  for (const id of selectedIds) {
+    const mapping = locationMapping[id];
+    if (mapping) {
+      if (!groupedByField[mapping.field]) {
+        groupedByField[mapping.field] = [];
+      }
+      groupedByField[mapping.field].push(mapping.value);
+    }
+  }
+
+  // Build a single combined OR query across all fields
+  // This ensures results match ANY of the selected locations, not ALL
+  const fieldQueries: string[] = [];
+  for (const [field, values] of Object.entries(groupedByField)) {
+    if (values.length > 0) {
+      const escaped = values.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(" OR ");
+      fieldQueries.push(`${field}:(${escaped})`);
+    }
+  }
+
+  if (fieldQueries.length === 0) return [];
+
+  // Combine all field queries with OR and return as single filter query
+  const combinedQuery = fieldQueries.join(" OR ");
+  return [`(${combinedQuery})`];
 }
 
 // Convert Voyager doc to a format suitable for the UI

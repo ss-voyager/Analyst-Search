@@ -179,7 +179,17 @@ export async function registerRoutes(
   // Voyager API proxy - Search (GET)
   app.get("/api/voyager/search", async (req, res) => {
     try {
-      const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+      // Handle array parameters correctly (e.g., multiple fq values)
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(req.query)) {
+        if (Array.isArray(value)) {
+          // Add each array item as a separate parameter
+          value.forEach((v) => params.append(key, String(v)));
+        } else if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      }
+      const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
       console.log("Voyager search URL:", url);
@@ -200,8 +210,16 @@ export async function registerRoutes(
   // Voyager API proxy - Search (POST for large queries)
   app.post("/api/voyager/search", async (req, res) => {
     try {
-      const params = req.body;
-      const queryString = new URLSearchParams(params).toString();
+      // Handle array parameters correctly (e.g., multiple fq values)
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(req.body)) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, String(v)));
+        } else if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      }
+      const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
       console.log("Voyager search POST URL:", url);
@@ -222,7 +240,16 @@ export async function registerRoutes(
   // Voyager API proxy - Facets (GET)
   app.get("/api/voyager/facets", async (req, res) => {
     try {
-      const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
+      // Handle array parameters correctly (e.g., multiple fq values)
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(req.query)) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, String(v)));
+        } else if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      }
+      const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
       console.log("Voyager facets URL:", url);
@@ -243,8 +270,16 @@ export async function registerRoutes(
   // Voyager API proxy - Facets (POST for large queries)
   app.post("/api/voyager/facets", async (req, res) => {
     try {
-      const params = req.body;
-      const queryString = new URLSearchParams(params).toString();
+      // Handle array parameters correctly (e.g., multiple fq values)
+      const params = new URLSearchParams();
+      for (const [key, value] of Object.entries(req.body)) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => params.append(key, String(v)));
+        } else if (value !== undefined) {
+          params.append(key, String(value));
+        }
+      }
+      const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
       console.log("Voyager facets POST URL:", url);

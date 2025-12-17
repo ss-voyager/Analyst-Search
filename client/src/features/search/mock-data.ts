@@ -55,8 +55,8 @@ export const HIERARCHY_TREE: TreeNode[] = [
     id: "na",
     label: "North America",
     children: [
-      { 
-        id: "usa", 
+      {
+        id: "usa",
         label: "United States",
         children: [
           { id: "ca", label: "California" },
@@ -73,8 +73,8 @@ export const HIERARCHY_TREE: TreeNode[] = [
     id: "eu",
     label: "Europe",
     children: [
-      { 
-        id: "uk", 
+      {
+        id: "uk",
         label: "United Kingdom",
         children: [
           { id: "eng", label: "England" },
@@ -118,6 +118,98 @@ export const HIERARCHY_TREE: TreeNode[] = [
     ]
   }
 ];
+
+// Mapping from hierarchy IDs to Voyager API facet field and value
+// The Voyager API uses grp_Region, grp_Country, grp_State for geography filtering
+export interface LocationMapping {
+  field: string;  // Voyager facet field name
+  value: string;  // Value to filter on (with emoji prefix as it appears in Voyager)
+}
+
+export const LOCATION_TO_VOYAGER: Record<string, LocationMapping> = {
+  // Regions
+  "na": { field: "grp_Region", value: "North America" },
+  "eu": { field: "grp_Region", value: "Europe" },
+  "as": { field: "grp_Region", value: "Asia" },
+  "sa": { field: "grp_Region", value: "South America" },
+  "af": { field: "grp_Region", value: "Africa" },
+
+  // Countries (with flag emoji prefix as they appear in Voyager)
+  "usa": { field: "grp_Country", value: "🇺🇸 United States" },
+  "can": { field: "grp_Country", value: "🇨🇦 Canada" },
+  "mex": { field: "grp_Country", value: "🇲🇽 Mexico" },
+  "uk": { field: "grp_Country", value: "🇬🇧 United Kingdom" },
+  "fr": { field: "grp_Country", value: "🇫🇷 France" },
+  "de": { field: "grp_Country", value: "🇩🇪 Germany" },
+  "it": { field: "grp_Country", value: "🇮🇹 Italy" },
+  "es": { field: "grp_Country", value: "🇪🇸 Spain" },
+  "jp": { field: "grp_Country", value: "🇯🇵 Japan" },
+  "cn": { field: "grp_Country", value: "🇨🇳 China" },
+  "in": { field: "grp_Country", value: "🇮🇳 India" },
+  "sg": { field: "grp_Country", value: "🇸🇬 Singapore" },
+  "br": { field: "grp_Country", value: "🇧🇷 Brazil" },
+  "ar": { field: "grp_Country", value: "🇦🇷 Argentina" },
+  "cl": { field: "grp_Country", value: "🇨🇱 Chile" },
+  "eg": { field: "grp_Country", value: "🇪🇬 Egypt" },
+  "za": { field: "grp_Country", value: "🇿🇦 South Africa" },
+  "ng": { field: "grp_Country", value: "🇳🇬 Nigeria" },
+  "ke": { field: "grp_Country", value: "🇰🇪 Kenya" },
+
+  // US States
+  "ca": { field: "grp_State", value: "California" },
+  "ny": { field: "grp_State", value: "New York" },
+  "tx": { field: "grp_State", value: "Texas" },
+  "fl": { field: "grp_State", value: "Florida" },
+
+  // UK regions (treated as states)
+  "eng": { field: "grp_State", value: "England" },
+  "sct": { field: "grp_State", value: "Scotland" },
+  "wls": { field: "grp_State", value: "Wales" },
+};
+
+// Helper to get all descendant IDs from a tree node (including the node itself)
+export function getAllDescendantIds(nodeId: string, tree: TreeNode[]): string[] {
+  const ids: string[] = [];
+
+  function findAndCollect(nodes: TreeNode[], targetId: string, collecting: boolean): boolean {
+    for (const node of nodes) {
+      if (node.id === targetId || collecting) {
+        // Found the target or we're already collecting descendants
+        ids.push(node.id);
+        if (node.children) {
+          // Collect all children recursively
+          for (const child of node.children) {
+            findAndCollect([child], child.id, true);
+          }
+        }
+        if (node.id === targetId) {
+          return true; // Found the target, stop searching siblings
+        }
+      } else if (node.children) {
+        // Keep searching in children
+        if (findAndCollect(node.children, targetId, false)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  findAndCollect(tree, nodeId, false);
+  return ids;
+}
+
+// Expand selected IDs to include all descendants
+export function expandSelectedLocations(selectedIds: string[], tree: TreeNode[]): string[] {
+  const expandedIds = new Set<string>();
+
+  for (const id of selectedIds) {
+    const descendants = getAllDescendantIds(id, tree);
+    descendants.forEach(d => expandedIds.add(d));
+  }
+
+  return Array.from(expandedIds);
+}
 
 export const KEYWORDS = [
   "Vegetation", "Water", "Urban", "Agriculture", "Disaster", 

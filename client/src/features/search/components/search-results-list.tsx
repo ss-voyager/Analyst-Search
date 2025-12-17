@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -20,9 +20,10 @@ interface SearchResultsListProps {
   onFilterByProvider?: (provider: string) => void;
   showFacets?: boolean;
   showMap?: boolean;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
 }
-
-const ITEMS_PER_PAGE = 12;
 
 export function SearchResultsList({
   isLoading,
@@ -33,42 +34,61 @@ export function SearchResultsList({
   onFilterByFormat,
   onFilterByProvider,
   showFacets = true,
-  showMap = true
+  showMap = true,
+  onLoadMore,
+  hasMore: hasMoreFromServer = false,
+  isLoadingMore: isLoadingMoreFromServer = false
 }: SearchResultsListProps) {
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  // Reset visible count when results change
-  useEffect(() => {
-    setVisibleCount(ITEMS_PER_PAGE);
-  }, [filteredResults.length]);
+  // Store latest values in refs so observer callback always has current values
+  const hasMoreRef = useRef(hasMoreFromServer);
+  const isLoadingMoreRef = useRef(isLoadingMoreFromServer);
+  const onLoadMoreRef = useRef(onLoadMore);
 
-  // Infinite scroll observer
+  // Keep refs in sync with props
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && visibleCount < filteredResults.length && !isLoadingMore) {
-          setIsLoadingMore(true);
-          // Simulate loading delay for smooth UX
-          setTimeout(() => {
-            setVisibleCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredResults.length));
-            setIsLoadingMore(false);
-          }, 300);
+    hasMoreRef.current = hasMoreFromServer;
+    isLoadingMoreRef.current = isLoadingMoreFromServer;
+    onLoadMoreRef.current = onLoadMore;
+  });
+
+  // Set up intersection observer - runs once on mount and reconnects when results change
+  useEffect(() => {
+    let observer: IntersectionObserver | null = null;
+
+    // Small delay to ensure ScrollArea viewport is mounted
+    const timeoutId = setTimeout(() => {
+      const scrollViewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement | null;
+      const sentinel = loadMoreRef.current;
+
+      if (!sentinel) return;
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          // Read from refs to get latest values
+          if (entries[0].isIntersecting && hasMoreRef.current && !isLoadingMoreRef.current && onLoadMoreRef.current) {
+            onLoadMoreRef.current();
+          }
+        },
+        {
+          root: scrollViewport,
+          threshold: 0.1,
+          rootMargin: '400px'
         }
-      },
-      { threshold: 0.1, rootMargin: '100px' }
-    );
+      );
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
-    }
+      observer.observe(sentinel);
+    }, 100);
 
-    return () => observer.disconnect();
-  }, [visibleCount, filteredResults.length, isLoadingMore]);
-
-  const visibleResults = filteredResults.slice(0, visibleCount);
-  const hasMore = visibleCount < filteredResults.length;
+    return () => {
+      clearTimeout(timeoutId);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [filteredResults.length, isLoading]); // Re-run when results change or loading state changes
 
   // Adjust grid columns based on which panels are visible
   const getGridCols = () => {
@@ -81,7 +101,7 @@ export function SearchResultsList({
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 bg-muted/30 dark:bg-background/50">
+    <div className="flex-1 flex flex-col min-w-0 bg-muted/30 dark:bg-background/50" ref={scrollAreaRef}>
        <ScrollArea className="flex-1">
          <div className="p-4">
            {isLoading ? (
@@ -107,7 +127,7 @@ export function SearchResultsList({
            ) : filteredResults.length > 0 ? (
              <>
                <div className={`grid ${getGridCols()} gap-4`}>
-                 {visibleResults.map((result, i) => (
+                 {filteredResults.map((result, i) => (
                    <motion.div
                      key={result.id}
                      initial={{ opacity: 0, y: 20 }}
@@ -209,17 +229,15 @@ export function SearchResultsList({
                  ))}
                </div>
                
-               {/* Load More Trigger */}
-               {hasMore && (
-                 <div ref={loadMoreRef} className="flex justify-center items-center py-8">
-                   {isLoadingMore && (
-                     <div className="flex items-center gap-2 text-muted-foreground">
-                       <Loader2 className="w-5 h-5 animate-spin" />
-                       <span className="text-sm">Loading more...</span>
-                     </div>
-                   )}
-                 </div>
-               )}
+               {/* Load More Trigger - always rendered so observer can watch it */}
+               <div ref={loadMoreRef} className="flex justify-center items-center py-8">
+                 {isLoadingMoreFromServer && (
+                   <div className="flex items-center gap-2 text-muted-foreground">
+                     <Loader2 className="w-5 h-5 animate-spin" />
+                     <span className="text-sm">Loading more...</span>
+                   </div>
+                 )}
+               </div>
              </>
            ) : (
              <div className="flex flex-col items-center justify-center h-[50vh] text-center p-8 border border-dashed border-border rounded-xl bg-muted/10">

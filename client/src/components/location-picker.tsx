@@ -69,9 +69,10 @@ export function LocationPicker({ isOpen, onClose, onSelect }: LocationPickerProp
     // Use tempBounds if we just drew it, or selectedBounds if we had one (logic can be refined)
     // For now, tempBounds tracks the latest draw action.
     const boundsToUse = tempBounds || selectedBounds;
-    
+
     if (boundsToUse) {
-      const boxString = `[${boundsToUse.getWest().toFixed(4)}, ${boundsToUse.getSouth().toFixed(4)}, ${boundsToUse.getEast().toFixed(4)}, ${boundsToUse.getNorth().toFixed(4)}]`;
+      // Format: west,south,east,north (no brackets, no spaces) for Voyager API compatibility
+      const boxString = `${boundsToUse.getWest().toFixed(4)},${boundsToUse.getSouth().toFixed(4)},${boundsToUse.getEast().toFixed(4)},${boundsToUse.getNorth().toFixed(4)}`;
       onSelect(boxString);
       onClose();
     }
