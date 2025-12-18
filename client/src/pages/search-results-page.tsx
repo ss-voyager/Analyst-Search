@@ -62,7 +62,10 @@ export default function SearchResultsPage() {
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [date, setDate] = useState<DateRange | undefined>();
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
-  const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
+  const [selectedKeywords, setSelectedKeywords] = useState<string[]>(() => {
+    const keywordsParam = params.get("keywords");
+    return keywordsParam ? [keywordsParam] : [];
+  });
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [keywordSearch, setKeywordSearch] = useState("");
   const [hoveredResultId, setHoveredResultId] = useState<number | string | null>(null);
@@ -266,6 +269,18 @@ export default function SearchResultsPage() {
   useEffect(() => {
     setSelectedIndex(-1);
   }, [place]);
+
+  // Handle URL param changes (e.g., when navigating from item detail page with keyword filter)
+  useEffect(() => {
+    const currentParams = new URLSearchParams(searchString);
+    const keywordsParam = currentParams.get("keywords");
+    if (keywordsParam) {
+      // Set the keyword from URL (replacing any existing URL-based keywords)
+      setSelectedKeywords([keywordsParam]);
+      // Clear the URL param after applying to avoid it persisting
+      setLocation("/search", { replace: true });
+    }
+  }, [searchString, setLocation]);
 
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(true);

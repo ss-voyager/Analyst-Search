@@ -551,3 +551,43 @@ export function toSearchResultFromVoyager(doc: VoyagerDoc) {
     fullpath: doc.fullpath || doc.absolute_path,
   };
 }
+
+// Fetch a single item by ID from the Voyager API
+async function fetchVoyagerItem(id: string): Promise<VoyagerDoc | null> {
+  const params = new URLSearchParams({
+    ...VOYAGER_CONFIG,
+    q: `id:"${id}"`,
+    rows: "1",
+    fl: DEFAULT_SEARCH_FIELDS,
+  });
+
+  const response = await fetch(`/api/voyager/search?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch item");
+  }
+
+  const data: VoyagerSearchResponse = await response.json();
+  if (data.response.docs.length === 0) {
+    return null;
+  }
+
+  return data.response.docs[0];
+}
+
+// React Query hook to fetch a single Voyager item
+export function useVoyagerItem(id: string | null) {
+  return useQuery({
+    queryKey: ["voyagerItem", id],
+    queryFn: async () => {
+      if (!id) return null;
+      const doc = await fetchVoyagerItem(id);
+      if (!doc) return null;
+      return {
+        ...toSearchResultFromVoyager(doc),
+        // Include raw doc data for additional fields
+        raw: doc,
+      };
+    },
+    enabled: !!id,
+  });
+}

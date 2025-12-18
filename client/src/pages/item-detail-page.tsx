@@ -1,94 +1,22 @@
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Calendar, Layers, Download, Share2, ExternalLink, Info, Globe, Cloud, Clock, Database, Tag, Check, Map as MapIcon, X, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { ArrowLeft, Calendar, Layers, Download, Share2, ExternalLink, Info, Globe, Cloud, Clock, Database, Tag, Check, Map as MapIcon, X, PanelRightOpen, PanelRightClose, Loader2, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LatLngBoundsExpression } from "leaflet";
 import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
-
-// Reusing Mock Data logic (in a real app this would come from an API or store)
-const MOCK_RESULTS = [
-  {
-    id: 1,
-    title: "Sentinel-2B MSI Level-2A",
-    date: "2024-03-15",
-    cloudCover: "12%",
-    platform: "Sentinel-2",
-    provider: "ESA",
-    thumbnail: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300&auto=format&fit=crop",
-    bounds: [[34.0, -118.3], [34.1, -118.2]] as LatLngBoundsExpression,
-    description: "Sentinel-2B is an Earth observation satellite from the Copernicus Programme that systematically acquires optical imagery at high spatial resolution (10 m to 60 m) over land and coastal waters. The mission is a constellation with two twin satellites, Sentinel-2A and Sentinel-2B.",
-    processingLevel: "Level-2A",
-    resolution: "10m",
-    bands: ["B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B9", "B11", "B12"],
-    tags: ["Optical", "Multispectral", "Land Monitoring", "Vegetation"],
-    metadata: {
-        "Last Indexed": "2025-10-07T15:04:56.684Z",
-        "Format Category": "GIS",
-        "Format": "GeoTIFF",
-        "Spatial Reference": "WGS 84 / UTM zone 11N",
-        "Field Name": "bands",
-        "Agent": "h1999a1216a1",
-        "Driver": "GTiff/GeoTIFF",
-        "Field Count": "12",
-        "Field Type": "Integer",
-        "Format Acronym": "GTiff",
-        "Format Keyword": "Raster",
-        "Format Type": "File",
-        "Agent Extract": "h1999a1216a1"
-    },
-    relationships: [
-      { type: "Derived From", title: "Sentinel-2B L1C Source", id: "S2B_MSIL1C_20240315" },
-      { type: "Co-located", title: "Landsat 9 Scene (Same Date)", id: "LC09_L1TP_042036_20240315" },
-      { type: "Next Pass", title: "Sentinel-2A (5 days later)", id: "S2A_MSIL2A_20240320" }
-    ],
-    provenance: [
-        { date: "2024-03-15T10:23:00Z", system: "Sentinel-2B", event: "Data Capture" },
-        { date: "2024-03-15T10:45:00Z", system: "Sentinel-Processor-A", event: "Processing L1C" },
-        { date: "2024-03-15T11:15:00Z", system: "Sen2Cor-2.11", event: "Atmospheric Correction" },
-        { date: "2024-03-15T11:20:00Z", system: "QA-Bot-9000", event: "Quality Check Passed" },
-        { date: "2024-03-15T11:25:00Z", system: "Archive-System", event: "Archival" }
-    ]
-  },
-  // ... (other items would need similar metadata structure, applying generic for now)
-];
-
-// Helper to get item with metadata fallback
-const getItem = (id: number | null) => {
-    const item = MOCK_RESULTS.find(r => r.id === id) || MOCK_RESULTS[0];
-    if (!item.metadata) {
-        item.metadata = {
-            "Last Indexed": "2025-10-07T15:04:56.684Z",
-            "Format Category": "GIS",
-            "Format": "GeoTIFF",
-            "Spatial Reference": "WGS 84",
-            "Driver": "GTiff",
-            "Resolution": item.resolution,
-            "Platform": item.platform,
-            "Provider": item.provider
-        } as any;
-    }
-    if (!item.relationships) {
-        item.relationships = [
-            { type: "Related", title: `Similar ${item.platform} Item`, id: `${item.platform}_REL_001` }
-        ] as any;
-    }
-    if (!item.provenance) {
-        item.provenance = [
-            { date: "2024-03-15T10:00:00Z", system: "System", event: "Ingestion" },
-            { date: "2024-03-15T10:30:00Z", system: "Processor-v1", event: "Processing" }
-        ] as any;
-    }
-    return item;
-}
+import { useVoyagerItem } from "@/features/search/voyager-api";
 
 export default function ItemDetailPage() {
   const [, params] = useRoute("/item/:id");
@@ -96,47 +24,95 @@ export default function ItemDetailPage() {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const [showAllKeywords, setShowAllKeywords] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  const id = params?.id ? parseInt(params.id) : null;
-  
-  const item = getItem(id);
+  const id = params?.id || null;
 
-  if (!item) return <div>Item not found</div>;
+  // Fetch item data from API
+  const { data: item, isLoading, error } = useVoyagerItem(id);
 
-  const handleShare = () => {
-      const url = new URL(window.location.href);
-      url.searchParams.set("auth", "mock_token_123");
-      navigator.clipboard.writeText(url.toString());
-      toast.success("Link copied to clipboard", {
-          description: "Deep link created for authorized users."
-      });
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
+        <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0">
+          <button
+            onClick={() => setLocation("/search")}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <Skeleton className="h-6 w-48" />
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading item details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error or not found state
+  if (error || !item) {
+    return (
+      <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
+        <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0">
+          <button
+            onClick={() => setLocation("/search")}
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <span className="font-display font-bold text-lg">Item Not Found</span>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Info className="w-12 h-12 text-muted-foreground" />
+            <h2 className="text-xl font-bold">Item not found</h2>
+            <p className="text-muted-foreground max-w-md">
+              The item you're looking for doesn't exist or couldn't be loaded.
+            </p>
+            <Button onClick={() => setLocation("/search")}>Back to Search</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Get date for display
+  const displayDate = item.modified || item.acquisitionDate || item.publishDate || null;
+
+  const shareUrl = item.fullpath || window.location.href;
+
+  const copyToClipboard = (text: string) => {
+      navigator.clipboard.writeText(text);
+      toast.success("Link copied to clipboard");
   };
 
-  const handleDownload = async () => {
-      toast.info("Preparing download...", { duration: 1000 });
-      
-      try {
-        // Simulate downloading the file (using thumbnail as proxy)
-        const response = await fetch(item.thumbnail);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${item.title.replace(/\s+/g, '_')}.jpg`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
+  const handleKeywordClick = (keyword: string) => {
+      // Navigate to search with keyword filter
+      setLocation(`/search?keywords=${encodeURIComponent(keyword)}`);
+  };
+
+  const handleDownload = () => {
+      if (item.download) {
+        window.open(item.download, '_blank');
         toast.success("Download started", {
-            description: `${item.title}.tif (~850 MB)`
+            description: `Opening download for ${item.title}`
         });
-      } catch (e) {
-        // Fallback
-        toast.success("Download started", {
-            description: `${item.title}.tif (~850 MB)`
+      } else if (item.fullpath) {
+        window.open(item.fullpath, '_blank');
+        toast.info("Opening item source", {
+            description: "Direct download not available, opening source URL."
+        });
+      } else {
+        toast.error("Download not available", {
+            description: "This item doesn't have a download link."
         });
       }
   };
@@ -145,21 +121,24 @@ export default function ItemDetailPage() {
     <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
       {/* Header */}
       <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
-        <div className="flex items-center gap-4">
-          <button 
+        <div className="flex items-center gap-4 min-w-0">
+          <button
             onClick={() => setLocation("/search")}
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          
-          <div className="flex flex-col">
-             <h1 className="font-display font-bold text-lg leading-none">{item.title}</h1>
-             <span className="text-xs text-muted-foreground font-mono">{item.id} • {item.date}</span>
+
+          <div className="flex flex-col min-w-0">
+             <h1 className="font-display font-bold text-lg leading-none truncate">{item.title}</h1>
+             <span className="text-xs text-muted-foreground font-mono truncate">
+               {item.id}
+               {displayDate && ` • ${new Date(displayDate).toLocaleDateString()}`}
+             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
            <ThemeToggle />
            <div className="w-8 h-8 rounded-full bg-secondary border border-border" />
         </div>
@@ -193,7 +172,7 @@ export default function ItemDetailPage() {
                             <Button className="w-full gap-2" variant="default" onClick={handleDownload}>
                                 <Download className="w-4 h-4" /> Download
                             </Button>
-                            <Button variant="outline" className="w-full gap-2" onClick={handleShare}>
+                            <Button variant="outline" className="w-full gap-2" onClick={() => setShowShareDialog(true)}>
                                 <Share2 className="w-4 h-4" /> Share
                             </Button>
                         </div>
@@ -209,105 +188,152 @@ export default function ItemDetailPage() {
                 <div className="col-span-1 md:col-span-2 space-y-6">
                     <div>
                         <h2 className="text-2xl font-display font-bold mb-4">{item.title}</h2>
-                        <p className="text-muted-foreground leading-relaxed text-lg">
-                            {item.description}
-                        </p>
+                        {item.description ? (
+                          <p className="text-muted-foreground leading-relaxed text-lg" dangerouslySetInnerHTML={{ __html: item.description.substring(0, 500) + (item.description.length > 500 ? '...' : '') }} />
+                        ) : (
+                          <p className="text-muted-foreground leading-relaxed text-lg italic">No description available.</p>
+                        )}
                     </div>
 
+                    {/* Keywords - Clickable Tags */}
+                    {item.keywords && item.keywords.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {(showAllKeywords ? item.keywords : item.keywords.slice(0, 10)).map((keyword, i) => (
+                            <Badge
+                              key={i}
+                              variant="secondary"
+                              className="text-xs cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                              onClick={() => handleKeywordClick(keyword)}
+                            >
+                              {keyword}
+                            </Badge>
+                          ))}
+                        </div>
+                        {item.keywords.length > 10 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowAllKeywords(!showAllKeywords)}
+                          >
+                            {showAllKeywords ? (
+                              <>
+                                <ChevronUp className="w-3 h-3 mr-1" />
+                                Show less
+                              </>
+                            ) : (
+                              <>
+                                <ChevronDown className="w-3 h-3 mr-1" />
+                                Show {item.keywords.length - 10} more
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
                     <Tabs defaultValue="details" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="details">Details</TabsTrigger>
-                            <TabsTrigger value="lineage">Lineage</TabsTrigger>
-                            <TabsTrigger value="provenance">Provenance</TabsTrigger>
+                            <TabsTrigger value="metadata">Metadata</TabsTrigger>
                         </TabsList>
                         <TabsContent value="details" className="mt-4">
                             <div className="rounded-md border border-border overflow-hidden">
                                 <Table>
                                     <TableBody>
                                         <TableRow className="bg-muted/30">
-                                            <TableCell className="font-medium text-muted-foreground w-1/3">Cloud Cover</TableCell>
-                                            <TableCell>{item.cloudCover}</TableCell>
+                                            <TableCell className="font-medium text-muted-foreground w-1/3">Format</TableCell>
+                                            <TableCell>{item.format || 'Unknown'}</TableCell>
                                         </TableRow>
                                         <TableRow>
-                                            <TableCell className="font-medium text-muted-foreground">Acquisition Date</TableCell>
-                                            <TableCell>{item.date}</TableCell>
+                                            <TableCell className="font-medium text-muted-foreground">Format Type</TableCell>
+                                            <TableCell>{item.formatType || 'N/A'}</TableCell>
                                         </TableRow>
                                         <TableRow className="bg-muted/30">
-                                            <TableCell className="font-medium text-muted-foreground">Size</TableCell>
-                                            <TableCell>~850 MB</TableCell>
+                                            <TableCell className="font-medium text-muted-foreground">Format Category</TableCell>
+                                            <TableCell>{item.formatCategory || 'N/A'}</TableCell>
                                         </TableRow>
-                                        {Object.entries(item.metadata || {}).map(([key, value], i) => (
-                                            <TableRow key={key} className={i % 2 === 1 ? "bg-muted/30" : "bg-transparent"}>
-                                                <TableCell className="font-medium text-muted-foreground w-1/3">{key}</TableCell>
-                                                <TableCell>{value as string}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                        <TableRow className="bg-muted/30">
-                                            <TableCell className="font-medium text-muted-foreground">Spectral Bands</TableCell>
-                                            <TableCell>{item.bands.join(", ")}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell className="font-medium text-muted-foreground">Resolution</TableCell>
-                                            <TableCell>{item.resolution}</TableCell>
-                                        </TableRow>
+                                        {displayDate && (
+                                          <TableRow>
+                                              <TableCell className="font-medium text-muted-foreground">Date</TableCell>
+                                              <TableCell>{new Date(displayDate).toLocaleDateString()}</TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.bytes && (
+                                          <TableRow className="bg-muted/30">
+                                              <TableCell className="font-medium text-muted-foreground">Size</TableCell>
+                                              <TableCell>{(item.bytes / 1024 / 1024).toFixed(2)} MB</TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.country && (
+                                          <TableRow>
+                                              <TableCell className="font-medium text-muted-foreground">Country</TableCell>
+                                              <TableCell>{item.country}</TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.agency && (
+                                          <TableRow className="bg-muted/30">
+                                              <TableCell className="font-medium text-muted-foreground">Agency</TableCell>
+                                              <TableCell>{item.agency}</TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.geometryType && (
+                                          <TableRow>
+                                              <TableCell className="font-medium text-muted-foreground">Geometry Type</TableCell>
+                                              <TableCell>{item.geometryType}</TableCell>
+                                          </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             </div>
                         </TabsContent>
-                        <TabsContent value="lineage" className="mt-4">
+                        <TabsContent value="metadata" className="mt-4">
                             <div className="rounded-md border border-border overflow-hidden">
                                 <Table>
-                                    <TableHeader>
-                                        <TableRow className="bg-muted/30">
-                                            <TableHead className="w-[200px]">Relationship Type</TableHead>
-                                            <TableHead>Related Item</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
                                     <TableBody>
-                                        {item.relationships?.map((rel: any, i: number) => (
-                                            <TableRow key={i}>
-                                                <TableCell className="font-medium text-muted-foreground">
-                                                    <Badge variant="outline" className="font-normal">
-                                                        {rel.type}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div 
-                                                      className="flex flex-col cursor-pointer hover:underline"
-                                                      onClick={() => setLocation(`/item/1`)}
-                                                    >
-                                                        <span className="font-medium text-primary">{rel.title}</span>
-                                                        <span className="text-xs text-muted-foreground font-mono">{rel.id}</span>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="provenance" className="mt-4">
-                            <div className="rounded-md border border-border overflow-hidden">
-                                <Table>
-                                    <TableHeader>
                                         <TableRow className="bg-muted/30">
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>System / Agent</TableHead>
-                                            <TableHead className="text-right">Event / Modification</TableHead>
+                                            <TableCell className="font-medium text-muted-foreground w-1/3">Item ID</TableCell>
+                                            <TableCell className="font-mono text-xs break-all">{item.id}</TableCell>
                                         </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {item.provenance?.map((prov: any, i: number) => (
-                                            <TableRow key={i}>
-                                                <TableCell className="text-muted-foreground text-xs font-mono">
-                                                    {new Date(prov.date).toLocaleString()}
-                                                </TableCell>
-                                                <TableCell className="font-medium">{prov.system}</TableCell>
-                                                <TableCell className="text-right text-muted-foreground">
-                                                    {prov.event}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                        {item.fullpath && (
+                                          <TableRow>
+                                              <TableCell className="font-medium text-muted-foreground">Source URL</TableCell>
+                                              <TableCell>
+                                                <a href={item.fullpath} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm break-all">
+                                                  {item.fullpath}
+                                                </a>
+                                              </TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.download && (
+                                          <TableRow className="bg-muted/30">
+                                              <TableCell className="font-medium text-muted-foreground">Download URL</TableCell>
+                                              <TableCell>
+                                                <a href={item.download} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm break-all">
+                                                  {item.download}
+                                                </a>
+                                              </TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.acquisitionDate && (
+                                          <TableRow>
+                                              <TableCell className="font-medium text-muted-foreground">Acquisition Date</TableCell>
+                                              <TableCell>{new Date(item.acquisitionDate).toLocaleString()}</TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.publishDate && (
+                                          <TableRow className="bg-muted/30">
+                                              <TableCell className="font-medium text-muted-foreground">Publish Date</TableCell>
+                                              <TableCell>{new Date(item.publishDate).toLocaleString()}</TableCell>
+                                          </TableRow>
+                                        )}
+                                        {item.modified && (
+                                          <TableRow>
+                                              <TableCell className="font-medium text-muted-foreground">Last Modified</TableCell>
+                                              <TableCell>{new Date(item.modified).toLocaleString()}</TableCell>
+                                          </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             </div>
@@ -321,40 +347,44 @@ export default function ItemDetailPage() {
         {/* Right Panel - Context Map */}
         {showMap && (
             <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 relative">
-                <MapContainer 
+                <MapContainer
                     center={item.bounds ? [
-                    ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
-                    ((item.bounds as any)[0][1] + (item.bounds as any)[1][1]) / 2
-                    ] : [34.05, -118.25]} 
-                    zoom={10} 
+                      ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
+                      ((item.bounds as any)[0][1] + (item.bounds as any)[1][1]) / 2
+                    ] : [20, 0]}
+                    zoom={item.bounds ? 10 : 2}
                     style={{ height: '100%', width: '100%' }}
                     className="z-0 bg-muted/20"
                 >
                     <TileLayer
-                        attribution={mapStyle === 'streets' 
+                        attribution={mapStyle === 'streets'
                         ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                         : '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         }
                         url={mapStyle === 'streets'
-                        ? (isDark 
+                        ? (isDark
                             ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                             : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png")
                         : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                         }
                     />
-                    <ImageOverlay
-                        url={item.thumbnail}
-                        bounds={item.bounds}
-                        opacity={0.8}
-                    />
-                    <Rectangle 
-                        bounds={item.bounds} 
-                        pathOptions={{ 
-                        color: '#00ffff', 
-                        weight: 2, 
-                        fillOpacity: 0,
-                        }} 
-                    />
+                    {item.bounds && item.thumbnail && (
+                      <ImageOverlay
+                          url={item.thumbnail}
+                          bounds={item.bounds as LatLngBoundsExpression}
+                          opacity={0.8}
+                      />
+                    )}
+                    {item.bounds && (
+                      <Rectangle
+                          bounds={item.bounds as LatLngBoundsExpression}
+                          pathOptions={{
+                          color: '#00ffff',
+                          weight: 2,
+                          fillOpacity: 0,
+                          }}
+                      />
+                    )}
                 </MapContainer>
                 
                 {/* Map Style Toggle */}
@@ -402,40 +432,44 @@ export default function ItemDetailPage() {
                </Button>
              </div>
              <div className="flex-1 relative bg-muted/20">
-                <MapContainer 
+                <MapContainer
                      center={item.bounds ? [
                        ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
                        ((item.bounds as any)[0][1] + (item.bounds as any)[1][1]) / 2
-                     ] : [34.05, -118.25]} 
-                     zoom={10} 
+                     ] : [20, 0]}
+                     zoom={item.bounds ? 10 : 2}
                      style={{ height: '100%', width: '100%' }}
                      className="z-0 bg-muted/20"
                    >
                      <TileLayer
-                       attribution={mapStyle === 'streets' 
+                       attribution={mapStyle === 'streets'
                          ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                          : '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                        }
                        url={mapStyle === 'streets'
-                         ? (isDark 
+                         ? (isDark
                              ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                              : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png")
                          : "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                        }
                      />
-                     <ImageOverlay
-                        url={item.thumbnail}
-                        bounds={item.bounds}
-                        opacity={0.8}
-                     />
-                     <Rectangle 
-                        bounds={item.bounds} 
-                        pathOptions={{ 
-                          color: '#00ffff', 
-                          weight: 2, 
-                          fillOpacity: 0,
-                          }} 
-                     />
+                     {item.bounds && item.thumbnail && (
+                       <ImageOverlay
+                          url={item.thumbnail}
+                          bounds={item.bounds as LatLngBoundsExpression}
+                          opacity={0.8}
+                       />
+                     )}
+                     {item.bounds && (
+                       <Rectangle
+                          bounds={item.bounds as LatLngBoundsExpression}
+                          pathOptions={{
+                            color: '#00ffff',
+                            weight: 2,
+                            fillOpacity: 0,
+                            }}
+                       />
+                     )}
                 </MapContainer>
 
                 {/* Map Style Toggle - Full Screen */}
@@ -461,6 +495,48 @@ export default function ItemDetailPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Share Dialog */}
+      <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-primary" />
+              Share Item
+            </DialogTitle>
+            <DialogDescription>
+              Copy the URL below to share this item with others.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2 mt-2">
+            <div className="grid flex-1 gap-2">
+              <Input
+                value={shareUrl}
+                readOnly
+                className="bg-muted/30 font-mono text-xs"
+              />
+            </div>
+            <Button type="button" size="sm" className="px-3" onClick={() => copyToClipboard(shareUrl)}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          {item.fullpath && item.fullpath !== shareUrl && (
+            <div className="mt-4">
+              <p className="text-xs text-muted-foreground mb-2">Source URL:</p>
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={item.fullpath}
+                  readOnly
+                  className="bg-muted/30 font-mono text-xs"
+                />
+                <Button type="button" size="sm" variant="outline" className="px-3" onClick={() => copyToClipboard(item.fullpath!)}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
