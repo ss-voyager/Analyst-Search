@@ -15,7 +15,8 @@ describe('buildGazetteerUrl', () => {
     const url = buildGazetteerUrl(['United States']);
 
     expect(url).toContain('http://172.22.1.25:8888/solr/gazetteer/select');
-    expect(url).toContain('q=name%3A%22United%20States%22');
+    // URLSearchParams encodes spaces as '+' which is valid
+    expect(url).toContain('q=name%3A%22United+States%22');
     expect(url).toContain('fl=geo%3A%5Bgeo%5D%2C+name');
     expect(url).toContain('wt=json');
   });
@@ -24,7 +25,8 @@ describe('buildGazetteerUrl', () => {
     const url = buildGazetteerUrl(['United States', 'Canada', 'Mexico']);
 
     expect(url).toContain('http://172.22.1.25:8888/solr/gazetteer/select');
-    expect(url).toContain('name%3A%22United%20States%22');
+    // URLSearchParams encodes spaces as '+' which is valid
+    expect(url).toContain('name%3A%22United+States%22');
     expect(url).toContain('name%3A%22Canada%22');
     expect(url).toContain('name%3A%22Mexico%22');
     expect(url).toContain('%7C%7C'); // URL encoded '||'
@@ -33,7 +35,8 @@ describe('buildGazetteerUrl', () => {
   it('should properly encode special characters in location names', () => {
     const url = buildGazetteerUrl(['São Paulo', 'Zürich']);
 
-    expect(url).toContain('S%C3%A3o%20Paulo');
+    // URLSearchParams encodes spaces as '+' which is valid
+    expect(url).toContain('S%C3%A3o+Paulo');
     expect(url).toContain('Z%C3%BCrich');
   });
 });

@@ -101,6 +101,21 @@ const MapRefSetter = ({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null>
   return null;
 };
 
+// Component to zoom map to selected location bbox
+const LocationZoomEffect = ({ bbox }: { bbox: [number, number, number, number] | null }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (bbox) {
+      const [west, south, east, north] = bbox;
+      const bounds = new LatLngBounds([south, west], [north, east]);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [20, 20], maxZoom: 10 });
+      }
+    }
+  }, [bbox, map]);
+  return null;
+};
+
 interface SearchMapProps {
   showMap: boolean;
   setShowMap: (show: boolean) => void;
@@ -115,6 +130,7 @@ interface SearchMapProps {
   setSpatialFilter: (filter: any) => void;
   setPlace: (place: string) => void;
   spatialFilter?: { type: 'box' | 'point' | 'polygon'; data: any } | null;
+  locationBbox?: [number, number, number, number] | null; // [west, south, east, north] - zoom to selected location
 }
 
 // Min/max constraints for map width
@@ -135,7 +151,8 @@ export function SearchMap({
   setDrawMode,
   setSpatialFilter,
   setPlace,
-  spatialFilter
+  spatialFilter,
+  locationBbox
 }: SearchMapProps) {
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -265,6 +282,7 @@ export function SearchMap({
           <TileLayer attribution={tileAttribution} url={tileUrl} noWrap={true} />
           <MapRefSetter mapRef={mapRef} />
           <MapEffect bounds={mapBounds} />
+          <LocationZoomEffect bbox={locationBbox ?? null} />
           <PreviewEffect result={previewedResult} />
           <MapDrawControl 
             mode={drawMode} 

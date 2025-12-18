@@ -22,9 +22,9 @@ import { toast } from "sonner";
 import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
-import { HIERARCHY_TREE, getAllDescendantIds, getAllAncestorIds, areAllChildrenSelected, findNodeById } from "@/features/search/location-hierarchy";
+import { HIERARCHY_TREE, getAllDescendantIds, getAllAncestorIds, areAllChildrenSelected, findNodeById, LOCATION_TO_VOYAGER } from "@/features/search/location-hierarchy";
 import { useSaveSearch, useSavedSearches, useDeleteSavedSearch, useLoadSavedSearch } from "@/features/search/api";
-import { useInfiniteVoyagerSearch, toSearchResultFromVoyager, buildPropertyFilterQueries } from "@/features/search/voyager-api";
+import { useInfiniteVoyagerSearch, toSearchResultFromVoyager, buildPropertyFilterQueries, buildLocationFilterQueries } from "@/features/search/voyager-api";
 import type { VoyagerSearchResult } from "@/features/search/types";
 import { queryGazetteer, type GazetteerResult } from "@/features/search/gazetteer-api";
 
@@ -345,9 +345,24 @@ export default function SearchResultsPage() {
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
   // Build filter queries from selected properties (has_spatial, has_thumbnail, etc.)
-  const filterQueries: string[] = useMemo(() => {
+  const propertyFilterQueries: string[] = useMemo(() => {
     return buildPropertyFilterQueries(selectedProperties);
   }, [selectedProperties]);
+
+  // Build location filter queries from selected locations (grp_Region, grp_Country, grp_State)
+  // NOTE: Disabled for now - Voyager data may not have these facet fields indexed.
+  // The gazetteerBbox spatial filter provides geographic filtering instead.
+  const locationFilterQueries: string[] = useMemo(() => {
+    // TODO: Re-enable when Voyager facet fields are confirmed:
+    // return buildLocationFilterQueries(topLevelSelectionIds, LOCATION_TO_VOYAGER);
+    console.log('Location selection IDs:', topLevelSelectionIds);
+    return []; // Rely on gazetteerBbox spatial filter instead
+  }, [topLevelSelectionIds]);
+
+  // Combine all filter queries
+  const filterQueries: string[] = useMemo(() => {
+    return [...propertyFilterQueries, ...locationFilterQueries];
+  }, [propertyFilterQueries, locationFilterQueries]);
 
   // Build search query from keyword
   const searchQuery = keyword ? keyword : undefined;
@@ -1359,6 +1374,7 @@ export default function SearchResultsPage() {
            setSpatialFilter={setSpatialFilter}
            setPlace={setPlace}
            spatialFilter={spatialFilter}
+           locationBbox={gazetteerBbox}
         />
       </div>
     </div>
