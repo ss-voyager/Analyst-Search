@@ -32,6 +32,8 @@ export interface VoyagerSearchResult {
   acquisitionDate?: string;
   publishDate?: string;
   geometryType?: string;
+  download?: string;
+  fullpath?: string;
 }
 
 export interface FilterState {

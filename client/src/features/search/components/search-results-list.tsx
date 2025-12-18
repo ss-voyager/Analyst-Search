@@ -4,8 +4,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MapPin, MoreHorizontal, Download, Share2, Search, Loader2 } from "lucide-react";
+import { MapPin, MoreHorizontal, Download, Share2, Search, Loader2, Calendar, FileType } from "lucide-react";
 import { SearchResult, VoyagerSearchResult } from "../types";
+import { toast } from "sonner";
 
 // Generic result type that works with both local and Voyager results
 type GenericResult = SearchResult | VoyagerSearchResult;
@@ -140,67 +141,56 @@ export function SearchResultsList({
                    >
                      {/* Image Thumbnail */}
                      <div className="relative h-[160px] overflow-hidden bg-muted">
-                       <img 
-                         src={result.thumbnail} 
+                       <img
+                         src={result.thumbnail}
                          alt={result.title}
                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                          loading="lazy"
                        />
-                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
-                       
-                       {/* Quick Actions Overlay */}
-                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 backdrop-blur-[2px]">
-                          <button 
-                            className="px-3 py-1.5 bg-white text-black text-xs font-bold rounded-full hover:bg-gray-200 transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setLocation(`/item/${result.id}`);
-                            }}
-                          >
-                            View Details
-                          </button>
-                          <button 
-                            className="p-1.5 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors border border-white/20 transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewedResultId(result.id);
-                            }}
-                            title="Locate on Map"
-                          >
-                            <MapPin className="w-4 h-4" />
-                          </button>
-                       </div>
                      </div>
 
                      {/* Content */}
                      <div className="p-4 flex-1 flex flex-col gap-1.5">
-                       <h3 className="font-display font-bold text-base leading-tight group-hover:text-primary transition-colors line-clamp-2" title={result.title}>
+                       {/* Clickable Name */}
+                       <button
+                         className="font-display font-bold text-base leading-tight text-left group-hover:text-primary transition-colors line-clamp-2 hover:underline"
+                         title={result.title}
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setLocation(`/item/${result.id}`);
+                         }}
+                       >
                          {result.title}
-                       </h3>
-                       <div className="text-xs text-muted-foreground space-y-0.5 mt-1">
-                         <p>
+                       </button>
+
+                       {/* Format and Date */}
+                       <div className="text-xs text-muted-foreground space-y-1 mt-1">
+                         <p className="flex items-center gap-1.5">
+                           <FileType className="w-3 h-3 text-foreground/50" />
                            <span className="text-foreground/70">Format:</span>{' '}
-                           <button
-                             className="text-primary hover:underline"
-                             onClick={(e) => { e.stopPropagation(); if (result.format) onFilterByFormat?.(result.format); }}
-                           >
-                             {result.format || 'Unknown'}
-                           </button>
+                           <span className="text-foreground">{result.format || 'Unknown'}</span>
                          </p>
-                         <p>
-                           <span className="text-foreground/70">Author:</span>{' '}
-                           <button
-                             className="text-primary hover:underline"
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               const provider = 'provider' in result ? result.provider : ('agency' in result ? result.agency : undefined);
-                               if (provider) onFilterByProvider?.(provider);
-                             }}
-                           >
-                             {'provider' in result ? result.provider : ('agency' in result ? result.agency : 'Unknown')}
-                           </button>
+                         <p className="flex items-center gap-1.5">
+                           <Calendar className="w-3 h-3 text-foreground/50" />
+                           <span className="text-foreground/70">Date:</span>{' '}
+                           <span className="text-foreground">
+                             {(() => {
+                               const dateStr = 'date' in result ? result.date :
+                                 ('modified' in result ? result.modified :
+                                 ('acquisitionDate' in result ? result.acquisitionDate :
+                                 ('publishDate' in result ? result.publishDate : null)));
+                               if (!dateStr) return 'N/A';
+                               try {
+                                 return new Date(dateStr).toLocaleDateString();
+                               } catch {
+                                 return dateStr;
+                               }
+                             })()}
+                           </span>
                          </p>
                        </div>
+
+                       {/* Tools - Bottom Right */}
                        <div className="mt-auto flex justify-end">
                          <DropdownMenu>
                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -210,11 +200,30 @@ export function SearchResultsList({
                              </Button>
                            </DropdownMenuTrigger>
                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                             <DropdownMenuItem className="gap-2 cursor-pointer">
+                             <DropdownMenuItem
+                               className="gap-2 cursor-pointer"
+                               onClick={() => {
+                                 const downloadUrl = 'download' in result ? result.download : null;
+                                 if (downloadUrl) {
+                                   window.open(downloadUrl, '_blank');
+                                 } else {
+                                   toast.error("Download not available for this item");
+                                 }
+                               }}
+                             >
                                <Download className="w-4 h-4" />
                                Download
                              </DropdownMenuItem>
-                             <DropdownMenuItem className="gap-2 cursor-pointer">
+                             <DropdownMenuItem
+                               className="gap-2 cursor-pointer"
+                               onClick={() => {
+                                 const shareUrl = 'fullpath' in result ? result.fullpath : `${window.location.origin}/item/${result.id}`;
+                                 if (shareUrl) {
+                                   navigator.clipboard.writeText(shareUrl);
+                                   toast.success("Link copied to clipboard");
+                                 }
+                               }}
+                             >
                                <Share2 className="w-4 h-4" />
                                Share
                              </DropdownMenuItem>

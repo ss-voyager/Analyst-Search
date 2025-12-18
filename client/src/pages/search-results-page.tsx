@@ -24,7 +24,7 @@ import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
 import { HIERARCHY_TREE, KEYWORDS, LOCATION_TO_VOYAGER, expandSelectedLocations } from "@/features/search/mock-data";
-import { useSaveSearch } from "@/features/search/api";
+import { useSaveSearch, useSavedSearches, useDeleteSavedSearch } from "@/features/search/api";
 import { useInfiniteVoyagerSearch, buildLocationFilterQueries, buildKeywordFilterQuery, buildPropertyFilterQueries, toSearchResultFromVoyager } from "@/features/search/voyager-api";
 import type { VoyagerSearchResult } from "@/features/search/types";
 
@@ -78,23 +78,17 @@ export default function SearchResultsPage() {
   const [savedSearchLink, setSavedSearchLink] = useState("https://voyager.ai/s/a8XkD4");
   const [showAllSavedSearches, setShowAllSavedSearches] = useState(false);
   
-  // Mock saved searches data
-  const allSavedSearches = [
-    { id: 1, name: "Vegetation in California", keyword: "vegetation", place: "California", savedAt: "2 days ago" },
-    { id: 2, name: "Urban Growth in Tokyo", keyword: "urban", place: "Tokyo", savedAt: "5 days ago" },
-    { id: 3, name: "Deforestation in Amazon", keyword: "deforestation", place: "Amazon", savedAt: "1 week ago" },
-    { id: 4, name: "Coastal Erosion in Florida", keyword: "coastal erosion", place: "Florida", savedAt: "2 weeks ago" },
-    { id: 5, name: "Agricultural Land in Iowa", keyword: "agriculture", place: "Iowa", savedAt: "3 weeks ago" },
-    { id: 6, name: "Glacier Retreat in Alaska", keyword: "glacier", place: "Alaska", savedAt: "1 month ago" },
-    { id: 7, name: "Urban Heat Islands in Phoenix", keyword: "heat island", place: "Phoenix", savedAt: "1 month ago" },
-    { id: 8, name: "Wetland Changes in Louisiana", keyword: "wetland", place: "Louisiana", savedAt: "2 months ago" },
-  ];
-
+  // Fetch saved searches from API (use authenticated user ID or fetch anonymous searches)
+  const { data: savedSearchesData, isLoading: savedSearchesLoading } = useSavedSearches(
+    isAuthenticated && user ? user.id : undefined
+  );
   const saveSearchMutation = useSaveSearch();
+  const deleteSearchMutation = useDeleteSavedSearch();
 
   const handleSaveSearch = () => {
     saveSearchMutation.mutate({
-      userId: "demo-user", // In production, get from auth context
+      // userId is optional - only include if user is authenticated
+      ...(isAuthenticated && user ? { userId: user.id } : {}),
       name: saveSearchName,
       keyword,
       location: place,
@@ -712,7 +706,7 @@ export default function SearchResultsPage() {
             ))}
 
             {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0 || selectedPlatforms.length > 0 || spatialFilter) && (
-              <button 
+              <button
                 onClick={() => {
                   setKeyword("");
                   setPlace("");
@@ -723,8 +717,9 @@ export default function SearchResultsPage() {
                   setSelectedKeywords([]);
                   setSelectedPlatforms([]);
                   setDate(undefined);
+                  setIsSearchSaved(false);
                   setLocation("/search");
-                }} 
+                }}
                 className="text-xs text-muted-foreground hover:text-destructive transition-colors whitespace-nowrap"
               >
                 Clear all
@@ -832,7 +827,12 @@ export default function SearchResultsPage() {
                   
                   {/* Search Preview Summary */}
                   <div className="bg-muted/30 rounded-lg p-3 space-y-2 border border-border/50">
-                     <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Search Preview</div>
+                     <div className="flex items-center justify-between mb-2">
+                       <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Search Preview</div>
+                       <Badge variant="secondary" className="text-xs font-medium">
+                         {totalResults.toLocaleString()} results
+                       </Badge>
+                     </div>
                      <div className="space-y-1">
                         <div className="flex items-start gap-2 text-sm">
                            <Search className="w-3.5 h-3.5 mt-0.5 text-primary" />
@@ -842,13 +842,14 @@ export default function SearchResultsPage() {
                            <MapPin className="w-3.5 h-3.5 mt-0.5 text-primary" />
                            <span className="text-foreground/80">{place || spatialFilter ? (place || "Custom Area") : "Global"}</span>
                         </div>
-                        {(activeFilters.length > 0 || date) && (
+                        {(activeFilters.length > 0 || date || selectedKeywords.length > 0) && (
                            <div className="flex items-start gap-2 text-sm">
                              <Filter className="w-3.5 h-3.5 mt-0.5 text-primary" />
                              <span className="text-foreground/80">
                                {[
-                                 date ? "Date Range" : null,
+                                 date ? `${format(date.from!, "MMM d")}${date.to ? ` - ${format(date.to, "MMM d")}` : ""}` : null,
                                  ...activeFilters.map(f => f.value),
+                                 ...selectedKeywords,
                                  ...selectedProperties.map(p => p.replace('has_', '').replace('is_', ''))
                                ].filter(Boolean).join(", ")}
                              </span>
@@ -925,45 +926,101 @@ export default function SearchResultsPage() {
                <DialogHeader>
                  <DialogTitle className="flex items-center gap-2">
                    <Bookmark className="w-5 h-5" />
-                   All Saved Searches
+                   Saved Searches
                  </DialogTitle>
                  <DialogDescription>
                    Select a saved search to load its results.
                  </DialogDescription>
                </DialogHeader>
                <div className="max-h-[400px] overflow-y-auto">
-                 <div className="flex flex-col gap-1">
-                   {allSavedSearches.map((search) => (
-                     <button
-                       key={search.id}
-                       className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center justify-between group"
-                       onClick={() => {
-                         setKeyword(search.keyword);
-                         setPlace(search.place);
-                         setShowAllSavedSearches(false);
-                         toast.success(`Loaded "${search.name}"`);
-                       }}
-                       data-testid={`saved-search-${search.id}`}
-                     >
-                       <div className="flex flex-col gap-0.5">
-                         <span className="font-medium text-sm">{search.name}</span>
-                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                           <span className="flex items-center gap-1">
-                             <Search className="w-3 h-3" />
-                             {search.keyword}
+                 {savedSearchesLoading ? (
+                   <div className="flex items-center justify-center py-8 text-muted-foreground">
+                     Loading saved searches...
+                   </div>
+                 ) : !savedSearchesData || savedSearchesData.length === 0 ? (
+                   <div className="flex flex-col items-center justify-center py-8 text-center">
+                     <Bookmark className="w-10 h-10 text-muted-foreground/50 mb-3" />
+                     <p className="text-sm text-muted-foreground">No saved searches yet</p>
+                     <p className="text-xs text-muted-foreground/70 mt-1">Save a search to quickly access it later</p>
+                   </div>
+                 ) : (
+                   <div className="flex flex-col gap-1">
+                     {savedSearchesData.map((search) => (
+                       <div
+                         key={search.id}
+                         className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center justify-between group"
+                       >
+                         <button
+                           className="flex-1 text-left"
+                           onClick={() => {
+                             setKeyword(search.keyword || "");
+                             setPlace(search.location || "");
+                             if (search.keywords) setSelectedKeywords(search.keywords);
+                             if (search.locationIds) setSelectedLocationIds(search.locationIds);
+                             if (search.properties) setSelectedProperties(search.properties);
+                             if (search.dateFrom || search.dateTo) {
+                               setDate({
+                                 from: search.dateFrom ? new Date(search.dateFrom) : undefined,
+                                 to: search.dateTo ? new Date(search.dateTo) : undefined,
+                               });
+                             }
+                             setShowAllSavedSearches(false);
+                             toast.success(`Loaded "${search.name}"`);
+                           }}
+                           data-testid={`saved-search-${search.id}`}
+                         >
+                           <div className="flex flex-col gap-0.5">
+                             <span className="font-medium text-sm">{search.name}</span>
+                             <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                               {search.keyword && (
+                                 <span className="flex items-center gap-1">
+                                   <Search className="w-3 h-3" />
+                                   {search.keyword}
+                                 </span>
+                               )}
+                               {search.location && (
+                                 <span className="flex items-center gap-1">
+                                   <MapPin className="w-3 h-3" />
+                                   {search.location}
+                                 </span>
+                               )}
+                               {search.keywords && search.keywords.length > 0 && (
+                                 <span className="flex items-center gap-1">
+                                   <Tag className="w-3 h-3" />
+                                   {search.keywords.length} keywords
+                                 </span>
+                               )}
+                             </div>
+                           </div>
+                         </button>
+                         <div className="flex items-center gap-2">
+                           <span className="text-xs text-muted-foreground">
+                             {search.createdAt ? new Date(search.createdAt).toLocaleDateString() : ""}
                            </span>
-                           <span className="flex items-center gap-1">
-                             <MapPin className="w-3 h-3" />
-                             {search.place}
-                           </span>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                             onClick={(e) => {
+                               e.stopPropagation();
+                               deleteSearchMutation.mutate(search.id, {
+                                 onSuccess: () => {
+                                   toast.success(`Deleted "${search.name}"`);
+                                 },
+                                 onError: () => {
+                                   toast.error("Failed to delete search");
+                                 },
+                               });
+                             }}
+                             title="Delete saved search"
+                           >
+                             <X className="w-4 h-4" />
+                           </Button>
                          </div>
                        </div>
-                       <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                         {search.savedAt}
-                       </span>
-                     </button>
-                   ))}
-                 </div>
+                     ))}
+                   </div>
+                 )}
                </div>
              </DialogContent>
            </Dialog>

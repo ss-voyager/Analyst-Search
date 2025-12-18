@@ -63,6 +63,26 @@ async function fetchProvenanceEvents(id: number): Promise<ProvenanceEvent[]> {
   return response.json();
 }
 
+// Fetch saved searches for a user (or anonymous searches if no userId)
+async function fetchSavedSearches(userId?: string): Promise<SavedSearch[]> {
+  const url = userId ? `/api/saved-searches?userId=${encodeURIComponent(userId)}` : '/api/saved-searches';
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch saved searches');
+  }
+  return response.json();
+}
+
+// Delete saved search
+async function deleteSavedSearch(id: number): Promise<void> {
+  const response = await fetch(`/api/saved-searches/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete saved search');
+  }
+}
+
 // Create saved search
 async function createSavedSearch(data: {
   userId?: string;
@@ -123,9 +143,27 @@ export function useProvenanceEvents(id: number) {
 
 export function useSaveSearch() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: createSavedSearch,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['savedSearches'] });
+    },
+  });
+}
+
+export function useSavedSearches(userId?: string) {
+  return useQuery({
+    queryKey: ['savedSearches', userId || 'anonymous'],
+    queryFn: () => fetchSavedSearches(userId || ''),
+  });
+}
+
+export function useDeleteSavedSearch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteSavedSearch,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savedSearches'] });
     },

@@ -547,5 +547,7 @@ export function toSearchResultFromVoyager(doc: VoyagerDoc) {
     acquisitionDate: doc.fd_acquisition_date,
     publishDate: doc.fd_publish_date,
     geometryType: doc.geometry_type,
+    download: doc.download,
+    fullpath: doc.fullpath || doc.absolute_path,
   };
 }

@@ -16,7 +16,7 @@ import {
   type InsertSavedSearch
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, or, inArray, sql, desc, asc } from "drizzle-orm";
+import { eq, and, gte, lte, or, inArray, sql, desc, asc, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User methods (for Replit Auth)
@@ -205,9 +205,15 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Saved Searches methods
-  async getSavedSearches(userId: string): Promise<SavedSearch[]> {
+  async getSavedSearches(userId?: string): Promise<SavedSearch[]> {
+    if (userId) {
+      return await db.select().from(savedSearches)
+        .where(eq(savedSearches.userId, userId))
+        .orderBy(desc(savedSearches.createdAt));
+    }
+    // If no userId, return searches with null userId (anonymous saves)
     return await db.select().from(savedSearches)
-      .where(eq(savedSearches.userId, userId))
+      .where(isNull(savedSearches.userId))
       .orderBy(desc(savedSearches.createdAt));
   }
   

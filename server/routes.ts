@@ -5,7 +5,7 @@ import { insertSatelliteItemSchema, insertSavedSearchSchema } from "@shared/sche
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 
-const VOYAGER_BASE_URL = "https://ogc-sdi.voyagersearch.com/solr/v0/select";
+const VOYAGER_BASE_URL = "http://ec2-3-232-18-200.compute-1.amazonaws.com/solr/v0/select";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -132,13 +132,10 @@ export async function registerRoutes(
   app.get("/api/saved-searches", async (req, res) => {
     try {
       // In a real app, get userId from session/auth
-      const userId = req.query.userId as string;
-      
-      if (!userId) {
-        return res.status(400).json({ error: "userId is required" });
-      }
+      const userId = req.query.userId as string | undefined;
 
-      const searches = await storage.getSavedSearches(userId);
+      // If no userId, fetch anonymous searches (null userId)
+      const searches = await storage.getSavedSearches(userId || undefined);
       res.json(searches);
     } catch (error) {
       console.error("Error fetching saved searches:", error);
