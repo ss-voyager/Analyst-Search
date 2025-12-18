@@ -9,13 +9,14 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function LandingPage() {
   const [, setLocation] = useLocation();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, login, logout } = useAuth();
   const [query, setQuery] = useState("");
   const [place, setPlace] = useState("");
 
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,6 +30,25 @@ export default function LandingPage() {
 
   const handleLocationSelect = (bounds: string) => {
     setPlace(bounds);
+  };
+
+  const handleLogin = async () => {
+    setIsLoggingIn(true);
+    try {
+      await login();
+    } catch (error) {
+      console.error('Login failed:', error);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -69,25 +89,26 @@ export default function LandingPage() {
                 />
               )}
               <span className="text-sm font-medium hidden sm:inline">
-                {user.firstName || user.email?.split('@')[0] || 'User'}
+                {user.firstName || user.name || user.username || user.email?.split('@')[0] || 'User'}
               </span>
-              <a
-                href="/api/logout"
+              <button
+                onClick={handleLogout}
                 className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm flex items-center gap-2"
                 data-testid="button-logout"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Sign Out</span>
-              </a>
+              </button>
             </div>
           ) : (
-            <a
-              href="/api/login"
-              className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm"
+            <button
+              onClick={handleLogin}
+              disabled={isLoggingIn}
+              className="text-sm px-4 py-2 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:bg-black/10 dark:hover:bg-white/10 transition-all font-medium backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
               data-testid="button-login"
             >
-              Sign In
-            </a>
+              {isLoggingIn ? 'Opening...' : 'Sign In'}
+            </button>
           )}
           <ThemeToggle />
         </div>

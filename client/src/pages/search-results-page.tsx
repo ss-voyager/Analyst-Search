@@ -33,7 +33,8 @@ export default function SearchResultsPage() {
   const [location, setLocation] = useLocation();
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   const [query, setQuery] = useState(() => {
     const q = params.get("q") || "";
@@ -87,6 +88,26 @@ export default function SearchResultsPage() {
   );
   const saveSearchMutation = useSaveSearch();
   const deleteSearchMutation = useDeleteSavedSearch();
+
+  const handleLogin = async () => {
+    setIsLoggingIn(true);
+    try {
+      await login();
+    } catch (error) {
+      console.error('Login failed:', error);
+      toast.error('Login failed. Please try again.');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const handleSaveSearch = () => {
     saveSearchMutation.mutate({
@@ -581,15 +602,15 @@ export default function SearchResultsPage() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full w-9 h-9 p-0" data-testid="button-account">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
+                    <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || user.name || user.username || "User"} />
                     <AvatarFallback className="text-xs">
-                      {user.firstName?.[0] || user.email?.[0] || "U"}
+                      {user.firstName?.[0] || user.name?.[0] || user.username?.[0] || user.email?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <div className="px-2 py-1.5 text-sm font-medium">{user.firstName || user.email || "User"}</div>
+                <div className="px-2 py-1.5 text-sm font-medium">{user.firstName || user.name || user.username || user.email || "User"}</div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="cursor-pointer gap-2">
                   <User className="w-4 h-4" />
@@ -600,9 +621,9 @@ export default function SearchResultsPage() {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="cursor-pointer gap-2 text-destructive focus:text-destructive"
-                  onClick={() => window.location.href = '/api/logout'}
+                  onClick={handleLogout}
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -610,9 +631,16 @@ export default function SearchResultsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="outline" size="sm" className="h-9 gap-2" onClick={() => window.location.href = '/api/login'} data-testid="button-login">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2"
+              onClick={handleLogin}
+              disabled={isLoggingIn}
+              data-testid="button-login"
+            >
               <LogIn className="w-4 h-4" />
-              <span className="hidden sm:inline">Login</span>
+              <span className="hidden sm:inline">{isLoggingIn ? 'Opening...' : 'Login'}</span>
             </Button>
           )}
         </div>
