@@ -63,27 +63,35 @@ async function fetchProvenanceEvents(id: number): Promise<ProvenanceEvent[]> {
   return response.json();
 }
 
-// Fetch saved searches for a user (or anonymous searches if no userId)
+// Fetch saved searches for a user (proxied through Express to forward cookies)
 async function fetchSavedSearches(userId?: string): Promise<SavedSearch[]> {
-  const url = userId ? `/api/saved-searches?userId=${encodeURIComponent(userId)}` : '/api/saved-searches';
-  const response = await fetch(url);
+  if (!userId) {
+    return [];
+  }
+
+  const response = await fetch(`/api/saved-searches?userId=${encodeURIComponent(userId)}`, {
+    credentials: 'include', // Send cookies to our Express server
+  });
+
   if (!response.ok) {
     throw new Error('Failed to fetch saved searches');
   }
+
   return response.json();
 }
 
-// Delete saved search
-async function deleteSavedSearch(id: number): Promise<void> {
+// Delete saved search (proxied through Express to forward cookies)
+async function deleteSavedSearch(id: string): Promise<void> {
   const response = await fetch(`/api/saved-searches/${id}`, {
     method: 'DELETE',
+    credentials: 'include', // Send cookies to our Express server
   });
   if (!response.ok) {
     throw new Error('Failed to delete saved search');
   }
 }
 
-// Create saved search
+// Create saved search (proxied through Express to forward cookies)
 async function createSavedSearch(data: {
   userId?: string;
   name: string;
@@ -100,11 +108,21 @@ async function createSavedSearch(data: {
   const response = await fetch('/api/saved-searches', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // Send cookies to our Express server
     body: JSON.stringify(data),
   });
+
   if (!response.ok) {
-    throw new Error('Failed to save search');
+    let errorMessage = 'Failed to save search';
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorData.message || errorMessage;
+    } catch (e) {
+      // If parsing fails, use default message
+    }
+    throw new Error(errorMessage);
   }
+
   return response.json();
 }
 
@@ -155,7 +173,9 @@ export function useSaveSearch() {
 export function useSavedSearches(userId?: string) {
   return useQuery({
     queryKey: ['savedSearches', userId || 'anonymous'],
-    queryFn: () => fetchSavedSearches(userId || ''),
+    queryFn: () => fetchSavedSearches(userId),
+    enabled: !!userId, // Only fetch when userId is available
+    staleTime: 0, // Always refetch saved searches
   });
 }
 

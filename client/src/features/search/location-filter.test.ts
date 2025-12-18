@@ -5,7 +5,7 @@ import {
   LOCATION_TO_VOYAGER,
   getAllDescendantIds,
   expandSelectedLocations,
-} from './mock-data';
+} from './location-hierarchy';
 
 describe('getAllDescendantIds', () => {
   it('should return just the node ID for a leaf node', () => {

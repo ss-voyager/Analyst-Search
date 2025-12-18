@@ -128,14 +128,18 @@ export async function registerRoutes(
     }
   });
 
-  // Get saved searches (would need authentication in production)
+  // Get saved searches
   app.get("/api/saved-searches", async (req, res) => {
     try {
-      // In a real app, get userId from session/auth
       const userId = req.query.userId as string | undefined;
 
-      // If no userId, fetch anonymous searches (null userId)
-      const searches = await storage.getSavedSearches(userId || undefined);
+      if (!userId) {
+        return res.json([]);
+      }
+
+      // Forward cookies from browser to Voyager for authentication
+      const cookie = req.headers.cookie;
+      const searches = await storage.getSavedSearches(userId, cookie);
       res.json(searches);
     } catch (error) {
       console.error("Error fetching saved searches:", error);
@@ -147,17 +151,20 @@ export async function registerRoutes(
   app.post("/api/saved-searches", async (req, res) => {
     try {
       const validationResult = insertSavedSearchSchema.safeParse(req.body);
-      
+
       if (!validationResult.success) {
         const validationError = fromZodError(validationResult.error);
         return res.status(400).json({ error: validationError.message });
       }
 
-      const search = await storage.createSavedSearch(validationResult.data);
+      // Forward cookies from browser to Voyager for authentication
+      const cookie = req.headers.cookie;
+      const search = await storage.createSavedSearch(validationResult.data, cookie);
       res.status(201).json(search);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating saved search:", error);
-      res.status(500).json({ error: "Failed to create saved search" });
+      const errorMessage = error?.message || "Failed to create saved search";
+      res.status(500).json({ error: errorMessage });
     }
   });
 

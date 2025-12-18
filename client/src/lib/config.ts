@@ -6,3 +6,7 @@ export function getVoyagerBaseUrl(): string {
   // Ensure no trailing slash
   return baseUrl.replace(/\/$/, '');
 }
+
+export function getGazetteerBaseUrl(): string {
+  return import.meta.env.VITE_GAZETTEER_BASE_URL || 'http://172.22.1.25:8888';
+}

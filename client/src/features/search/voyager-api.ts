@@ -87,6 +87,7 @@ export interface VoyagerSearchFilters {
   dateTo?: Date;
   dateField?: string; // field to filter on, defaults to 'modified'
   bbox?: [number, number, number, number]; // [west, south, east, north] / [minLng, minLat, maxLng, maxLat]
+  gazetteerBbox?: [number, number, number, number]; // Location hierarchy bbox from gazetteer
   place?: string; // text-based place search
 }
 
@@ -208,10 +209,8 @@ function buildSearchUrl(filters: VoyagerSearchFilters): string {
     url.searchParams.append(key, value);
   });
 
-  // Add search query
-  if (filters.q) {
-    url.searchParams.append("q", filters.q);
-  }
+  // Add search query (default to *:* for match all)
+  url.searchParams.append("q", filters.q || "*:*");
 
   // Add filter queries (facet selections)
   if (filters.fq && filters.fq.length > 0) {
@@ -240,6 +239,14 @@ function buildSearchUrl(filters: VoyagerSearchFilters): string {
   else if (filters.place) {
     url.searchParams.append("place", filters.place);
     url.searchParams.append("place.op", "within");
+  }
+
+  // Add gazetteer bbox as additional spatial filter (uses AND logic with bbox/place)
+  if (filters.gazetteerBbox) {
+    const [west, south, east, north] = filters.gazetteerBbox;
+    // Use filter query (fq) to combine with existing bbox using AND logic
+    const gazetteerSpatialFq = `geo:"Intersects(ENVELOPE(${west}, ${east}, ${north}, ${south}))"`;
+    url.searchParams.append("fq", gazetteerSpatialFq);
   }
 
   // Add pagination
@@ -272,10 +279,8 @@ function buildFacetUrl(filters: VoyagerSearchFilters): string {
     url.searchParams.append(key, value);
   });
 
-  // Add search query (facets should reflect current search)
-  if (filters.q) {
-    url.searchParams.append("q", filters.q);
-  }
+  // Add search query (facets should reflect current search, default to *:* for match all)
+  url.searchParams.append("q", filters.q || "*:*");
 
   // Add filter queries (facet selections)
   if (filters.fq && filters.fq.length > 0) {

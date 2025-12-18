@@ -23,10 +23,11 @@ import { cn } from "@/lib/utils";
 import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
-import { HIERARCHY_TREE, KEYWORDS, LOCATION_TO_VOYAGER, expandSelectedLocations } from "@/features/search/mock-data";
+import { HIERARCHY_TREE, KEYWORDS, getAllDescendantIds, getAllAncestorIds, areAllChildrenSelected, findNodeById } from "@/features/search/location-hierarchy";
 import { useSaveSearch, useSavedSearches, useDeleteSavedSearch } from "@/features/search/api";
-import { useInfiniteVoyagerSearch, buildLocationFilterQueries, buildKeywordFilterQuery, buildPropertyFilterQueries, toSearchResultFromVoyager } from "@/features/search/voyager-api";
+import { useInfiniteVoyagerSearch, toSearchResultFromVoyager } from "@/features/search/voyager-api";
 import type { VoyagerSearchResult } from "@/features/search/types";
+import { queryGazetteer, type GazetteerResult } from "@/features/search/gazetteer-api";
 
 
 export default function SearchResultsPage() {
@@ -61,6 +62,7 @@ export default function SearchResultsPage() {
   // Filter States
   const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+  const [topLevelSelectionIds, setTopLevelSelectionIds] = useState<string[]>([]); // Track which items were directly clicked
   const [date, setDate] = useState<DateRange | undefined>();
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>(() => {
@@ -72,11 +74,14 @@ export default function SearchResultsPage() {
   const [hoveredResultId, setHoveredResultId] = useState<number | string | null>(null);
   const [previewedResultId, setPreviewedResultId] = useState<number | string | null>(null);
   const [mapStyle, setMapStyle] = useState<'streets' | 'satellite'>('streets');
-  
+
+  // Gazetteer State
+  const [gazetteerGeometries, setGazetteerGeometries] = useState<GazetteerResult[]>([]);
+
   // Saved Search State
   const [isSaveSearchOpen, setIsSaveSearchOpen] = useState(false);
   const [saveSearchName, setSaveSearchName] = useState("");
-  const [saveSearchNotify, setSaveSearchNotify] = useState(true);
+  const [saveSearchNotify, setSaveSearchNotify] = useState(false);
   const [isSearchSaved, setIsSearchSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [savedSearchLink, setSavedSearchLink] = useState("https://voyager.ai/s/a8XkD4");
@@ -110,9 +115,17 @@ export default function SearchResultsPage() {
   };
 
   const handleSaveSearch = () => {
+    // Require authentication - no anonymous saves
+    if (!isAuthenticated || !user) {
+      toast.error("Please log in to save searches", {
+        description: "Saved searches require authentication.",
+      });
+      setIsSaveSearchOpen(false);
+      return;
+    }
+
     saveSearchMutation.mutate({
-      // userId is optional - only include if user is authenticated
-      ...(isAuthenticated && user ? { userId: user.id } : {}),
+      userId: user.id, // Always include userId (required)
       name: saveSearchName,
       keyword,
       location: place,
@@ -125,19 +138,21 @@ export default function SearchResultsPage() {
       notifyOnNewResults: saveSearchNotify ? 1 : 0,
     }, {
       onSuccess: () => {
-        setIsSearchSaved(true);
         setIsSaveSearchOpen(false);
         toast.success("Search saved successfully", {
-          description: "You will be notified when new results match this query.",
+          description: "You can create multiple saved searches.",
           action: {
-            label: "Share",
+            label: "View Saved",
             onClick: () => setShowShareModal(true),
           },
         });
       },
-      onError: () => {
+      onError: (error: any) => {
+        console.error("Save search error:", error);
+        const errorMessage = error?.message || "An unknown error occurred";
+        console.log("Showing error toast with message:", errorMessage);
         toast.error("Failed to save search", {
-          description: "Please try again later.",
+          description: errorMessage,
         });
       },
     });
@@ -329,26 +344,86 @@ export default function SearchResultsPage() {
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point' | 'polygon'>('none');
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
-  // Build location filter queries from selected hierarchy locations
-  // Expand parent selections to include all descendants (e.g., "North America" includes USA, Canada, Mexico, and all states)
-  const expandedLocationIds = expandSelectedLocations(selectedLocationIds, HIERARCHY_TREE);
-  const locationFilterQueries = buildLocationFilterQueries(expandedLocationIds, LOCATION_TO_VOYAGER);
-
-  // Build keyword filter query from selected keywords
-  const keywordFilterQuery = buildKeywordFilterQuery(selectedKeywords);
-
-  // Build property filter queries from selected properties
-  const propertyFilterQueries = buildPropertyFilterQueries(selectedProperties);
-
-  // Combine all filter queries
-  const filterQueries = [
-    ...locationFilterQueries,
-    ...(keywordFilterQuery ? [keywordFilterQuery] : []),
-    ...propertyFilterQueries,
-  ];
+  // No filter queries - just visual hierarchy selection for now
+  const filterQueries: string[] = [];
 
   // Build search query from keyword
   const searchQuery = keyword ? keyword : undefined;
+
+  // Helper to extract bounding box from GeoJSON geometry
+  const extractBoundsFromGeoJSON = (geo: any): [number, number, number, number] | null => {
+    if (!geo || !geo.coordinates) return null;
+
+    let allCoords: number[][] = [];
+
+    if (geo.type === 'MultiPolygon') {
+      // Flatten all polygons
+      geo.coordinates.forEach((polygon: any) => {
+        polygon.forEach((ring: any) => {
+          allCoords.push(...ring);
+        });
+      });
+    } else if (geo.type === 'Polygon') {
+      geo.coordinates.forEach((ring: any) => {
+        allCoords.push(...ring);
+      });
+    }
+
+    if (allCoords.length === 0) return null;
+
+    const lngs = allCoords.map(c => c[0]);
+    const lats = allCoords.map(c => c[1]);
+
+    return [
+      Math.min(...lngs),
+      Math.min(...lats),
+      Math.max(...lngs),
+      Math.max(...lats)
+    ];
+  };
+
+  // Helper to convert gazetteer geometries to combined bounding box
+  const convertGeometriesToBbox = (geometries: GazetteerResult[]): [number, number, number, number] | undefined => {
+    if (geometries.length === 0) return undefined;
+
+    let minLng = Infinity, minLat = Infinity;
+    let maxLng = -Infinity, maxLat = -Infinity;
+
+    geometries.forEach(result => {
+      const bounds = extractBoundsFromGeoJSON(result.geo);
+      if (bounds) {
+        minLng = Math.min(minLng, bounds[0]);
+        minLat = Math.min(minLat, bounds[1]);
+        maxLng = Math.max(maxLng, bounds[2]);
+        maxLat = Math.max(maxLat, bounds[3]);
+      }
+    });
+
+    if (minLng === Infinity) return undefined;
+    return [minLng, minLat, maxLng, maxLat];
+  };
+
+  // Query gazetteer for top-level location selections
+  const queryGazetteerForLocations = async (topLevelIds: string[]) => {
+    if (topLevelIds.length === 0) {
+      setGazetteerGeometries([]);
+      return;
+    }
+
+    // Get labels for top-level IDs
+    const locationLabels = topLevelIds.map(id => {
+      const node = findNodeById(id, HIERARCHY_TREE);
+      return node?.label;
+    }).filter(Boolean) as string[];
+
+    try {
+      const results = await queryGazetteer(locationLabels);
+      setGazetteerGeometries(results);
+    } catch (error) {
+      console.error('Gazetteer query error:', error);
+      setGazetteerGeometries([]);
+    }
+  };
 
   // Extract bbox from spatialFilter for map-based search
   // spatialFilter.data is a Leaflet LatLngBounds object with methods getWest(), getSouth(), getEast(), getNorth()
@@ -361,6 +436,11 @@ export default function SearchResultsPage() {
           spatialFilter.data.getNorth(), // north (maxLat)
         ]
       : undefined;
+
+  // Calculate bbox from gazetteer geometries (location hierarchy)
+  const gazetteerBbox = gazetteerGeometries.length > 0
+    ? convertGeometriesToBbox(gazetteerGeometries)
+    : undefined;
 
   // Voyager API calls with infinite pagination
   const {
@@ -375,7 +455,8 @@ export default function SearchResultsPage() {
     sort: sortBy === 'relevance' ? 'score desc' : sortBy === 'date_desc' ? 'modified desc' : sortBy === 'date_asc' ? 'modified asc' : 'score desc',
     dateFrom: date?.from,
     dateTo: date?.to,
-    bbox: bboxFilter,
+    bbox: bboxFilter,           // Map-drawn bbox (if exists)
+    gazetteerBbox: gazetteerBbox, // Location hierarchy bbox (if exists)
     place: place || undefined,
   });
 
@@ -438,7 +519,7 @@ export default function SearchResultsPage() {
 
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    
+
     // Use the current keyword and place values directly
     setLocation(`/search?q=${encodeURIComponent(keyword)}&loc=${encodeURIComponent(place)}`);
     setIsLoading(true);
@@ -448,17 +529,81 @@ export default function SearchResultsPage() {
   const handleLocationFilterSelect = (id: string, label: string) => {
     setSelectedLocationIds(prev => {
       const isSelected = prev.includes(id);
-      let newSelection;
-      
+      let newSelection = [...prev];
+
       if (isSelected) {
-        newSelection = prev.filter(locId => locId !== id);
-        setActiveFilters(curr => curr.filter(f => f.id !== `loc-${id}`));
+        // Unchecking: remove this node, all descendants, and all ancestors
+        const descendantIds = getAllDescendantIds(id, HIERARCHY_TREE);
+        const ancestorIds = getAllAncestorIds(id, HIERARCHY_TREE);
+        const idsToRemove = new Set([...descendantIds, ...ancestorIds]);
+
+        newSelection = newSelection.filter(locId => !idsToRemove.has(locId));
+
+        // Remove from top-level selections - but keep any ancestor that's in topLevel
+        setTopLevelSelectionIds(curr => {
+          // Check if any ancestor is in topLevel
+          const ancestorInTopLevel = ancestorIds.find(ancestorId => curr.includes(ancestorId));
+
+          if (ancestorInTopLevel) {
+            // Keep the ancestor, only remove this node and its descendants
+            return curr.filter(locId => locId !== id && !descendantIds.includes(locId));
+          }
+
+          // No ancestor in topLevel, remove everything
+          return curr.filter(locId => !idsToRemove.has(locId));
+        });
+
+        // Remove all affected filter badges
+        setActiveFilters(curr => curr.filter(f => !idsToRemove.has(f.id.replace('loc-', ''))));
       } else {
-        newSelection = [...prev, id];
+        // Checking: add this node and all descendants
+        const descendantIds = getAllDescendantIds(id, HIERARCHY_TREE);
+        descendantIds.forEach(descId => {
+          if (!newSelection.includes(descId)) {
+            newSelection.push(descId);
+          }
+        });
+
+        // Check if we should auto-check ancestors
+        const ancestorIds = getAllAncestorIds(id, HIERARCHY_TREE);
+        ancestorIds.forEach(ancestorId => {
+          if (areAllChildrenSelected(ancestorId, newSelection, HIERARCHY_TREE)) {
+            if (!newSelection.includes(ancestorId)) {
+              newSelection.push(ancestorId);
+            }
+          }
+        });
+
+        // Mark this as a top-level selection (the one that should be highlighted)
+        setTopLevelSelectionIds(curr => {
+          // First, remove any descendants from top-level (if Asia is clicked, remove Japan from top-level)
+          const descendantsToRemove = new Set(descendantIds);
+          let filtered = curr.filter(locId => !descendantsToRemove.has(locId) || locId === id);
+
+          // Check if any ancestor is already in topLevel
+          const hasAncestorInTopLevel = ancestorIds.some(ancestorId => curr.includes(ancestorId));
+
+          if (hasAncestorInTopLevel) {
+            // Don't change topLevel - keep the ancestor highlighted
+            return curr;
+          }
+
+          // Remove any ancestors from top-level (if California is clicked first, then NA)
+          filtered = filtered.filter(locId => !ancestorIds.includes(locId));
+
+          // Add this as the new top-level (if not already there)
+          if (!filtered.includes(id)) {
+            return [...filtered, id];
+          }
+          return filtered;
+        });
+
+        // Add filter badge only for the clicked node
         if (!activeFilters.find(f => f.id === `loc-${id}`)) {
           setActiveFilters(curr => [...curr, { type: 'location', value: label, id: `loc-${id}` }]);
         }
       }
+
       return newSelection;
     });
   };
@@ -469,6 +614,11 @@ export default function SearchResultsPage() {
       return [...prev, prop];
     });
   };
+
+  // Query gazetteer when top-level selections change
+  useEffect(() => {
+    queryGazetteerForLocations(topLevelSelectionIds);
+  }, [topLevelSelectionIds]);
 
   const toggleKeyword = (kw: string) => {
     setSelectedKeywords(prev => {
@@ -797,29 +947,31 @@ export default function SearchResultsPage() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button 
-                  variant={isSearchSaved ? "secondary" : "ghost"}
+                <Button
+                  variant="ghost"
                   size="sm"
-                  className={cn(
-                    "h-7 gap-1.5 text-xs",
-                    isSearchSaved && "bg-primary/10 text-primary"
-                  )}
+                  className="h-7 gap-1.5 text-xs"
                   onClick={() => {
-                    if (isSearchSaved) {
-                      setShowShareModal(true);
-                    } else {
-                      setIsSaveSearchOpen(true);
-                      setSaveSearchName(keyword || place || "New Search");
+                    if (!isAuthenticated) {
+                      toast.error("Please log in to save searches", {
+                        description: "Saved searches require authentication.",
+                      });
+                      return;
                     }
+                    setIsSaveSearchOpen(true);
+                    setSaveSearchName(keyword || place || "New Search");
                   }}
+                  disabled={!isAuthenticated}
                   data-testid="button-save-search"
                 >
-                  {isSearchSaved ? <Star className="w-3.5 h-3.5 fill-primary" /> : <Star className="w-3.5 h-3.5" />}
-                  <span className="hidden sm:inline">{isSearchSaved ? "Saved" : "Save"}</span>
+                  <Star className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Save</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {isSearchSaved ? "Manage saved search" : "Save this search"}
+                {!isAuthenticated
+                  ? "Log in to save searches"
+                  : "Save this search"}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -1079,6 +1231,7 @@ export default function SearchResultsPage() {
           hierarchyTree={HIERARCHY_TREE}
           handleLocationFilterSelect={handleLocationFilterSelect}
           selectedLocationIds={selectedLocationIds}
+          topLevelSelectionIds={topLevelSelectionIds}
           keywords={KEYWORDS}
           keywordSearch={keywordSearch}
           setKeywordSearch={setKeywordSearch}

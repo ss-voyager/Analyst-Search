@@ -47,5 +47,11 @@ export default defineConfig({
       strict: true,
       deny: ["**/.*"],
     },
+    proxy: {
+      "/api": {
+        target: "http://172.22.1.25:5000",
+        changeOrigin: true,
+      },
+    },
   },
 });

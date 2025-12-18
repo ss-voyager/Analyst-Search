@@ -211,6 +211,126 @@ export function expandSelectedLocations(selectedIds: string[], tree: TreeNode[])
   return Array.from(expandedIds);
 }
 
+// Helper to find parent ID for a given node
+export function getParentId(nodeId: string, tree: TreeNode[]): string | null {
+  function findParent(nodes: TreeNode[], targetId: string, parentId: string | null): string | null {
+    for (const node of nodes) {
+      if (node.id === targetId) {
+        return parentId;
+      }
+      if (node.children) {
+        const result = findParent(node.children, targetId, node.id);
+        if (result !== null) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+
+  return findParent(tree, nodeId, null);
+}
+
+// Helper to get direct children IDs of a node
+export function getDirectChildrenIds(nodeId: string, tree: TreeNode[]): string[] {
+  function findNode(nodes: TreeNode[]): TreeNode | null {
+    for (const node of nodes) {
+      if (node.id === nodeId) {
+        return node;
+      }
+      if (node.children) {
+        const result = findNode(node.children);
+        if (result) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+
+  const node = findNode(tree);
+  return node?.children?.map(child => child.id) || [];
+}
+
+// Helper to get all ancestor IDs from node to root
+export function getAllAncestorIds(nodeId: string, tree: TreeNode[]): string[] {
+  const ancestors: string[] = [];
+  let currentId: string | null = nodeId;
+
+  while (currentId !== null) {
+    const parentId = getParentId(currentId, tree);
+    if (parentId !== null) {
+      ancestors.push(parentId);
+    }
+    currentId = parentId;
+  }
+
+  return ancestors;
+}
+
+// Helper to check if all direct children are selected
+export function areAllChildrenSelected(nodeId: string, selectedIds: string[], tree: TreeNode[]): boolean {
+  const childrenIds = getDirectChildrenIds(nodeId, tree);
+  if (childrenIds.length === 0) {
+    return false;
+  }
+  return childrenIds.every(childId => selectedIds.includes(childId));
+}
+
+// Helper to check if some (but not all) children are selected
+export function areSomeChildrenSelected(nodeId: string, selectedIds: string[], tree: TreeNode[]): boolean {
+  const childrenIds = getDirectChildrenIds(nodeId, tree);
+  if (childrenIds.length === 0) {
+    return false;
+  }
+
+  const selectedCount = childrenIds.filter(childId => selectedIds.includes(childId)).length;
+  return selectedCount > 0 && selectedCount < childrenIds.length;
+}
+
+// Helper to calculate checkbox state (true/false/"indeterminate")
+export function getCheckboxState(
+  nodeId: string,
+  selectedIds: string[],
+  tree: TreeNode[]
+): boolean | "indeterminate" {
+  const isDirectlySelected = selectedIds.includes(nodeId);
+  const childrenIds = getDirectChildrenIds(nodeId, tree);
+
+  // Leaf node - just check if it's selected
+  if (childrenIds.length === 0) {
+    return isDirectlySelected;
+  }
+
+  // Parent node - check children state
+  const allChildrenSelected = areAllChildrenSelected(nodeId, selectedIds, tree);
+  const someChildrenSelected = areSomeChildrenSelected(nodeId, selectedIds, tree);
+
+  if (allChildrenSelected) {
+    return true;
+  } else if (someChildrenSelected || isDirectlySelected) {
+    return "indeterminate";
+  } else {
+    return false;
+  }
+}
+
+// Helper to find a node by ID in the tree
+export function findNodeById(id: string, tree: TreeNode[]): TreeNode | null {
+  for (const node of tree) {
+    if (node.id === id) {
+      return node;
+    }
+    if (node.children) {
+      const found = findNodeById(id, node.children);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
+}
+
 export const KEYWORDS = [
   "Vegetation", "Water", "Urban", "Agriculture", "Disaster", 
   "Snow/Ice", "Clouds", "Desert", "Forest", "Ocean",

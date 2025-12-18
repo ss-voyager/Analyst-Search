@@ -105,30 +105,53 @@ export const insertProvenanceEventSchema = createInsertSchema(provenanceEvents).
 export type InsertProvenanceEvent = z.infer<typeof insertProvenanceEventSchema>;
 export type ProvenanceEvent = typeof provenanceEvents.$inferSelect;
 
-// Saved Searches
-export const savedSearches = pgTable("saved_searches", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  keyword: text("keyword"),
-  location: text("location"),
-  dateFrom: timestamp("date_from"),
-  dateTo: timestamp("date_to"),
-  locationIds: text("location_ids").array(),
-  keywords: text("keywords").array(),
-  properties: text("properties").array(),
-  spatialFilter: jsonb("spatial_filter"),
-  notifyOnNewResults: integer("notify_on_new_results").default(1), // 1 = true, 0 = false (using integer for simplicity)
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Saved Searches - Now using Voyager API (no PostgreSQL table)
+// Keeping interfaces for API contracts
 
-export const insertSavedSearchSchema = createInsertSchema(savedSearches).omit({
-  id: true,
-  createdAt: true,
-});
+export interface SavedSearch {
+  id: string; // Changed from number to string (Voyager display ID)
+  userId?: string | null;
+  name: string;
+  keyword?: string | null;
+  location?: string | null;
+  locationIds?: string[] | null;
+  keywords?: string[] | null;
+  properties?: string[] | null;
+  dateFrom?: Date | null;
+  dateTo?: Date | null;
+  spatialFilter?: any;
+  notifyOnNewResults?: number | null;
+  createdAt: Date;
+}
 
-export type InsertSavedSearch = z.infer<typeof insertSavedSearchSchema>;
-export type SavedSearch = typeof savedSearches.$inferSelect;
+export interface InsertSavedSearch {
+  userId?: string;
+  name: string;
+  keyword?: string;
+  location?: string;
+  locationIds?: string[];
+  keywords?: string[];
+  properties?: string[];
+  dateFrom?: Date;
+  dateTo?: Date;
+  spatialFilter?: any;
+  notifyOnNewResults?: number;
+}
+
+// Zod schema for validation
+export const insertSavedSearchSchema = z.object({
+  userId: z.string().optional(),
+  name: z.string().min(1),
+  keyword: z.string().optional(),
+  location: z.string().optional(),
+  locationIds: z.array(z.string()).optional(),
+  keywords: z.array(z.string()).optional(),
+  properties: z.array(z.string()).optional(),
+  dateFrom: z.union([z.date(), z.string().transform(str => new Date(str))]).optional(),
+  dateTo: z.union([z.date(), z.string().transform(str => new Date(str))]).optional(),
+  spatialFilter: z.any().optional(),
+  notifyOnNewResults: z.number().optional(),
+});
 
 // Relations
 export const satelliteItemsRelations = relations(satelliteItems, ({ many }) => ({
@@ -150,9 +173,4 @@ export const provenanceEventsRelations = relations(provenanceEvents, ({ one }) =
   }),
 }));
 
-export const savedSearchesRelations = relations(savedSearches, ({ one }) => ({
-  user: one(users, {
-    fields: [savedSearches.userId],
-    references: [users.id],
-  }),
-}));
+// savedSearchesRelations removed - no longer using PostgreSQL for saved searches

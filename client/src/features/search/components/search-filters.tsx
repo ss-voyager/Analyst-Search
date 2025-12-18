@@ -14,9 +14,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from "@/components/ui/checkbox";
 import { Folder, FolderOpen, File } from "lucide-react";
 import { TreeNode } from "../types";
+import { getCheckboxState, HIERARCHY_TREE } from "../location-hierarchy";
 
 // --- FolderTree Component ---
-const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [] }: { nodes: TreeNode[], level?: number, onSelect?: (id: string, label: string) => void, selectedIds?: string[] }) => {
+const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [], topLevelIds = [] }: { nodes: TreeNode[], level?: number, onSelect?: (id: string, label: string) => void, selectedIds?: string[], topLevelIds?: string[] }) => {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -35,41 +36,42 @@ const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [] }: { nodes: T
       {nodes.map(node => {
         const hasChildren = node.children && node.children.length > 0;
         const isExpanded = expanded[node.id];
-        const isSelected = selectedIds.includes(node.id);
-        
+        const checkboxState = getCheckboxState(node.id, selectedIds, HIERARCHY_TREE);
+        const isTopLevel = topLevelIds.includes(node.id);
+
         return (
           <div key={node.id}>
-            <div 
+            <div
               className={cn(
                 "flex items-center py-1.5 px-2 rounded-md group transition-colors cursor-pointer select-none",
-                isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
+                isTopLevel ? "bg-primary/10 text-primary" : "hover:bg-muted/50"
               )}
               style={{ paddingLeft: `${level * 16 + 8}px` }}
               onClick={() => hasChildren && toggleExpand(node.id)}
             >
-              <div className={cn("mr-2 transition-colors", isSelected ? "text-primary" : "text-muted-foreground/70 group-hover:text-primary")}>
+              <div className={cn("mr-2 transition-colors", isTopLevel ? "text-primary" : "text-muted-foreground/70 group-hover:text-primary")}>
                 {hasChildren ? (
                   isExpanded ? <FolderOpen className="w-3.5 h-3.5" /> : <Folder className="w-3.5 h-3.5" />
                 ) : (
                   <File className="w-3.5 h-3.5 opacity-50" />
                 )}
               </div>
-              
-              <span className={cn("text-xs font-medium flex-1 truncate", isSelected ? "text-primary" : "text-foreground/90")}>
+
+              <span className={cn("text-xs font-medium flex-1 truncate", isTopLevel ? "text-primary" : "text-foreground/90")}>
                 {node.label}
               </span>
-              
-              <Checkbox 
-                id={`tree-check-${node.id}`} 
-                checked={isSelected}
+
+              <Checkbox
+                id={`tree-check-${node.id}`}
+                checked={checkboxState}
                 className={cn(
                   "w-3.5 h-3.5 ml-2 border-muted-foreground/40 group-hover:border-primary/60",
-                  isSelected ? "data-[state=checked]:bg-primary border-primary" : ""
-                )} 
-                onClick={(e) => handleSelect(e, node)} 
+                  checkboxState === true ? "data-[state=checked]:bg-primary border-primary" : ""
+                )}
+                onClick={(e) => handleSelect(e, node)}
               />
             </div>
-            
+
             {hasChildren && isExpanded && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -77,7 +79,7 @@ const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [] }: { nodes: T
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.2 }}
               >
-                <FolderTree nodes={node.children!} level={level + 1} onSelect={onSelect} selectedIds={selectedIds} />
+                <FolderTree nodes={node.children!} level={level + 1} onSelect={onSelect} selectedIds={selectedIds} topLevelIds={topLevelIds} />
               </motion.div>
             )}
           </div>
@@ -95,6 +97,7 @@ interface SearchFiltersProps {
   hierarchyTree: TreeNode[];
   handleLocationFilterSelect: (id: string, label: string) => void;
   selectedLocationIds: string[];
+  topLevelSelectionIds: string[];
   keywords: string[];
   keywordSearch: string;
   setKeywordSearch: (val: string) => void;
@@ -111,6 +114,7 @@ export function SearchFilters({
   hierarchyTree,
   handleLocationFilterSelect,
   selectedLocationIds,
+  topLevelSelectionIds,
   keywords,
   keywordSearch,
   setKeywordSearch,
@@ -181,7 +185,7 @@ export function SearchFilters({
                   <Globe className="w-4 h-4 text-primary" /> Location Hierarchy
                 </h3>
                 <div className="border border-border/60 rounded-lg bg-muted/10 p-2 max-h-[300px] overflow-y-auto">
-                  <FolderTree nodes={hierarchyTree} onSelect={handleLocationFilterSelect} selectedIds={selectedLocationIds} />
+                  <FolderTree nodes={hierarchyTree} onSelect={handleLocationFilterSelect} selectedIds={selectedLocationIds} topLevelIds={topLevelSelectionIds} />
                 </div>
               </div>
 
