@@ -271,10 +271,110 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getSavedSearch(id: string): Promise<SavedSearch | undefined> {
-    // Not currently used by the API routes
-    console.log('getSavedSearch called for id:', id);
-    return undefined;
+  async getSavedSearch(id: string, cookie?: string): Promise<SavedSearch | undefined> {
+    const voyagerBaseUrl = process.env.VOYAGER_BASE_URL || 'http://172.22.1.25:8888';
+
+    try {
+      console.log('getSavedSearch called for id:', id);
+
+      const queryParams = new URLSearchParams({
+        indent: 'on',
+        q: `id:${id}`,
+        wt: 'json',
+      });
+
+      const url = `${voyagerBaseUrl}/solr/ssearch/select?${queryParams}`;
+      console.log('Voyager URL:', url);
+
+      const headers: HeadersInit = {};
+      if (cookie) {
+        headers['Cookie'] = cookie;
+      }
+
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Voyager API error: ${response.status} ${response.statusText}`, errorText);
+        return undefined;
+      }
+
+      const data = await response.json();
+      console.log('Voyager response:', JSON.stringify(data, null, 2));
+
+      if (!data.response || !data.response.docs || data.response.docs.length === 0) {
+        console.log('No docs found for id:', id);
+        return undefined;
+      }
+
+      const doc = data.response.docs[0];
+
+      // Parse param_fq array to extract search parameters
+      // Format: ["keyword:water", "locationId:af", "locationId:eg", "keywords:Urban"]
+      let keyword: string | undefined;
+      let location: string | undefined;
+      const locationIds: string[] = [];
+      const keywords: string[] = [];
+      const properties: string[] = [];
+      let dateFrom: Date | undefined;
+      let dateTo: Date | undefined;
+
+      if (doc.param_fq && Array.isArray(doc.param_fq)) {
+        for (const fq of doc.param_fq) {
+          const colonIndex = fq.indexOf(':');
+          if (colonIndex === -1) continue;
+
+          const field = fq.substring(0, colonIndex);
+          const value = fq.substring(colonIndex + 1);
+
+          switch (field) {
+            case 'keyword':
+              keyword = value;
+              break;
+            case 'location':
+              location = value;
+              break;
+            case 'locationId':
+              locationIds.push(value);
+              break;
+            case 'keywords':
+              keywords.push(value);
+              break;
+            case 'properties':
+            case 'property':
+              properties.push(value);
+              break;
+            case 'dateFrom':
+              dateFrom = new Date(value);
+              break;
+            case 'dateTo':
+              dateTo = new Date(value);
+              break;
+          }
+        }
+      }
+
+      console.log('Parsed from param_fq:', { keyword, location, locationIds, keywords, properties, dateFrom, dateTo });
+
+      return {
+        id: doc.id,
+        userId: doc.owner,
+        name: doc.title,
+        keyword: keyword,
+        location: location,
+        locationIds: locationIds.length > 0 ? locationIds : undefined,
+        keywords: keywords.length > 0 ? keywords : undefined,
+        properties: properties.length > 0 ? properties : undefined,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
+        spatialFilter: doc.spatialFilter,
+        notifyOnNewResults: doc.notifyOnNewResults,
+        createdAt: doc.saved ? new Date(doc.saved) : new Date(),
+      };
+    } catch (error) {
+      console.error('Voyager getSavedSearch error:', error);
+      return undefined;
+    }
   }
 
   async createSavedSearch(search: InsertSavedSearch, cookie?: string): Promise<SavedSearch> {

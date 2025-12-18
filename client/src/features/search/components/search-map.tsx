@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap } from 'react-leaflet';
-import { LatLngBounds, LatLng } from 'leaflet';
+import L, { LatLngBounds, LatLng } from 'leaflet';
 import { Map as MapIcon, Globe, Square, MapPin, Pentagon, MousePointer } from "lucide-react";
 import { MapDrawControl, SpatialFilterLayer } from "@/components/map-draw-control";
 import { SearchResult, VoyagerSearchResult } from "../types";
@@ -25,12 +25,30 @@ function hasValidBounds(result: GenericResult): boolean {
   }
 }
 
-// Convert bounds from [lng, lat] to Leaflet's [lat, lng] format
+// Convert bounds to Leaflet LatLngBounds
+// VoyagerSearchResult bounds from toSearchResultFromVoyager are already [[lat, lng], [lat, lng]]
 function toLeafletBounds(bounds: [[number, number], [number, number]]): LatLngBounds {
-  // bounds is [[lng1, lat1], [lng2, lat2]] - swap to [lat, lng]
+  // bounds is [[lat, lng], [lat, lng]] - use directly (sw, ne format)
   return new LatLngBounds(
-    [bounds[0][1], bounds[0][0]],
-    [bounds[1][1], bounds[1][0]]
+    [bounds[0][0], bounds[0][1]], // [lat, lng] for southwest
+    [bounds[1][0], bounds[1][1]]  // [lat, lng] for northeast
+  );
+}
+
+// Create a fixed-size bounds centered on the centroid of the original bounds
+// This prevents huge world-spanning rectangles from cluttering the map
+const MARKER_SIZE_DEGREES = 4; // Fixed size in degrees (roughly ~440km at equator)
+
+function toCentroidBounds(bounds: [[number, number], [number, number]]): LatLngBounds {
+  // Calculate centroid
+  const centerLat = (bounds[0][0] + bounds[1][0]) / 2;
+  const centerLng = (bounds[0][1] + bounds[1][1]) / 2;
+
+  // Create fixed-size bounds around centroid
+  const halfSize = MARKER_SIZE_DEGREES / 2;
+  return new LatLngBounds(
+    [centerLat - halfSize, centerLng - halfSize],
+    [centerLat + halfSize, centerLng + halfSize]
   );
 }
 
@@ -74,6 +92,15 @@ const PreviewEffect = ({ result }: { result: GenericResult | undefined }) => {
   return null;
 };
 
+// Component to capture map instance and store in ref
+const MapRefSetter = ({ mapRef }: { mapRef: React.MutableRefObject<L.Map | null> }) => {
+  const map = useMap();
+  useEffect(() => {
+    mapRef.current = map;
+  }, [map, mapRef]);
+  return null;
+};
+
 interface SearchMapProps {
   showMap: boolean;
   setShowMap: (show: boolean) => void;
@@ -89,6 +116,11 @@ interface SearchMapProps {
   setPlace: (place: string) => void;
   spatialFilter?: { type: 'box' | 'point' | 'polygon'; data: any } | null;
 }
+
+// Min/max constraints for map width
+const MIN_MAP_WIDTH = 250;
+const MAX_MAP_WIDTH = 800;
+const DEFAULT_MAP_WIDTH = 400;
 
 export function SearchMap({
   showMap,
@@ -106,11 +138,17 @@ export function SearchMap({
   spatialFilter
 }: SearchMapProps) {
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
 
-  const validResults = useMemo(() => 
-    filteredResults.filter(hasValidBounds), 
-    [filteredResults]
-  );
+  const validResults = useMemo(() => {
+    const valid = filteredResults.filter(hasValidBounds);
+    console.log(`Map: ${valid.length}/${filteredResults.length} results have valid bounds`);
+    if (valid.length > 0) {
+      console.log('Sample bounds:', valid[0].bounds);
+    }
+    return valid;
+  }, [filteredResults]);
 
   useEffect(() => {
     if (validResults.length > 0) {
@@ -129,6 +167,39 @@ export function SearchMap({
       }
     }
   }, [validResults.length]);
+
+  // Handle resize drag with direct DOM manipulation for performance
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const container = containerRef.current;
+    if (!container) return;
+
+    const startX = e.clientX;
+    const startWidth = container.offsetWidth;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      // Direct DOM manipulation - no React state updates during drag
+      const delta = startX - moveEvent.clientX;
+      const newWidth = Math.max(MIN_MAP_WIDTH, Math.min(MAX_MAP_WIDTH, startWidth + delta));
+      container.style.width = `${newWidth}px`;
+      // Invalidate map size during drag so it updates smoothly
+      mapRef.current?.invalidateSize();
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      // Final invalidation to ensure map fills correctly
+      mapRef.current?.invalidateSize();
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
 
   if (!showMap) return null;
 
@@ -165,7 +236,18 @@ export function SearchMap({
     : '&copy; <a href="https://www.esri.com/">Esri</a>';
 
   return (
-    <div className="w-[400px] hidden xl:block border-l border-border shrink-0 transition-all duration-300 relative">
+    <div
+      ref={containerRef}
+      className="hidden xl:block shrink-0 relative border-l border-border"
+      style={{ width: DEFAULT_MAP_WIDTH }}
+    >
+      {/* Resize Handle - positioned over the border */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-2 -ml-1 hover:bg-primary/30 cursor-col-resize z-20 group"
+        onMouseDown={handleMouseDown}
+      >
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 rounded-full bg-muted-foreground/30 group-hover:bg-primary transition-colors" />
+      </div>
       <div className="absolute inset-0">
         <MapContainer 
           center={[20, 0]} 
@@ -181,6 +263,7 @@ export function SearchMap({
           dragging={true}
         >
           <TileLayer attribution={tileAttribution} url={tileUrl} noWrap={true} />
+          <MapRefSetter mapRef={mapRef} />
           <MapEffect bounds={mapBounds} />
           <PreviewEffect result={previewedResult} />
           <MapDrawControl 
@@ -190,22 +273,22 @@ export function SearchMap({
             onDrawPolygon={handleDrawPolygon}
           />
           {validResults.map(result => (
-            <Rectangle 
+            <Rectangle
               key={`footprint-${result.id}`}
-              bounds={toLeafletBounds(result.bounds as [[number, number], [number, number]])} 
-              pathOptions={{ 
-                color: hoveredResultId === result.id ? '#00ffff' : '#3b82f6', 
-                weight: hoveredResultId === result.id ? 2 : 1, 
-                fillOpacity: hoveredResultId === result.id ? 0.2 : 0.05,
-                fillColor: hoveredResultId === result.id ? '#00ffff' : '#3b82f6'
-              }} 
+              bounds={toCentroidBounds(result.bounds as [[number, number], [number, number]])}
+              pathOptions={{
+                color: hoveredResultId === result.id ? '#00ffff' : '#3b82f6',
+                weight: hoveredResultId === result.id ? 2 : 1,
+                fillOpacity: 0,
+                fill: false
+              }}
             />
           ))}
           {hoveredResult && hasValidBounds(hoveredResult) && (
-            <ImageOverlay url={hoveredResult.thumbnail} bounds={toLeafletBounds(hoveredResult.bounds as [[number, number], [number, number]])} opacity={0.9} zIndex={100} />
+            <ImageOverlay url={hoveredResult.thumbnail} bounds={toCentroidBounds(hoveredResult.bounds as [[number, number], [number, number]])} opacity={0.9} zIndex={100} />
           )}
           {previewedResult && previewedResult.id !== hoveredResultId && hasValidBounds(previewedResult) && (
-            <ImageOverlay url={previewedResult.thumbnail} bounds={toLeafletBounds(previewedResult.bounds as [[number, number], [number, number]])} opacity={0.9} zIndex={90} />
+            <ImageOverlay url={previewedResult.thumbnail} bounds={toCentroidBounds(previewedResult.bounds as [[number, number], [number, number]])} opacity={0.9} zIndex={90} />
           )}
           {spatialFilter && <SpatialFilterLayer type={spatialFilter.type} data={spatialFilter.data} />}
         </MapContainer>

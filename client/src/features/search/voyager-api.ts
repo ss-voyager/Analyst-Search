@@ -89,6 +89,7 @@ export interface VoyagerSearchFilters {
   bbox?: [number, number, number, number]; // [west, south, east, north] / [minLng, minLat, maxLng, maxLat]
   gazetteerBbox?: [number, number, number, number]; // Location hierarchy bbox from gazetteer
   place?: string; // text-based place search
+  keywords?: string[]; // selected keywords to filter by
 }
 
 export interface VoyagerDoc {
@@ -247,6 +248,13 @@ function buildSearchUrl(filters: VoyagerSearchFilters): string {
     // Use filter query (fq) to combine with existing bbox using AND logic
     const gazetteerSpatialFq = `geo:"Intersects(ENVELOPE(${west}, ${east}, ${north}, ${south}))"`;
     url.searchParams.append("fq", gazetteerSpatialFq);
+  }
+
+  // Add keywords filter (searches the 'keywords' field which contains keyword strings)
+  if (filters.keywords && filters.keywords.length > 0) {
+    // Build OR query for multiple keywords: keywords:("keyword1" OR "keyword2")
+    const keywordQueries = filters.keywords.map(kw => `"${kw.replace(/"/g, '\\"')}"`).join(" OR ");
+    url.searchParams.append("fq", `keywords:(${keywordQueries})`);
   }
 
   // Add pagination
@@ -523,10 +531,13 @@ export function buildLocationFilterQueries(
 
 // Convert Voyager doc to a format suitable for the UI
 export function toSearchResultFromVoyager(doc: VoyagerDoc) {
-  // Parse bbox if available (format: "minLng,minLat,maxLng,maxLat")
+  // Parse bbox if available (format: "minLng minLat maxLng maxLat" - space separated)
   let bounds: [[number, number], [number, number]] | null = null;
+
   if (doc.bbox) {
-    const parts = doc.bbox.split(",").map(Number);
+    // Voyager returns bbox as space-separated: "minLng minLat maxLng maxLat"
+    // Handle both space and comma separators for flexibility
+    const parts = doc.bbox.trim().split(/[\s,]+/).map(Number);
     if (parts.length === 4 && parts.every((p) => !isNaN(p))) {
       bounds = [
         [parts[1], parts[0]], // [minLat, minLng]

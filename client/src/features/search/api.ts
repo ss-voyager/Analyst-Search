@@ -91,6 +91,19 @@ async function deleteSavedSearch(id: string): Promise<void> {
   }
 }
 
+// Fetch single saved search by ID (proxied through Express to forward cookies)
+async function fetchSavedSearchById(id: string): Promise<SavedSearch> {
+  const response = await fetch(`/api/saved-searches/${id}`, {
+    credentials: 'include', // Send cookies to our Express server
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch saved search');
+  }
+
+  return response.json();
+}
+
 // Create saved search (proxied through Express to forward cookies)
 async function createSavedSearch(data: {
   userId?: string;
@@ -175,7 +188,8 @@ export function useSavedSearches(userId?: string) {
     queryKey: ['savedSearches', userId || 'anonymous'],
     queryFn: () => fetchSavedSearches(userId),
     enabled: !!userId, // Only fetch when userId is available
-    staleTime: 0, // Always refetch saved searches
+    staleTime: 5 * 60 * 1000, // 5 minutes - don't refetch constantly
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 }
 
@@ -187,5 +201,11 @@ export function useDeleteSavedSearch() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['savedSearches'] });
     },
+  });
+}
+
+export function useLoadSavedSearch() {
+  return useMutation({
+    mutationFn: fetchSavedSearchById,
   });
 }

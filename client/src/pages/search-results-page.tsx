@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
 import {
   Search, MapPin, Filter, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark, Settings, LogOut
@@ -19,13 +19,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { SearchFilters } from "@/features/search/components/search-filters";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
-import { HIERARCHY_TREE, KEYWORDS, getAllDescendantIds, getAllAncestorIds, areAllChildrenSelected, findNodeById } from "@/features/search/location-hierarchy";
-import { useSaveSearch, useSavedSearches, useDeleteSavedSearch } from "@/features/search/api";
-import { useInfiniteVoyagerSearch, toSearchResultFromVoyager } from "@/features/search/voyager-api";
+import { HIERARCHY_TREE, getAllDescendantIds, getAllAncestorIds, areAllChildrenSelected, findNodeById } from "@/features/search/location-hierarchy";
+import { useSaveSearch, useSavedSearches, useDeleteSavedSearch, useLoadSavedSearch } from "@/features/search/api";
+import { useInfiniteVoyagerSearch, toSearchResultFromVoyager, buildPropertyFilterQueries } from "@/features/search/voyager-api";
 import type { VoyagerSearchResult } from "@/features/search/types";
 import { queryGazetteer, type GazetteerResult } from "@/features/search/gazetteer-api";
 
@@ -93,6 +92,7 @@ export default function SearchResultsPage() {
   );
   const saveSearchMutation = useSaveSearch();
   const deleteSearchMutation = useDeleteSavedSearch();
+  const loadSavedSearchMutation = useLoadSavedSearch();
 
   const handleLogin = async () => {
     setIsLoggingIn(true);
@@ -344,8 +344,10 @@ export default function SearchResultsPage() {
   const [drawMode, setDrawMode] = useState<'none' | 'box' | 'point' | 'polygon'>('none');
   const [spatialFilter, setSpatialFilter] = useState<{type: 'box' | 'point' | 'polygon', data: any} | null>(null);
 
-  // No filter queries - just visual hierarchy selection for now
-  const filterQueries: string[] = [];
+  // Build filter queries from selected properties (has_spatial, has_thumbnail, etc.)
+  const filterQueries: string[] = useMemo(() => {
+    return buildPropertyFilterQueries(selectedProperties);
+  }, [selectedProperties]);
 
   // Build search query from keyword
   const searchQuery = keyword ? keyword : undefined;
@@ -458,6 +460,7 @@ export default function SearchResultsPage() {
     bbox: bboxFilter,           // Map-drawn bbox (if exists)
     gazetteerBbox: gazetteerBbox, // Location hierarchy bbox (if exists)
     place: place || undefined,
+    keywords: selectedKeywords.length > 0 ? selectedKeywords : undefined, // Selected keywords filter
   });
 
   useEffect(() => {
@@ -469,6 +472,46 @@ export default function SearchResultsPage() {
   const filteredResults: VoyagerSearchResult[] = searchData?.pages
     ? searchData.pages.flatMap(page => page.response.docs.map(toSearchResultFromVoyager))
     : [];
+
+  // Track available keywords - accumulate from results, don't reset when filtering
+  // This prevents keywords from disappearing when a keyword filter is applied
+  const [availableKeywords, setAvailableKeywords] = useState<string[]>([]);
+
+  // Update available keywords when results change, but preserve existing ones
+  // Only fully reset when base search criteria (not keywords) change
+  useEffect(() => {
+    if (filteredResults.length > 0) {
+      const keywordSet = new Set<string>(availableKeywords);
+      filteredResults.forEach(result => {
+        if (result.keywords && Array.isArray(result.keywords)) {
+          result.keywords.forEach(kw => {
+            const normalized = typeof kw === 'string' ? kw.trim() : '';
+            if (normalized) {
+              keywordSet.add(normalized);
+            }
+          });
+        }
+      });
+      const sorted = Array.from(keywordSet).sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase())
+      );
+      // Only update if there are new keywords
+      if (sorted.length > availableKeywords.length) {
+        setAvailableKeywords(sorted);
+      }
+    }
+  }, [filteredResults]);
+
+  // Reset available keywords when base search changes (not keyword selection)
+  const baseSearchKey = useMemo(() =>
+    JSON.stringify({ q: searchQuery, fq: filterQueries, dateFrom: date?.from, dateTo: date?.to, bbox: bboxFilter, gazetteerBbox, place }),
+    [searchQuery, filterQueries, date?.from, date?.to, bboxFilter, gazetteerBbox, place]
+  );
+
+  useEffect(() => {
+    // Clear keywords when base search changes so they refresh from new results
+    setAvailableKeywords([]);
+  }, [baseSearchKey]);
 
   // Total results count from Voyager (from first page)
   const totalResults = searchData?.pages?.[0]?.response?.numFound || 0;
@@ -623,11 +666,7 @@ export default function SearchResultsPage() {
   const toggleKeyword = (kw: string) => {
     setSelectedKeywords(prev => {
       if (prev.includes(kw)) {
-        setActiveFilters(curr => curr.filter(f => f.id !== `kw-${kw}`));
         return prev.filter(k => k !== kw);
-      }
-      if (!activeFilters.find(f => f.id === `kw-${kw}`)) {
-        setActiveFilters(curr => [...curr, { type: 'keyword', value: kw, id: `kw-${kw}` }]);
       }
       return [...prev, kw];
     });
@@ -1132,7 +1171,7 @@ export default function SearchResultsPage() {
                    <div className="flex items-center justify-center py-8 text-muted-foreground">
                      Loading saved searches...
                    </div>
-                 ) : !savedSearchesData || savedSearchesData.length === 0 ? (
+                 ) : !savedSearchesData || savedSearchesData.filter(s => user?.id && s.userId && s.userId === user.id).length === 0 ? (
                    <div className="flex flex-col items-center justify-center py-8 text-center">
                      <Bookmark className="w-10 h-10 text-muted-foreground/50 mb-3" />
                      <p className="text-sm text-muted-foreground">No saved searches yet</p>
@@ -1140,27 +1179,75 @@ export default function SearchResultsPage() {
                    </div>
                  ) : (
                    <div className="flex flex-col gap-1">
-                     {savedSearchesData.map((search) => (
+                     {savedSearchesData.filter(s => user?.id && s.userId && s.userId === user.id).map((search) => (
                        <div
                          key={search.id}
                          className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors flex items-center justify-between group"
                        >
                          <button
                            className="flex-1 text-left"
+                           disabled={loadSavedSearchMutation.isPending}
                            onClick={() => {
-                             setKeyword(search.keyword || "");
-                             setPlace(search.location || "");
-                             if (search.keywords) setSelectedKeywords(search.keywords);
-                             if (search.locationIds) setSelectedLocationIds(search.locationIds);
-                             if (search.properties) setSelectedProperties(search.properties);
-                             if (search.dateFrom || search.dateTo) {
-                               setDate({
-                                 from: search.dateFrom ? new Date(search.dateFrom) : undefined,
-                                 to: search.dateTo ? new Date(search.dateTo) : undefined,
-                               });
-                             }
-                             setShowAllSavedSearches(false);
-                             toast.success(`Loaded "${search.name}"`);
+                             // Prevent multiple clicks
+                             if (loadSavedSearchMutation.isPending) return;
+
+                             // Fetch the full saved search by ID and apply it
+                             loadSavedSearchMutation.mutate(search.id, {
+                               onSuccess: (savedSearch) => {
+                                 console.log('Loaded saved search:', savedSearch);
+                                 console.log('Keywords to apply:', savedSearch.keywords);
+                                 console.log('LocationIds to apply:', savedSearch.locationIds);
+
+                                 // Clear all previous state first
+                                 setActiveFilters([]);
+                                 setSelectedLocationIds([]);
+                                 setTopLevelSelectionIds([]);
+                                 setSelectedKeywords([]);
+                                 setSelectedProperties([]);
+                                 setDate(undefined);
+                                 setSpatialFilter(null);
+                                 setGazetteerGeometries([]);
+
+                                 // Apply saved search values
+                                 const newKeyword = savedSearch.keyword || "";
+                                 const newPlace = savedSearch.location || "";
+
+                                 setKeyword(newKeyword);
+                                 setPlace(newPlace);
+
+                                 if (savedSearch.keywords && savedSearch.keywords.length > 0) {
+                                   setSelectedKeywords(savedSearch.keywords);
+                                 }
+                                 if (savedSearch.locationIds && savedSearch.locationIds.length > 0) {
+                                   setSelectedLocationIds(savedSearch.locationIds);
+                                   setTopLevelSelectionIds(savedSearch.locationIds);
+                                   // Query gazetteer to get geometries for map zoom
+                                   queryGazetteerForLocations(savedSearch.locationIds);
+                                 }
+                                 if (savedSearch.properties && savedSearch.properties.length > 0) {
+                                   setSelectedProperties(savedSearch.properties);
+                                 }
+                                 if (savedSearch.dateFrom || savedSearch.dateTo) {
+                                   setDate({
+                                     from: savedSearch.dateFrom ? new Date(savedSearch.dateFrom) : undefined,
+                                     to: savedSearch.dateTo ? new Date(savedSearch.dateTo) : undefined,
+                                   });
+                                 }
+                                 if (savedSearch.spatialFilter) {
+                                   setSpatialFilter(savedSearch.spatialFilter);
+                                 }
+
+                                 // Update URL to trigger search
+                                 setLocation(`/search?q=${encodeURIComponent(newKeyword)}&loc=${encodeURIComponent(newPlace)}`);
+
+                                 setShowAllSavedSearches(false);
+                                 toast.success(`Loaded "${savedSearch.name}"`);
+                               },
+                               onError: (error) => {
+                                 console.error("Failed to load saved search:", error);
+                                 toast.error("Failed to load saved search");
+                               },
+                             });
                            }}
                            data-testid={`saved-search-${search.id}`}
                          >
@@ -1232,7 +1319,7 @@ export default function SearchResultsPage() {
           handleLocationFilterSelect={handleLocationFilterSelect}
           selectedLocationIds={selectedLocationIds}
           topLevelSelectionIds={topLevelSelectionIds}
-          keywords={KEYWORDS}
+          keywords={availableKeywords}
           keywordSearch={keywordSearch}
           setKeywordSearch={setKeywordSearch}
           toggleKeyword={toggleKeyword}

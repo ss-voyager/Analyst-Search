@@ -168,11 +168,30 @@ export async function registerRoutes(
     }
   });
 
+  // Get single saved search by ID
+  app.get("/api/saved-searches/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const cookie = req.headers.cookie;
+      const search = await storage.getSavedSearch(id, cookie);
+
+      if (!search) {
+        return res.status(404).json({ error: "Saved search not found" });
+      }
+
+      res.json(search);
+    } catch (error) {
+      console.error("Error fetching saved search:", error);
+      res.status(500).json({ error: "Failed to fetch saved search" });
+    }
+  });
+
   // Delete saved search
   app.delete("/api/saved-searches/:id", async (req, res) => {
     try {
-      const id = parseInt(req.params.id);
-      await storage.deleteSavedSearch(id);
+      const id = req.params.id;
+      const cookie = req.headers.cookie;
+      await storage.deleteSavedSearch(id, cookie);
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting saved search:", error);
