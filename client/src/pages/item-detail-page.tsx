@@ -12,11 +12,19 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LatLngBoundsExpression } from "leaflet";
 import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
-import { useVoyagerItem } from "@/features/search/voyager-api";
+import { useVoyagerItem, DEFAULT_THUMBNAIL } from "@/features/search/voyager-api";
+import { getFormatDisplayName } from "@/features/search/format-utils";
+
+// Helper function to strip HTML tags from a string
+function stripHtml(html: string): string {
+  // Create a temporary element to parse HTML and extract text
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || '';
+}
 
 export default function ItemDetailPage() {
   const [, params] = useRoute("/item/:id");
@@ -163,7 +171,12 @@ export default function ItemDetailPage() {
                 {/* Hero Image / Preview */}
                 <div className="col-span-1 md:col-span-1">
                     <div className="rounded-xl overflow-hidden border border-border bg-muted relative aspect-square group shadow-lg">
-                    <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.src = DEFAULT_THUMBNAIL; }}
+                    />
                     </div>
                     
                     {/* Sidebar Actions - Download & Share */}
@@ -233,112 +246,87 @@ export default function ItemDetailPage() {
                       </div>
                     )}
 
-                    <Tabs defaultValue="details" className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="details">Details</TabsTrigger>
-                            <TabsTrigger value="metadata">Metadata</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="details" className="mt-4">
-                            <div className="rounded-md border border-border overflow-hidden">
-                                <Table>
-                                    <TableBody>
-                                        <TableRow className="bg-muted/30">
-                                            <TableCell className="font-medium text-muted-foreground w-1/3">Format</TableCell>
-                                            <TableCell>{item.format || 'Unknown'}</TableCell>
-                                        </TableRow>
-                                        <TableRow>
-                                            <TableCell className="font-medium text-muted-foreground">Format Type</TableCell>
-                                            <TableCell>{item.formatType || 'N/A'}</TableCell>
-                                        </TableRow>
-                                        <TableRow className="bg-muted/30">
-                                            <TableCell className="font-medium text-muted-foreground">Format Category</TableCell>
-                                            <TableCell>{item.formatCategory || 'N/A'}</TableCell>
-                                        </TableRow>
-                                        {displayDate && (
-                                          <TableRow>
-                                              <TableCell className="font-medium text-muted-foreground">Date</TableCell>
-                                              <TableCell>{new Date(displayDate).toLocaleDateString()}</TableCell>
+                    {/* All Metadata */}
+                    <div className="space-y-2">
+                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">All Metadata</h3>
+                        <div className="rounded-md border border-border overflow-hidden">
+                            <Table>
+                                <TableBody>
+                                    {item.raw && Object.entries(item.raw)
+                                      .filter(([key, value]) => {
+                                        // Skip null, undefined, empty arrays, and internal fields
+                                        if (value === null || value === undefined) return false;
+                                        if (Array.isArray(value) && value.length === 0) return false;
+                                        if (typeof value === 'string' && value.trim() === '') return false;
+                                        // Skip complex objects like geo (shown on map instead)
+                                        if (key === 'geo') return false;
+                                        return true;
+                                      })
+                                      .sort(([a], [b]) => a.localeCompare(b))
+                                      .map(([key, value], index) => {
+                                        // Format the key for display
+                                        const displayKey = key
+                                          .replace(/_/g, ' ')
+                                          .replace(/^(grp|fs|fd|fi|fl)[ _]/i, '')
+                                          .split(' ')
+                                          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                          .join(' ');
+
+                                        // Format the value for display
+                                        let displayValue: React.ReactNode = '';
+                                        if (Array.isArray(value)) {
+                                          displayValue = value.join(', ');
+                                        } else if (typeof value === 'boolean') {
+                                          displayValue = value ? 'Yes' : 'No';
+                                        } else if (typeof value === 'number') {
+                                          // Format bytes specially
+                                          if (key === 'bytes' && value > 0) {
+                                            displayValue = `${(value / 1024 / 1024).toFixed(2)} MB`;
+                                          } else {
+                                            displayValue = value.toLocaleString();
+                                          }
+                                        } else if (typeof value === 'string') {
+                                          // Check if it's a URL
+                                          if (value.startsWith('http://') || value.startsWith('https://')) {
+                                            displayValue = (
+                                              <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm break-all">
+                                                {value}
+                                              </a>
+                                            );
+                                          // Check if it's a date
+                                          } else if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+                                            try {
+                                              displayValue = new Date(value).toLocaleString();
+                                            } catch {
+                                              displayValue = value;
+                                            }
+                                          // Check if it contains HTML tags and strip them
+                                          } else if (/<[^>]+>/.test(value)) {
+                                            displayValue = stripHtml(value);
+                                          } else {
+                                            displayValue = value;
+                                          }
+                                        } else {
+                                          displayValue = JSON.stringify(value);
+                                        }
+
+                                        // Apply special formatting for format field
+                                        if (key === 'format') {
+                                          displayValue = getFormatDisplayName(value as string);
+                                        }
+
+                                        return (
+                                          <TableRow key={key} className={index % 2 === 0 ? 'bg-muted/30' : ''}>
+                                            <TableCell className="font-medium text-muted-foreground w-1/3 align-top">{displayKey}</TableCell>
+                                            <TableCell className="text-sm break-all">{displayValue}</TableCell>
                                           </TableRow>
-                                        )}
-                                        {item.bytes && (
-                                          <TableRow className="bg-muted/30">
-                                              <TableCell className="font-medium text-muted-foreground">Size</TableCell>
-                                              <TableCell>{(item.bytes / 1024 / 1024).toFixed(2)} MB</TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.country && (
-                                          <TableRow>
-                                              <TableCell className="font-medium text-muted-foreground">Country</TableCell>
-                                              <TableCell>{item.country}</TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.agency && (
-                                          <TableRow className="bg-muted/30">
-                                              <TableCell className="font-medium text-muted-foreground">Agency</TableCell>
-                                              <TableCell>{item.agency}</TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.geometryType && (
-                                          <TableRow>
-                                              <TableCell className="font-medium text-muted-foreground">Geometry Type</TableCell>
-                                              <TableCell>{item.geometryType}</TableCell>
-                                          </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </TabsContent>
-                        <TabsContent value="metadata" className="mt-4">
-                            <div className="rounded-md border border-border overflow-hidden">
-                                <Table>
-                                    <TableBody>
-                                        <TableRow className="bg-muted/30">
-                                            <TableCell className="font-medium text-muted-foreground w-1/3">Item ID</TableCell>
-                                            <TableCell className="font-mono text-xs break-all">{item.id}</TableCell>
-                                        </TableRow>
-                                        {item.fullpath && (
-                                          <TableRow>
-                                              <TableCell className="font-medium text-muted-foreground">Source URL</TableCell>
-                                              <TableCell>
-                                                <a href={item.fullpath} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm break-all">
-                                                  {item.fullpath}
-                                                </a>
-                                              </TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.download && (
-                                          <TableRow className="bg-muted/30">
-                                              <TableCell className="font-medium text-muted-foreground">Download URL</TableCell>
-                                              <TableCell>
-                                                <a href={item.download} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-sm break-all">
-                                                  {item.download}
-                                                </a>
-                                              </TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.acquisitionDate && (
-                                          <TableRow>
-                                              <TableCell className="font-medium text-muted-foreground">Acquisition Date</TableCell>
-                                              <TableCell>{new Date(item.acquisitionDate).toLocaleString()}</TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.publishDate && (
-                                          <TableRow className="bg-muted/30">
-                                              <TableCell className="font-medium text-muted-foreground">Publish Date</TableCell>
-                                              <TableCell>{new Date(item.publishDate).toLocaleString()}</TableCell>
-                                          </TableRow>
-                                        )}
-                                        {item.modified && (
-                                          <TableRow>
-                                              <TableCell className="font-medium text-muted-foreground">Last Modified</TableCell>
-                                              <TableCell>{new Date(item.modified).toLocaleString()}</TableCell>
-                                          </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </TabsContent>
-                    </Tabs>
+                                        );
+                                      })
+                                    }
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
                 </div>
             </div>
           </div>

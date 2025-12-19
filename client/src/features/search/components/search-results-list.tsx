@@ -7,6 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MapPin, MoreHorizontal, Download, Share2, Search, Loader2, Calendar, FileType } from "lucide-react";
 import { SearchResult, VoyagerSearchResult } from "../types";
 import { toast } from "sonner";
+import { getFormatDisplayName } from "../format-utils";
+import { DEFAULT_THUMBNAIL } from "../voyager-api";
 
 // Generic result type that works with both local and Voyager results
 type GenericResult = SearchResult | VoyagerSearchResult;
@@ -146,6 +148,7 @@ export function SearchResultsList({
                          alt={result.title}
                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                          loading="lazy"
+                         onError={(e) => { e.currentTarget.src = DEFAULT_THUMBNAIL; }}
                        />
                      </div>
 
@@ -168,7 +171,7 @@ export function SearchResultsList({
                          <p className="flex items-center gap-1.5">
                            <FileType className="w-3 h-3 text-foreground/50" />
                            <span className="text-foreground/70">Format:</span>{' '}
-                           <span className="text-foreground">{result.format || 'Unknown'}</span>
+                           <span className="text-foreground">{getFormatDisplayName(result.format)}</span>
                          </p>
                          <p className="flex items-center gap-1.5">
                            <Calendar className="w-3 h-3 text-foreground/50" />

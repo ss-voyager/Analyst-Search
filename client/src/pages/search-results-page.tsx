@@ -19,11 +19,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Label } from "@/components/ui/label";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { SearchFilters } from "@/features/search/components/search-filters";
+import { SearchFilters, DateFilterMode, SinceUnit } from "@/features/search/components/search-filters";
+import { useConfig, DEFAULT_CONFIG, type FiltersConfig } from "@/hooks/useConfig";
 import { SearchResultsList } from "@/features/search/components/search-results-list";
 import { SearchMap } from "@/features/search/components/search-map";
 import { HIERARCHY_TREE, getAllDescendantIds, getAllAncestorIds, areAllChildrenSelected, findNodeById, LOCATION_TO_VOYAGER } from "@/features/search/location-hierarchy";
-import { useSaveSearch, useSavedSearches, useDeleteSavedSearch, useLoadSavedSearch } from "@/features/search/api";
+import { useSaveSearch, useSavedSearches, useLoadSavedSearch } from "@/features/search/api";
 import { useInfiniteVoyagerSearch, toSearchResultFromVoyager, buildPropertyFilterQueries, buildLocationFilterQueries } from "@/features/search/voyager-api";
 import type { VoyagerSearchResult } from "@/features/search/types";
 import { queryGazetteer, type GazetteerResult } from "@/features/search/gazetteer-api";
@@ -35,6 +36,10 @@ export default function SearchResultsPage() {
   const params = new URLSearchParams(searchString);
   const { user, isAuthenticated, isLoading: authLoading, login, logout } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Fetch app config from backend
+  const { data: appConfig, isLoading: configLoading } = useConfig();
+  const config = appConfig || DEFAULT_CONFIG;
   
   const [query, setQuery] = useState(() => {
     const q = params.get("q") || "";
@@ -63,6 +68,10 @@ export default function SearchResultsPage() {
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [topLevelSelectionIds, setTopLevelSelectionIds] = useState<string[]>([]); // Track which items were directly clicked
   const [date, setDate] = useState<DateRange | undefined>();
+  const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>(config.filters.date.defaultMode);
+  const [sinceValue, setSinceValue] = useState<number>(config.filters.date.defaultSinceValue);
+  const [sinceUnit, setSinceUnit] = useState<SinceUnit>(config.filters.date.defaultSinceUnit);
+  const [dateField, setDateField] = useState<string>(config.filters.date.fields.defaultField);
   const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>(() => {
     const keywordsParam = params.get("keywords");
@@ -91,7 +100,6 @@ export default function SearchResultsPage() {
     isAuthenticated && user ? user.id : undefined
   );
   const saveSearchMutation = useSaveSearch();
-  const deleteSearchMutation = useDeleteSavedSearch();
   const loadSavedSearchMutation = useLoadSavedSearch();
 
   const handleLogin = async () => {
@@ -367,6 +375,38 @@ export default function SearchResultsPage() {
   // Build search query from keyword
   const searchQuery = keyword ? keyword : undefined;
 
+  // Calculate effective date range based on filter mode
+  const effectiveDateRange = useMemo((): DateRange | undefined => {
+    if (dateFilterMode === "range") {
+      return date;
+    }
+
+    // Calculate "since" date range
+    if (dateFilterMode === "since" && sinceValue > 0) {
+      const now = new Date();
+      const from = new Date();
+
+      switch (sinceUnit) {
+        case "days":
+          from.setDate(now.getDate() - sinceValue);
+          break;
+        case "weeks":
+          from.setDate(now.getDate() - (sinceValue * 7));
+          break;
+        case "months":
+          from.setMonth(now.getMonth() - sinceValue);
+          break;
+        case "years":
+          from.setFullYear(now.getFullYear() - sinceValue);
+          break;
+      }
+
+      return { from, to: now };
+    }
+
+    return undefined;
+  }, [dateFilterMode, date, sinceValue, sinceUnit]);
+
   // Helper to extract bounding box from GeoJSON geometry
   const extractBoundsFromGeoJSON = (geo: any): [number, number, number, number] | null => {
     if (!geo || !geo.coordinates) return null;
@@ -469,9 +509,15 @@ export default function SearchResultsPage() {
   } = useInfiniteVoyagerSearch({
     q: searchQuery,
     fq: filterQueries,
-    sort: sortBy === 'relevance' ? 'score desc' : sortBy === 'date_desc' ? 'modified desc' : sortBy === 'date_asc' ? 'modified asc' : 'score desc',
-    dateFrom: date?.from,
-    dateTo: date?.to,
+    sort: sortBy === 'relevance' ? 'score desc'
+        : sortBy === 'date_desc' ? 'modified desc'
+        : sortBy === 'date_asc' ? 'modified asc'
+        : sortBy === 'name_asc' ? 'title_sort asc'
+        : sortBy === 'name_desc' ? 'title_sort desc'
+        : 'score desc',
+    dateFrom: effectiveDateRange?.from,
+    dateTo: effectiveDateRange?.to,
+    dateField: dateField, // Use selected date field from config
     bbox: bboxFilter,           // Map-drawn bbox (if exists)
     gazetteerBbox: gazetteerBbox, // Location hierarchy bbox (if exists)
     place: place || undefined,
@@ -892,15 +938,22 @@ export default function SearchResultsPage() {
               </Badge>
             )}
 
-            {date?.from && (
+            {effectiveDateRange?.from && (
               <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-0.5 font-normal text-xs">
                 <Clock className="w-3 h-3 opacity-50" />
-                {date.to ? (
-                  <>{format(date.from, "MMM dd")} - {format(date.to, "MMM dd")}</>
+                {dateFilterMode === "since" ? (
+                  <>Last {sinceValue} {sinceUnit}</>
+                ) : effectiveDateRange.to ? (
+                  <>{format(effectiveDateRange.from, "MMM dd")} - {format(effectiveDateRange.to, "MMM dd")}</>
                 ) : (
-                  format(date.from, "MMM dd")
+                  format(effectiveDateRange.from, "MMM dd")
                 )}
-                <button onClick={() => setDate(undefined)} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
+                <button onClick={() => {
+                  setDate(undefined);
+                  setDateFilterMode("range");
+                  setSinceValue(7);
+                  setSinceUnit("days");
+                }} className="ml-1 hover:bg-background/20 rounded-full p-0.5">
                   <X className="w-3 h-3" />
                 </button>
               </Badge>
@@ -952,7 +1005,7 @@ export default function SearchResultsPage() {
               </Badge>
             ))}
 
-            {(keyword || place || activeFilters.length > 0 || date || selectedProperties.length > 0 || selectedKeywords.length > 0 || selectedPlatforms.length > 0 || spatialFilter) && (
+            {(keyword || place || activeFilters.length > 0 || effectiveDateRange?.from || selectedProperties.length > 0 || selectedKeywords.length > 0 || selectedPlatforms.length > 0 || spatialFilter) && (
               <button
                 onClick={() => {
                   setKeyword("");
@@ -964,6 +1017,10 @@ export default function SearchResultsPage() {
                   setSelectedKeywords([]);
                   setSelectedPlatforms([]);
                   setDate(undefined);
+                  setDateFilterMode(config.filters.date.defaultMode);
+                  setSinceValue(config.filters.date.defaultSinceValue);
+                  setSinceUnit(config.filters.date.defaultSinceUnit);
+                  setDateField(config.filters.date.fields.defaultField);
                   setIsSearchSaved(false);
                   setLocation("/search");
                 }}
@@ -994,6 +1051,7 @@ export default function SearchResultsPage() {
               <SelectItem value="date_desc">Newest first</SelectItem>
               <SelectItem value="date_asc">Oldest first</SelectItem>
               <SelectItem value="name_asc">Name A-Z</SelectItem>
+              <SelectItem value="name_desc">Name Z-A</SelectItem>
             </SelectContent>
           </Select>
 
@@ -1290,30 +1348,9 @@ export default function SearchResultsPage() {
                              </div>
                            </div>
                          </button>
-                         <div className="flex items-center gap-2">
-                           <span className="text-xs text-muted-foreground">
-                             {search.createdAt ? new Date(search.createdAt).toLocaleDateString() : ""}
-                           </span>
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                             onClick={(e) => {
-                               e.stopPropagation();
-                               deleteSearchMutation.mutate(search.id, {
-                                 onSuccess: () => {
-                                   toast.success(`Deleted "${search.name}"`);
-                                 },
-                                 onError: () => {
-                                   toast.error("Failed to delete search");
-                                 },
-                               });
-                             }}
-                             title="Delete saved search"
-                           >
-                             <X className="w-4 h-4" />
-                           </Button>
-                         </div>
+                         <span className="text-xs text-muted-foreground">
+                           {search.createdAt ? new Date(search.createdAt).toLocaleDateString() : ""}
+                         </span>
                        </div>
                      ))}
                    </div>
@@ -1328,8 +1365,17 @@ export default function SearchResultsPage() {
         {/* Facets Panel (Refactored) */}
         <SearchFilters
           showFacets={showFacets}
+          filtersConfig={config.filters}
           date={date}
           setDate={setDate}
+          dateFilterMode={dateFilterMode}
+          setDateFilterMode={setDateFilterMode}
+          sinceValue={sinceValue}
+          setSinceValue={setSinceValue}
+          sinceUnit={sinceUnit}
+          setSinceUnit={setSinceUnit}
+          dateField={dateField}
+          setDateField={setDateField}
           hierarchyTree={HIERARCHY_TREE}
           handleLocationFilterSelect={handleLocationFilterSelect}
           selectedLocationIds={selectedLocationIds}

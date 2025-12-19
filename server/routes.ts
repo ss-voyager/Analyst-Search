@@ -4,8 +4,9 @@ import { storage } from "./storage";
 import { insertSatelliteItemSchema, insertSavedSearchSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { voyagerConfig, getPublicConfig } from "./voyager-config";
 
-const VOYAGER_BASE_URL = "http://ec2-3-232-18-200.compute-1.amazonaws.com/solr/v0/select";
+const VOYAGER_BASE_URL = voyagerConfig.baseUrl;
 
 export async function registerRoutes(
   httpServer: Server,
@@ -27,6 +28,17 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Config endpoint - serves public configuration to frontend
+  app.get('/api/config', (req, res) => {
+    try {
+      const config = getPublicConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching config:", error);
+      res.status(500).json({ message: "Failed to fetch config" });
     }
   });
 

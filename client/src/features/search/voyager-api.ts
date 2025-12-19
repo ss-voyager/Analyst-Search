@@ -7,6 +7,9 @@ const VOYAGER_CONFIG = {
   wt: "json",
 };
 
+// Default placeholder thumbnail (SVG data URL)
+export const DEFAULT_THUMBNAIL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300'%3E%3Crect fill='%23374151' width='400' height='300'/%3E%3Cg fill='%236b7280'%3E%3Crect x='160' y='100' width='80' height='60' rx='4'/%3E%3Ccircle cx='180' cy='120' r='8'/%3E%3Cpath d='M165 150 L185 130 L205 145 L235 115 L235 155 L165 155Z'/%3E%3C/g%3E%3Ctext x='200' y='190' text-anchor='middle' fill='%239ca3af' font-family='system-ui' font-size='14'%3ENo Preview%3C/text%3E%3C/svg%3E";
+
 // Default search fields
 const DEFAULT_SEARCH_FIELDS = "id,title,name:[name],format,abstract,fullpath:[absolute],absolute_path:[absolute],thumb:[thumbURL],path_to_thumb,subject,download:[downloadURL],format_type,bytes,modified,shard:[shard],bbox,geo:[geo],format_category,component_files,ags_fused_cache,linkcount__children,contains_name,wms_layer_name,tag_flags,hasMissingData,layerURL:[lyrURL],hasLayerFile,likes,dislikes,grp_Country,fl_views,views,description,keywords,fd_acquisition_date,name,name_alias,tag_tags,fd_publish_date,grp_Agency,fs_english_name,fs_title,fs_product_detail_link";
 
@@ -553,7 +556,7 @@ export function toSearchResultFromVoyager(doc: VoyagerDoc) {
     formatType: doc.format_type,
     formatCategory: doc.format_category,
     description: doc.abstract || doc.description || "",
-    thumbnail: doc.thumb || doc.path_to_thumb || "",
+    thumbnail: doc.thumb || doc.path_to_thumb || DEFAULT_THUMBNAIL,
     bounds,
     bytes: doc.bytes,
     modified: doc.modified,
@@ -574,7 +577,8 @@ async function fetchVoyagerItem(id: string): Promise<VoyagerDoc | null> {
     ...VOYAGER_CONFIG,
     q: `id:"${id}"`,
     rows: "1",
-    fl: DEFAULT_SEARCH_FIELDS,
+    // Request all fields plus computed fields (thumbURL, absolute path, etc.)
+    fl: "*,thumb:[thumbURL],fullpath:[absolute],download:[downloadURL],geo:[geo]",
   });
 
   const response = await fetch(`/api/voyager/search?${params.toString()}`);

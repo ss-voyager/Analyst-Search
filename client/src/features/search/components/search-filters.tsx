@@ -13,9 +13,22 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Folder, FolderOpen, File } from "lucide-react";
 import { TreeNode } from "../types";
 import { getCheckboxState, HIERARCHY_TREE } from "../location-hierarchy";
+
+import type { FiltersConfig, FilterOption } from "@/hooks/useConfig";
+
+// Date filter mode type
+export type DateFilterMode = "range" | "since";
+export type SinceUnit = "days" | "weeks" | "months" | "years";
+
+// Re-export for backwards compatibility
+export type DateFieldOption = FilterOption;
 
 // Keyword grouping categories with common prefixes/patterns
 const KEYWORD_GROUPS: { name: string; patterns: RegExp[]; keywords: string[] }[] = [
@@ -338,25 +351,48 @@ const FolderTree = ({ nodes, level = 0, onSelect, selectedIds = [], topLevelIds 
 // --- SearchFilters Component ---
 interface SearchFiltersProps {
   showFacets: boolean;
+  // Full filter configuration from backend
+  filtersConfig: FiltersConfig;
+  // Date filter state
   date: DateRange | undefined;
   setDate: (date: DateRange | undefined) => void;
+  dateFilterMode: DateFilterMode;
+  setDateFilterMode: (mode: DateFilterMode) => void;
+  sinceValue: number;
+  setSinceValue: (value: number) => void;
+  sinceUnit: SinceUnit;
+  setSinceUnit: (unit: SinceUnit) => void;
+  dateField: string;
+  setDateField: (field: string) => void;
+  // Location filter state
   hierarchyTree: TreeNode[];
   handleLocationFilterSelect: (id: string, label: string) => void;
   selectedLocationIds: string[];
   topLevelSelectionIds: string[];
+  // Keywords filter state
   keywords: string[];
   keywordSearch: string;
   setKeywordSearch: (val: string) => void;
   toggleKeyword: (kw: string) => void;
   selectedKeywords: string[];
+  // Properties filter state
   selectedProperties: string[];
   toggleProperty: (prop: string) => void;
 }
 
 export function SearchFilters({
   showFacets,
+  filtersConfig,
   date,
   setDate,
+  dateFilterMode,
+  setDateFilterMode,
+  sinceValue,
+  setSinceValue,
+  sinceUnit,
+  setSinceUnit,
+  dateField,
+  setDateField,
   hierarchyTree,
   handleLocationFilterSelect,
   selectedLocationIds,
@@ -369,6 +405,11 @@ export function SearchFilters({
   selectedProperties,
   toggleProperty,
 }: SearchFiltersProps) {
+  // Extract config for each filter
+  const dateConfig = filtersConfig.date;
+  const locationConfig = filtersConfig.location;
+  const keywordsConfig = filtersConfig.keywords;
+  const propertiesConfig = filtersConfig.properties;
   return (
     <AnimatePresence mode="wait">
       {showFacets && (
@@ -381,149 +422,259 @@ export function SearchFilters({
         >
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-6 pr-4">
-              {/* Date Range Filter */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
-                  <CalendarIcon className="w-4 h-4 text-primary" /> Date Range
-                </h3>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="date"
-                      variant={"outline"}
-                      className={cn(
-                        "w-full justify-start text-left font-normal text-xs",
-                        !date && "text-muted-foreground"
-                      )}
+              {/* Date Filter - conditionally rendered based on config */}
+              {dateConfig.enabled && (
+                <>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                      <CalendarIcon className="w-4 h-4 text-primary" /> {dateConfig.label}
+                    </h3>
+
+                    <RadioGroup
+                      value={dateFilterMode}
+                      onValueChange={(value) => setDateFilterMode(value as DateFilterMode)}
+                      className="space-y-3"
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date?.from ? (
-                        date.to ? (
-                          <>
-                            {format(date.from, "LLL dd, y")} -{" "}
-                            {format(date.to, "LLL dd, y")}
-                          </>
-                        ) : (
-                          format(date.from, "LLL dd, y")
-                        )
-                      ) : (
-                        <span>Pick a date range</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      initialFocus
-                      mode="range"
-                      defaultMonth={date?.from}
-                      selected={date}
-                      onSelect={setDate}
-                      numberOfMonths={2}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
+                      {/* Range Option - shown if enabled in config */}
+                      {dateConfig.modes.range && (
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="range" id="date-range" />
+                            <Label htmlFor="date-range" className="text-xs font-medium cursor-pointer">Range</Label>
+                          </div>
 
-              <Separator className="bg-border/50" />
+                          {dateFilterMode === "range" && (
+                            <div className="pl-6 space-y-2">
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">start</Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "w-full justify-start text-left font-normal text-xs h-8",
+                                        !date?.from && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {date?.from ? format(date.from, "yyyy-MM-dd") : "yyyy-mm-dd"}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={date?.from}
+                                      onSelect={(day) => setDate({ from: day, to: date?.to })}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
 
-              <div className="space-y-3">
-                <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
-                  <Globe className="w-4 h-4 text-primary" /> Location Hierarchy
-                </h3>
-                <div className="border border-border/60 rounded-lg bg-muted/10 p-2 max-h-[300px] overflow-y-auto">
-                  <FolderTree nodes={hierarchyTree} onSelect={handleLocationFilterSelect} selectedIds={selectedLocationIds} topLevelIds={topLevelSelectionIds} />
-                </div>
-              </div>
-
-              <Separator className="bg-border/50" />
-
-              {/* Keywords Filter - Grouped with collapsible sections */}
-              <div className="space-y-1">
-                <Accordion type="single" collapsible defaultValue="keywords" className="w-full">
-                  <AccordionItem value="keywords" className="border-none">
-                    <AccordionTrigger className="py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:no-underline uppercase tracking-wider">
-                      <div className="flex items-center gap-2">
-                        <Tag className="w-3.5 h-3.5" />
-                        Keywords
-                        {keywords.length > 0 && (
-                          <span className="text-[10px] font-normal text-muted-foreground">({keywords.length})</span>
-                        )}
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-1">
-                        {/* Search input */}
-                        <div className="relative mb-2">
-                          <input
-                            type="text"
-                            placeholder="Filter keywords..."
-                            value={keywordSearch}
-                            onChange={(e) => setKeywordSearch(e.target.value)}
-                            className="w-full h-8 px-3 text-xs bg-muted/50 border border-border rounded-md outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
-                          />
-                        </div>
-
-                        {/* Grouped keywords */}
-                        <div className="border border-border/60 rounded-lg bg-muted/10 max-h-[300px] overflow-y-auto">
-                          {keywords.length === 0 ? (
-                            <div className="p-3 text-xs text-muted-foreground text-center">
-                              No keywords available
+                              <div className="space-y-1">
+                                <Label className="text-xs text-muted-foreground">end</Label>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      className={cn(
+                                        "w-full justify-start text-left font-normal text-xs h-8",
+                                        !date?.to && "text-muted-foreground"
+                                      )}
+                                    >
+                                      {date?.to ? format(date.to, "yyyy-MM-dd") : "yyyy-mm-dd"}
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      mode="single"
+                                      selected={date?.to}
+                                      onSelect={(day) => setDate({ from: date?.from, to: day })}
+                                      initialFocus
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                              </div>
                             </div>
-                          ) : (
-                            <GroupedKeywordsList
-                              keywords={keywords}
-                              selectedKeywords={selectedKeywords}
-                              toggleKeyword={toggleKeyword}
-                              keywordSearch={keywordSearch}
-                            />
                           )}
                         </div>
+                      )}
+
+                      {/* Since Option - shown if enabled in config */}
+                      {dateConfig.modes.since && (
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="since" id="date-since" />
+                            <Label htmlFor="date-since" className="text-xs font-medium cursor-pointer">Since</Label>
+                          </div>
+
+                          {dateFilterMode === "since" && (
+                            <div className="pl-6 flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={1}
+                                value={sinceValue}
+                                onChange={(e) => setSinceValue(Math.max(1, parseInt(e.target.value) || 1))}
+                                className="w-20 h-8 text-xs"
+                              />
+                              <Select value={sinceUnit} onValueChange={(value) => setSinceUnit(value as SinceUnit)}>
+                                <SelectTrigger className="w-24 h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="days">Days</SelectItem>
+                                  <SelectItem value="weeks">Weeks</SelectItem>
+                                  <SelectItem value="months">Months</SelectItem>
+                                  <SelectItem value="years">Years</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </RadioGroup>
+
+                    {/* Date Field Selector - shown if configured */}
+                    {dateConfig.fields.showFieldSelector && dateConfig.fields.options.length > 1 && (
+                      <div className="pt-3 border-t border-border/30">
+                        <Label className="text-xs text-muted-foreground mb-1.5 block">Filter by</Label>
+                        <Select value={dateField} onValueChange={setDateField}>
+                          <SelectTrigger className="w-full h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {dateConfig.fields.options.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex flex-col">
+                                  <span>{option.label}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {dateConfig.fields.options.find(o => o.value === dateField)?.description}
+                        </p>
                       </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
+                    )}
+                  </div>
 
-              <Separator className="bg-border/50" />
+                  <Separator className="bg-border/50" />
+                </>
+              )}
 
-              {/* Properties Filter - Clickable */}
-              <div className="space-y-1">
-                <Accordion type="single" collapsible defaultValue="properties" className="w-full">
-                  <AccordionItem value="properties" className="border-none">
-                    <AccordionTrigger className="py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:no-underline uppercase tracking-wider">
-                      Properties
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      <div className="space-y-1 pb-2">
-                         {[
-                           { name: "has_thumbnail", label: "Has Thumbnail" },
-                           { name: "has_spatial", label: "Has Spatial Info" },
-                           { name: "has_temporal", label: "Has Temporal Info" },
-                           { name: "is_downloadable", label: "Downloadable" }
-                         ].map(prop => {
-                           const isSelected = selectedProperties.includes(prop.name);
-                           return (
-                            <button 
-                              key={prop.name} 
-                              onClick={() => toggleProperty(prop.name)}
-                              className={cn(
-                                "w-full flex items-center justify-between py-1.5 px-2 text-sm rounded-md group transition-colors text-left",
-                                isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/50 text-foreground/80"
-                              )}
+              {/* Location Hierarchy Filter - conditionally rendered based on config */}
+              {locationConfig.enabled && (
+                <>
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-display font-bold text-foreground flex items-center gap-2 tracking-wide">
+                      <Globe className="w-4 h-4 text-primary" /> {locationConfig.label}
+                    </h3>
+                    <div
+                      className="border border-border/60 rounded-lg bg-muted/10 p-2 overflow-y-auto"
+                      style={{ maxHeight: `${locationConfig.maxHeight}px` }}
+                    >
+                      <FolderTree nodes={hierarchyTree} onSelect={handleLocationFilterSelect} selectedIds={selectedLocationIds} topLevelIds={topLevelSelectionIds} />
+                    </div>
+                  </div>
+
+                  <Separator className="bg-border/50" />
+                </>
+              )}
+
+              {/* Keywords Filter - conditionally rendered based on config */}
+              {keywordsConfig.enabled && (
+                <>
+                  <div className="space-y-1">
+                    <Accordion type="single" collapsible defaultValue={keywordsConfig.defaultExpanded ? "keywords" : undefined} className="w-full">
+                      <AccordionItem value="keywords" className="border-none">
+                        <AccordionTrigger className="py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:no-underline uppercase tracking-wider">
+                          <div className="flex items-center gap-2">
+                            <Tag className="w-3.5 h-3.5" />
+                            {keywordsConfig.label}
+                            {keywords.length > 0 && (
+                              <span className="text-[10px] font-normal text-muted-foreground">({keywords.length})</span>
+                            )}
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1">
+                            {/* Search input - shown if enabled in config */}
+                            {keywordsConfig.showSearch && (
+                              <div className="relative mb-2">
+                                <input
+                                  type="text"
+                                  placeholder="Filter keywords..."
+                                  value={keywordSearch}
+                                  onChange={(e) => setKeywordSearch(e.target.value)}
+                                  className="w-full h-8 px-3 text-xs bg-muted/50 border border-border rounded-md outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50"
+                                />
+                              </div>
+                            )}
+
+                            {/* Grouped keywords */}
+                            <div
+                              className="border border-border/60 rounded-lg bg-muted/10 overflow-y-auto"
+                              style={{ maxHeight: `${keywordsConfig.maxHeight}px` }}
                             >
-                              <span className="font-medium">{prop.label}</span>
-                              {isSelected && <Check className="w-3 h-3" />}
-                            </button>
-                           )
-                         })}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              </div>
+                              {keywords.length === 0 ? (
+                                <div className="p-3 text-xs text-muted-foreground text-center">
+                                  No keywords available
+                                </div>
+                              ) : (
+                                <GroupedKeywordsList
+                                  keywords={keywords}
+                                  selectedKeywords={selectedKeywords}
+                                  toggleKeyword={toggleKeyword}
+                                  keywordSearch={keywordSearch}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
 
+                  <Separator className="bg-border/50" />
+                </>
+              )}
 
-              <Separator className="bg-border" />
+              {/* Properties Filter - conditionally rendered based on config */}
+              {propertiesConfig.enabled && (
+                <>
+                  <div className="space-y-1">
+                    <Accordion type="single" collapsible defaultValue={propertiesConfig.defaultExpanded ? "properties" : undefined} className="w-full">
+                      <AccordionItem value="properties" className="border-none">
+                        <AccordionTrigger className="py-3 text-xs font-bold text-muted-foreground hover:text-foreground hover:no-underline uppercase tracking-wider">
+                          {propertiesConfig.label}
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-1 pb-2">
+                             {propertiesConfig.options.map(prop => {
+                               const isSelected = selectedProperties.includes(prop.value);
+                               return (
+                                <button
+                                  key={prop.value}
+                                  onClick={() => toggleProperty(prop.value)}
+                                  className={cn(
+                                    "w-full flex items-center justify-between py-1.5 px-2 text-sm rounded-md group transition-colors text-left",
+                                    isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/50 text-foreground/80"
+                                  )}
+                                >
+                                  <span className="font-medium">{prop.label}</span>
+                                  {isSelected && <Check className="w-3 h-3" />}
+                                </button>
+                               )
+                             })}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </div>
+
+                  <Separator className="bg-border" />
+                </>
+              )}
             </div>
           </ScrollArea>
         </motion.div>
