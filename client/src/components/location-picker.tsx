@@ -8,12 +8,20 @@ interface LocationPickerProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (bounds: string) => void;
+  initialBounds?: string;
 }
 
-function BoxDrawer({ onBoundsChange }: { onBoundsChange: (bounds: LatLngBounds | null) => void }) {
+function BoxDrawer({ onBoundsChange, initialBounds }: { onBoundsChange: (bounds: LatLngBounds | null) => void; initialBounds?: LatLngBounds | null }) {
   const [startPoint, setStartPoint] = useState<LatLng | null>(null);
   const [currentPoint, setCurrentPoint] = useState<LatLng | null>(null);
-  const [bounds, setBounds] = useState<LatLngBounds | null>(null);
+  const [bounds, setBounds] = useState<LatLngBounds | null>(initialBounds || null);
+
+  // Initialize with existing bounds
+  useEffect(() => {
+    if (initialBounds) {
+      setBounds(initialBounds);
+    }
+  }, [initialBounds]);
 
   useMapEvents({
     mousedown(e) {
@@ -61,14 +69,26 @@ function BoxDrawer({ onBoundsChange }: { onBoundsChange: (bounds: LatLngBounds |
   return null;
 }
 
-export function LocationPicker({ isOpen, onClose, onSelect }: LocationPickerProps) {
+// Parse bounds string "west,south,east,north" to LatLngBounds
+function parseBoundsString(boundsStr: string): LatLngBounds | null {
+  if (!boundsStr) return null;
+  const parts = boundsStr.split(',').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return null;
+  const [west, south, east, north] = parts;
+  return new LatLngBounds(
+    new LatLng(south, west),
+    new LatLng(north, east)
+  );
+}
+
+export function LocationPicker({ isOpen, onClose, onSelect, initialBounds }: LocationPickerProps) {
   const [selectedBounds, setSelectedBounds] = useState<LatLngBounds | null>(null);
   const [tempBounds, setTempBounds] = useState<LatLngBounds | null>(null);
+  const [parsedInitialBounds, setParsedInitialBounds] = useState<LatLngBounds | null>(null);
 
   const handleConfirm = () => {
-    // Use tempBounds if we just drew it, or selectedBounds if we had one (logic can be refined)
-    // For now, tempBounds tracks the latest draw action.
-    const boundsToUse = tempBounds || selectedBounds;
+    // Use tempBounds if we just drew it, or parsedInitialBounds if we had one
+    const boundsToUse = tempBounds || parsedInitialBounds;
 
     if (boundsToUse) {
       // Format: west,south,east,north (no brackets, no spaces) for Voyager API compatibility
@@ -78,13 +98,14 @@ export function LocationPicker({ isOpen, onClose, onSelect }: LocationPickerProp
     }
   };
 
-  // Reset when opening
+  // Parse initial bounds when opening
   useEffect(() => {
     if (isOpen) {
-      setTempBounds(null);
-      setSelectedBounds(null);
+      const parsed = parseBoundsString(initialBounds || '');
+      setParsedInitialBounds(parsed);
+      setTempBounds(parsed);
     }
-  }, [isOpen]);
+  }, [isOpen, initialBounds]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -110,7 +131,7 @@ export function LocationPicker({ isOpen, onClose, onSelect }: LocationPickerProp
                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                />
-               <BoxDrawer onBoundsChange={setTempBounds} />
+               <BoxDrawer onBoundsChange={setTempBounds} initialBounds={parsedInitialBounds} />
                {/* Show the selected bounds if we have one and aren't currently drawing new one (handled by BoxDrawer mostly) */}
                {/* Actually BoxDrawer handles the visual feedback nicely during draw. */}
              </MapContainer>
@@ -128,10 +149,10 @@ export function LocationPicker({ isOpen, onClose, onSelect }: LocationPickerProp
               <Button variant="outline" onClick={onClose} className="border-white/10 hover:bg-white/5">
                 Cancel
               </Button>
-              <Button 
-                onClick={handleConfirm} 
+              <Button
+                onClick={handleConfirm}
                 disabled={!tempBounds}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-foreground text-background hover:bg-foreground/90"
               >
                 Confirm Area
               </Button>
