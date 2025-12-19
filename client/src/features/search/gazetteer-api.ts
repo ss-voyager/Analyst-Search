@@ -1,14 +1,29 @@
+/**
+ * @fileoverview Gazetteer API client for geocoding location names
+ * @module client/features/search/gazetteer-api
+ */
+
 import { getGazetteerBaseUrl } from '@/lib/config';
 
-// Types
+/**
+ * Result from a gazetteer query containing location name and geometry
+ */
 export interface GazetteerResult {
+  /** Location name */
   name: string;
+  /** GeoJSON geometry object */
   geo: {
+    /** Geometry type (e.g., "Polygon", "MultiPolygon") */
     type: string;
+    /** GeoJSON coordinates array */
     coordinates: any;
   };
 }
 
+/**
+ * Raw response structure from the Gazetteer Solr API
+ * @internal
+ */
 interface GazetteerResponse {
   response: {
     docs: Array<{
@@ -19,9 +34,17 @@ interface GazetteerResponse {
 }
 
 /**
- * Build gazetteer query URL for location names
- * @param locationNames Array of location names to query
- * @returns URL string for gazetteer query
+ * Builds a Solr query URL for the gazetteer API
+ *
+ * @param locationNames - Array of location names to search for
+ * @returns Fully-formed URL string for the gazetteer query
+ * @throws Error if locationNames array is empty
+ *
+ * @example
+ * ```typescript
+ * const url = buildGazetteerUrl(['New York', 'California']);
+ * // Returns: "http://host/solr/gazetteer/select?q=name:"New York" || name:"California"&..."
+ * ```
  */
 export function buildGazetteerUrl(locationNames: string[]): string {
   if (locationNames.length === 0) {
@@ -42,9 +65,21 @@ export function buildGazetteerUrl(locationNames: string[]): string {
 }
 
 /**
- * Query gazetteer for location geometries
- * @param locationNames Array of location names to query
- * @returns Promise resolving to array of gazetteer results
+ * Queries the gazetteer API for location geometries
+ *
+ * @param locationNames - Array of location names to look up
+ * @returns Promise resolving to array of GazetteerResult objects with geometries
+ *
+ * @remarks
+ * - Returns empty array if locationNames is empty
+ * - Returns empty array on network or API errors (fails silently)
+ * - Filters out results that don't have valid geo data
+ *
+ * @example
+ * ```typescript
+ * const results = await queryGazetteer(['United States']);
+ * // Returns: [{ name: 'United States', geo: { type: 'MultiPolygon', coordinates: [...] } }]
+ * ```
  */
 export async function queryGazetteer(locationNames: string[]): Promise<GazetteerResult[]> {
   if (locationNames.length === 0) {

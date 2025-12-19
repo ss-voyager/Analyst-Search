@@ -1,7 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
+import swaggerUi from "swagger-ui-express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { swaggerSpec } from "./swagger";
 
 const app = express();
 const httpServer = createServer(app);
@@ -22,6 +24,23 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Swagger API documentation
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "Analyst Search API Documentation",
+}));
+
+// Serve OpenAPI spec as JSON
+app.get("/api/docs.json", (_req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
+});
+
+/**
+ * Logs a message with timestamp and source label
+ * @param message - The message to log
+ * @param source - The source of the log message (default: "express")
+ */
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
