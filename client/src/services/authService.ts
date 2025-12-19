@@ -129,13 +129,19 @@ export const authService = {
   getAuthInfo: async (): Promise<User | null> => {
     try {
       const baseUrl = getVoyagerBaseUrl();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
       const response = await fetch(`${baseUrl}/api/rest/auth/info`, {
         method: 'GET',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         return null;

@@ -29,7 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true);
-      await refreshAuth();
+      // Add timeout to prevent hanging if server is unreachable
+      const timeoutPromise = new Promise<void>((resolve) => setTimeout(resolve, 3000));
+      await Promise.race([refreshAuth(), timeoutPromise]);
       setIsLoading(false);
     };
     checkAuth();

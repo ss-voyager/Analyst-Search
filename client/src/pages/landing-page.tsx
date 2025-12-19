@@ -83,7 +83,7 @@ export default function LandingPage() {
           <button
             onClick={handleLogin}
             disabled={isLoggingIn || isLoading}
-            className="text-sm px-6 py-2.5 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            className="text-sm px-6 py-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/90 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg border border-black/20 dark:border-white/20"
             data-testid="button-login"
           >
             {isLoading ? 'Loading...' : isLoggingIn ? 'Opening...' : 'Sign In'}
@@ -98,14 +98,14 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="flex flex-col items-center text-center mb-10 w-full"
+          className="flex flex-col items-center text-center mb-6 w-full"
         >
           <img
             src={voyagerLogo}
             alt="Voyager"
-            className="h-5 md:h-6 mb-10 dark:invert-0 invert"
+            className="h-5 md:h-6 mb-8 dark:invert-0 invert"
           />
-          <h1 className="text-2xl md:text-3xl text-foreground italic font-bold mb-10" style={{ fontFamily: "'Monda', sans-serif" }}>
+          <h1 className="text-2xl md:text-3xl text-foreground font-bold" style={{ fontFamily: "'Monda', sans-serif" }}>
             Let's search your data.
           </h1>
         </motion.div>
