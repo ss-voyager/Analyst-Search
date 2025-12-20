@@ -5,8 +5,8 @@ import { insertSavedSearchSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { voyagerConfig } from "./voyager-config";
 
-/** Base URL for Voyager search API */
-const VOYAGER_BASE_URL = "http://ec2-3-232-18-200.compute-1.amazonaws.com/solr/v0/select";
+/** Base URL for Voyager search API (from config/voyager.json) */
+const VOYAGER_BASE_URL = `${voyagerConfig.baseUrl}/solr/v0/select`;
 
 /**
  * Registers all API routes with the Express application

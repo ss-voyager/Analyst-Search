@@ -10,7 +10,11 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Support deployment under a context path (e.g., /analyst-search/)
+  // When running as IIS virtual application, IIS strips the context path before forwarding
+  const basePath = process.env.BASE_PATH || "/";
+
+  app.use(basePath, express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {

@@ -7,6 +7,7 @@ import {
   type SavedSearch,
   type InsertSavedSearch
 } from "@shared/schema";
+import { voyagerConfig } from "./voyager-config";
 
 /**
  * Storage interface defining saved search methods
@@ -46,15 +47,10 @@ export interface IStorage {
 }
 
 /**
- * Gets the Voyager base URL from environment
- * @throws Error if VOYAGER_BASE_URL is not set
+ * Gets the Voyager base URL from config
  */
 function getVoyagerBaseUrl(): string {
-  const baseUrl = process.env.VOYAGER_BASE_URL;
-  if (!baseUrl) {
-    throw new Error('VOYAGER_BASE_URL environment variable is required');
-  }
-  return baseUrl;
+  return voyagerConfig.baseUrl;
 }
 
 /**

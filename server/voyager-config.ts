@@ -2,10 +2,17 @@
  * Voyager Search Configuration
  *
  * This file contains configuration settings for the Voyager search API.
- * Modify these settings to customize search behavior across the application.
+ * Runtime configuration is loaded from config/voyager.json at startup.
  *
- * IMPORTANT: After making changes, restart the server to apply them.
+ * IMPORTANT: After making changes to config/voyager.json, restart the server to apply them.
  */
+
+import * as fs from "fs";
+import * as path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -128,38 +135,33 @@ export interface VoyagerConfig {
 }
 
 // ============================================================================
-// CONFIGURATION
+// DEFAULT CONFIGURATION
 // ============================================================================
 
-export const voyagerConfig: VoyagerConfig = {
+/**
+ * Default configuration values.
+ * These are used as fallbacks when values are not specified in config/voyager.json.
+ */
+const DEFAULT_CONFIG: VoyagerConfig = {
   baseUrl: "http://ec2-3-232-18-200.compute-1.amazonaws.com",
-
-  displayId: "D187992491DF",
-
+  displayId: "",
   filters: {
-    // ========================================================================
-    // DATE FILTER
-    // ========================================================================
     date: {
       id: "date",
       label: "Date",
       type: "date",
       enabled: true,
       order: 1,
-
-      // Date mode options
       modes: {
-        range: true,   // Show date range picker (start/end dates)
-        since: true,   // Show "since X days/weeks/months" option
+        range: true,
+        since: true,
       },
       defaultMode: "range",
       defaultSinceValue: 7,
       defaultSinceUnit: "days",
-
-      // Date field configuration
       fields: {
         defaultField: "modified",
-        showFieldSelector: false,  // Set to true to show date field dropdown
+        showFieldSelector: false,
         options: [
           {
             value: "modified",
@@ -184,10 +186,6 @@ export const voyagerConfig: VoyagerConfig = {
         ],
       },
     },
-
-    // ========================================================================
-    // LOCATION HIERARCHY FILTER
-    // ========================================================================
     location: {
       id: "location",
       label: "Location Hierarchy",
@@ -196,12 +194,8 @@ export const voyagerConfig: VoyagerConfig = {
       order: 2,
       defaultExpanded: true,
       maxHeight: 300,
-      showSearch: false, // Set to true to enable location search
+      showSearch: false,
     },
-
-    // ========================================================================
-    // KEYWORDS FILTER
-    // ========================================================================
     keywords: {
       id: "keywords",
       label: "Keywords",
@@ -214,14 +208,10 @@ export const voyagerConfig: VoyagerConfig = {
       groupByCategory: true,
       initialDisplayCount: 10,
     },
-
-    // ========================================================================
-    // PROPERTIES FILTER
-    // ========================================================================
     properties: {
       id: "properties",
       label: "Properties",
-      type: "checkbox",  // Can be "checkbox" or "toggle"
+      type: "checkbox",
       enabled: true,
       order: 4,
       defaultExpanded: true,
@@ -249,14 +239,83 @@ export const voyagerConfig: VoyagerConfig = {
       ],
     },
   },
-
   pagination: {
     defaultPageSize: 48,
     maxPageSize: 100,
   },
-
   defaultSort: "score desc",
 };
+
+// ============================================================================
+// CONFIG LOADER
+// ============================================================================
+
+/**
+ * Deep merge two objects, with source values overwriting target values.
+ * Arrays are replaced entirely (not merged).
+ */
+function deepMerge<T extends Record<string, any>>(target: T, source: Partial<T>): T {
+  const result = { ...target };
+
+  for (const key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      const sourceValue = source[key];
+      const targetValue = target[key];
+
+      if (
+        sourceValue !== null &&
+        typeof sourceValue === "object" &&
+        !Array.isArray(sourceValue) &&
+        targetValue !== null &&
+        typeof targetValue === "object" &&
+        !Array.isArray(targetValue)
+      ) {
+        // Recursively merge nested objects
+        (result as any)[key] = deepMerge(targetValue, sourceValue);
+      } else if (sourceValue !== undefined) {
+        // Replace value (including arrays)
+        (result as any)[key] = sourceValue;
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Load Voyager configuration from config/voyager.json.
+ * Falls back to default configuration if file doesn't exist.
+ */
+function loadVoyagerConfig(): VoyagerConfig {
+  // Try multiple possible config file locations
+  const possiblePaths = [
+    path.join(process.cwd(), "config", "voyager.json"),
+    path.join(__dirname, "..", "config", "voyager.json"),
+    path.join(__dirname, "config", "voyager.json"),
+  ];
+
+  for (const configPath of possiblePaths) {
+    try {
+      if (fs.existsSync(configPath)) {
+        const configContent = fs.readFileSync(configPath, "utf-8");
+        const runtimeConfig = JSON.parse(configContent);
+        console.log(`Loaded Voyager config from: ${configPath}`);
+        return deepMerge(DEFAULT_CONFIG, runtimeConfig);
+      }
+    } catch (error) {
+      console.warn(`Failed to load config from ${configPath}:`, error);
+    }
+  }
+
+  console.warn("No config/voyager.json found, using default configuration");
+  return DEFAULT_CONFIG;
+}
+
+/**
+ * The loaded Voyager configuration.
+ * Loaded once at server startup from config/voyager.json.
+ */
+export const voyagerConfig: VoyagerConfig = loadVoyagerConfig();
 
 // ============================================================================
 // HELPER FUNCTIONS

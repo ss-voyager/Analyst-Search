@@ -1,10 +1,18 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
-export default defineConfig({
-  plugins: [
+export default defineConfig(({ mode }) => {
+  // Load env from client folder to get VITE_BASE_PATH
+  const clientDir = path.resolve(import.meta.dirname, "client");
+  const env = loadEnv(mode, clientDir, "");
+
+  return {
+    // Set base path for deployment under a context path (e.g., /analyst-search/)
+    // Use VITE_BASE_PATH env var or default to root
+    base: env.VITE_BASE_PATH || "/",
+    plugins: [
     react(),
     tailwindcss(),
   ],
@@ -39,4 +47,5 @@ export default defineConfig({
       },
     },
   },
+  };
 });

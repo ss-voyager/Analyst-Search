@@ -7,3 +7,9 @@ vite.config.ts.*
 .env
 coverage/
 nul
+
+# IIS deployment logs
+iisnode/
+
+# Runtime config (keep example tracked)
+config/voyager.json

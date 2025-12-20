@@ -1,0 +1,36 @@
+{
+  "baseUrl": "http://your-voyager-instance.com",
+  "displayId": "YOUR_DISPLAY_ID",
+  "filters": {
+    "date": {
+      "enabled": true,
+      "defaultMode": "range",
+      "defaultSinceValue": 7,
+      "defaultSinceUnit": "days",
+      "fields": {
+        "defaultField": "modified",
+        "showFieldSelector": false
+      }
+    },
+    "location": {
+      "enabled": false,
+      "maxHeight": 300,
+      "showSearch": false
+    },
+    "keywords": {
+      "enabled": true,
+      "maxHeight": 300,
+      "showSearch": true,
+      "groupByCategory": true,
+      "initialDisplayCount": 10
+    },
+    "properties": {
+      "enabled": true
+    }
+  },
+  "pagination": {
+    "defaultPageSize": 48,
+    "maxPageSize": 100
+  },
+  "defaultSort": "score desc"
+}
