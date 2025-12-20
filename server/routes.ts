@@ -1,9 +1,9 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { type Server } from "http";
 import { storage } from "./storage";
-import { insertSatelliteItemSchema, insertSavedSearchSchema } from "@shared/schema";
+import { insertSavedSearchSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { voyagerConfig } from "./voyager-config";
 
 /** Base URL for Voyager search API */
 const VOYAGER_BASE_URL = "http://ec2-3-232-18-200.compute-1.amazonaws.com/solr/v0/select";
@@ -18,325 +18,24 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Setup Replit Auth (skip if REPL_ID not set - local development)
-  if (process.env.REPL_ID) {
-    await setupAuth(app);
-  } else {
-    console.log("Skipping Replit auth setup (REPL_ID not set - local dev mode)");
-  }
 
   /**
    * @openapi
-   * /auth/user:
+   * /config:
    *   get:
-   *     summary: Get authenticated user information
-   *     description: Returns the current authenticated user's profile information
-   *     tags: [Authentication]
-   *     security:
-   *       - cookieAuth: []
+   *     summary: Get application configuration
+   *     description: Returns filter settings and app-wide configuration
+   *     tags: [Configuration]
    *     responses:
    *       200:
-   *         description: User information retrieved successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/User'
-   *       401:
-   *         description: Not authenticated
-   *       500:
-   *         description: Server error
+   *         description: Application configuration
    */
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
-  });
-
-  /**
-   * @openapi
-   * /satellite-items:
-   *   get:
-   *     summary: Search satellite items
-   *     description: Search for satellite imagery items with various filters including keywords, location, date range, and properties
-   *     tags: [Satellite Items]
-   *     parameters:
-   *       - in: query
-   *         name: keyword
-   *         schema:
-   *           type: string
-   *         description: Text search keyword
-   *       - in: query
-   *         name: location
-   *         schema:
-   *           type: string
-   *         description: Location name filter
-   *       - in: query
-   *         name: locationIds
-   *         schema:
-   *           type: array
-   *           items:
-   *             type: string
-   *         description: Location hierarchy IDs
-   *       - in: query
-   *         name: keywords
-   *         schema:
-   *           type: array
-   *           items:
-   *             type: string
-   *         description: Keyword category filters
-   *       - in: query
-   *         name: properties
-   *         schema:
-   *           type: array
-   *           items:
-   *             type: string
-   *         description: Property filters (has_spatial, has_thumbnail, etc.)
-   *       - in: query
-   *         name: dateFrom
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: Start date for date range filter
-   *       - in: query
-   *         name: dateTo
-   *         schema:
-   *           type: string
-   *           format: date
-   *         description: End date for date range filter
-   *       - in: query
-   *         name: platform
-   *         schema:
-   *           type: string
-   *         description: Satellite platform filter
-   *       - in: query
-   *         name: sortBy
-   *         schema:
-   *           type: string
-   *           enum: [date, relevance, title]
-   *         description: Sort order
-   *       - in: query
-   *         name: limit
-   *         schema:
-   *           type: integer
-   *           default: 48
-   *         description: Maximum number of results
-   *       - in: query
-   *         name: offset
-   *         schema:
-   *           type: integer
-   *           default: 0
-   *         description: Pagination offset
-   *     responses:
-   *       200:
-   *         description: List of satellite items
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: array
-   *               items:
-   *                 $ref: '#/components/schemas/SatelliteItem'
-   *       500:
-   *         description: Server error
-   */
-  app.get("/api/satellite-items", async (req, res) => {
-    try {
-      const {
-        keyword,
-        location,
-        locationIds,
-        keywords,
-        properties,
-        dateFrom,
-        dateTo,
-        platform,
-        sortBy,
-        limit,
-        offset
-      } = req.query;
-
-      const filters: any = {};
-
-      if (keyword) filters.keyword = String(keyword);
-      if (location) filters.location = String(location);
-      if (locationIds) filters.locationIds = Array.isArray(locationIds) ? locationIds : [String(locationIds)];
-      if (keywords) filters.keywords = Array.isArray(keywords) ? keywords : [String(keywords)];
-      if (properties) filters.properties = Array.isArray(properties) ? properties : [String(properties)];
-      if (dateFrom) filters.dateFrom = new Date(String(dateFrom));
-      if (dateTo) filters.dateTo = new Date(String(dateTo));
-      if (platform) filters.platform = String(platform);
-      if (sortBy) filters.sortBy = String(sortBy);
-      if (limit) filters.limit = parseInt(String(limit));
-      if (offset) filters.offset = parseInt(String(offset));
-
-      const items = await storage.searchSatelliteItems(filters);
-      res.json(items);
-    } catch (error) {
-      console.error("Error searching satellite items:", error);
-      res.status(500).json({ error: "Failed to search satellite items" });
-    }
-  });
-
-  /**
-   * @openapi
-   * /satellite-items/{id}:
-   *   get:
-   *     summary: Get satellite item by ID
-   *     description: Retrieve a single satellite item by its unique identifier
-   *     tags: [Satellite Items]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *         description: Satellite item ID
-   *     responses:
-   *       200:
-   *         description: Satellite item details
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/SatelliteItem'
-   *       404:
-   *         description: Item not found
-   *       500:
-   *         description: Server error
-   */
-  app.get("/api/satellite-items/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const item = await storage.getSatelliteItem(id);
-
-      if (!item) {
-        return res.status(404).json({ error: "Item not found" });
-      }
-
-      res.json(item);
-    } catch (error) {
-      console.error("Error fetching satellite item:", error);
-      res.status(500).json({ error: "Failed to fetch satellite item" });
-    }
-  });
-
-  /**
-   * @openapi
-   * /satellite-items:
-   *   post:
-   *     summary: Create a new satellite item
-   *     description: Create a new satellite imagery item (admin/testing purposes)
-   *     tags: [Satellite Items]
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/SatelliteItem'
-   *     responses:
-   *       201:
-   *         description: Item created successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/SatelliteItem'
-   *       400:
-   *         description: Validation error
-   *       500:
-   *         description: Server error
-   */
-  app.post("/api/satellite-items", async (req, res) => {
-    try {
-      const validationResult = insertSatelliteItemSchema.safeParse(req.body);
-
-      if (!validationResult.success) {
-        const validationError = fromZodError(validationResult.error);
-        return res.status(400).json({ error: validationError.message });
-      }
-
-      const item = await storage.createSatelliteItem(validationResult.data);
-      res.status(201).json(item);
-    } catch (error) {
-      console.error("Error creating satellite item:", error);
-      res.status(500).json({ error: "Failed to create satellite item" });
-    }
-  });
-
-  /**
-   * @openapi
-   * /satellite-items/{id}/related:
-   *   get:
-   *     summary: Get related items for lineage
-   *     description: Retrieve items related to the specified satellite item for data lineage tracking
-   *     tags: [Satellite Items]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *         description: Satellite item ID
-   *     responses:
-   *       200:
-   *         description: List of related items
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: array
-   *               items:
-   *                 $ref: '#/components/schemas/RelatedItem'
-   *       500:
-   *         description: Server error
-   */
-  app.get("/api/satellite-items/:id/related", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const relatedItems = await storage.getRelatedItems(id);
-      res.json(relatedItems);
-    } catch (error) {
-      console.error("Error fetching related items:", error);
-      res.status(500).json({ error: "Failed to fetch related items" });
-    }
-  });
-
-  /**
-   * @openapi
-   * /satellite-items/{id}/provenance:
-   *   get:
-   *     summary: Get provenance events
-   *     description: Retrieve the provenance history (processing events) for a satellite item
-   *     tags: [Satellite Items]
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *         description: Satellite item ID
-   *     responses:
-   *       200:
-   *         description: List of provenance events
-   *         content:
-   *           application/json:
-   *             schema:
-   *               type: array
-   *               items:
-   *                 $ref: '#/components/schemas/ProvenanceEvent'
-   *       500:
-   *         description: Server error
-   */
-  app.get("/api/satellite-items/:id/provenance", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const events = await storage.getProvenanceEvents(id);
-      res.json(events);
-    } catch (error) {
-      console.error("Error fetching provenance events:", error);
-      res.status(500).json({ error: "Failed to fetch provenance events" });
-    }
+  app.get("/api/config", (_req, res) => {
+    res.json({
+      filters: voyagerConfig.filters,
+      pagination: voyagerConfig.pagination,
+      defaultSort: voyagerConfig.defaultSort,
+    });
   });
 
   /**

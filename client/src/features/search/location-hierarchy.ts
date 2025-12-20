@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Location hierarchy utilities and mock data for satellite imagery search
+ * @module client/features/search/location-hierarchy
+ */
+
 import { LatLngBoundsExpression } from 'leaflet';
 import { SearchResult, TreeNode } from './types';
 import stockImage from '@assets/stock_images/satellite_radar_imag_5d3e79b8.jpg';
@@ -9,7 +14,9 @@ import snowImage from '@assets/stock_images/satellite_view_of_sn_8f021214.jpg';
 import cityImage from '@assets/stock_images/satellite_view_of_ci_093e163a.jpg';
 import sarImage from '@assets/stock_images/satellite_radar_sar__0ff421fd.jpg';
 
-// Mock Data Generators
+/**
+ * Satellite platform configuration
+ */
 export const PLATFORMS = [
   { name: "Sentinel-2", provider: "ESA", type: "Optical" },
   { name: "Landsat 8", provider: "USGS", type: "Optical" },
@@ -119,11 +126,15 @@ export const HIERARCHY_TREE: TreeNode[] = [
   }
 ];
 
-// Mapping from hierarchy IDs to Voyager API facet field and value
-// The Voyager API uses grp_Region, grp_Country, grp_State for geography filtering
+/**
+ * Mapping from location hierarchy IDs to Voyager API facet field and value
+ * The Voyager API uses grp_Region, grp_Country, grp_State for geography filtering
+ */
 export interface LocationMapping {
-  field: string;  // Voyager facet field name
-  value: string;  // Value to filter on (with emoji prefix as it appears in Voyager)
+  /** Voyager facet field name (e.g., "grp_Country", "grp_State") */
+  field: string;
+  /** Value to filter on (with emoji prefix as it appears in Voyager) */
+  value: string;
 }
 
 export const LOCATION_TO_VOYAGER: Record<string, LocationMapping> = {
@@ -167,7 +178,19 @@ export const LOCATION_TO_VOYAGER: Record<string, LocationMapping> = {
   "wls": { field: "grp_State", value: "Wales" },
 };
 
-// Helper to get all descendant IDs from a tree node (including the node itself)
+/**
+ * Gets all descendant IDs from a tree node (including the node itself)
+ *
+ * @param nodeId - The ID of the node to start from
+ * @param tree - The tree structure to search
+ * @returns Array of node IDs including the target node and all its descendants
+ *
+ * @example
+ * ```typescript
+ * const ids = getAllDescendantIds('usa', HIERARCHY_TREE);
+ * // Returns: ['usa', 'ca', 'ny', 'tx', 'fl']
+ * ```
+ */
 export function getAllDescendantIds(nodeId: string, tree: TreeNode[]): string[] {
   const ids: string[] = [];
 
@@ -199,7 +222,20 @@ export function getAllDescendantIds(nodeId: string, tree: TreeNode[]): string[] 
   return ids;
 }
 
-// Expand selected IDs to include all descendants
+/**
+ * Expands selected IDs to include all descendants
+ * Used when a parent location is selected to include all child locations
+ *
+ * @param selectedIds - Array of selected node IDs
+ * @param tree - The tree structure to search
+ * @returns Deduplicated array of all selected IDs plus their descendants
+ *
+ * @example
+ * ```typescript
+ * const expanded = expandSelectedLocations(['usa'], HIERARCHY_TREE);
+ * // Returns: ['usa', 'ca', 'ny', 'tx', 'fl']
+ * ```
+ */
 export function expandSelectedLocations(selectedIds: string[], tree: TreeNode[]): string[] {
   const expandedIds = new Set<string>();
 
@@ -211,7 +247,20 @@ export function expandSelectedLocations(selectedIds: string[], tree: TreeNode[])
   return Array.from(expandedIds);
 }
 
-// Helper to find parent ID for a given node
+/**
+ * Finds the parent ID for a given node in the tree
+ *
+ * @param nodeId - The ID of the node to find the parent for
+ * @param tree - The tree structure to search
+ * @returns Parent node ID, or null if node is at root level or not found
+ *
+ * @example
+ * ```typescript
+ * getParentId('ca', HIERARCHY_TREE); // Returns: 'usa'
+ * getParentId('usa', HIERARCHY_TREE); // Returns: 'na'
+ * getParentId('na', HIERARCHY_TREE); // Returns: null (root node)
+ * ```
+ */
 export function getParentId(nodeId: string, tree: TreeNode[]): string | null {
   function findParent(nodes: TreeNode[], targetId: string, parentId: string | null): string | null {
     for (const node of nodes) {
@@ -231,7 +280,19 @@ export function getParentId(nodeId: string, tree: TreeNode[]): string | null {
   return findParent(tree, nodeId, null);
 }
 
-// Helper to get direct children IDs of a node
+/**
+ * Gets the direct children IDs of a node (not grandchildren)
+ *
+ * @param nodeId - The ID of the parent node
+ * @param tree - The tree structure to search
+ * @returns Array of direct child node IDs, or empty array if node has no children
+ *
+ * @example
+ * ```typescript
+ * getDirectChildrenIds('usa', HIERARCHY_TREE);
+ * // Returns: ['ca', 'ny', 'tx', 'fl']
+ * ```
+ */
 export function getDirectChildrenIds(nodeId: string, tree: TreeNode[]): string[] {
   function findNode(nodes: TreeNode[]): TreeNode | null {
     for (const node of nodes) {
@@ -252,7 +313,19 @@ export function getDirectChildrenIds(nodeId: string, tree: TreeNode[]): string[]
   return node?.children?.map(child => child.id) || [];
 }
 
-// Helper to get all ancestor IDs from node to root
+/**
+ * Gets all ancestor IDs from a node up to the root
+ *
+ * @param nodeId - The ID of the node to find ancestors for
+ * @param tree - The tree structure to search
+ * @returns Array of ancestor IDs from immediate parent to root
+ *
+ * @example
+ * ```typescript
+ * getAllAncestorIds('ca', HIERARCHY_TREE);
+ * // Returns: ['usa', 'na']
+ * ```
+ */
 export function getAllAncestorIds(nodeId: string, tree: TreeNode[]): string[] {
   const ancestors: string[] = [];
   let currentId: string | null = nodeId;
@@ -268,7 +341,14 @@ export function getAllAncestorIds(nodeId: string, tree: TreeNode[]): string[] {
   return ancestors;
 }
 
-// Helper to check if all direct children are selected
+/**
+ * Checks if all direct children of a node are selected
+ *
+ * @param nodeId - The ID of the parent node
+ * @param selectedIds - Array of currently selected node IDs
+ * @param tree - The tree structure to search
+ * @returns True if all direct children are in selectedIds, false otherwise
+ */
 export function areAllChildrenSelected(nodeId: string, selectedIds: string[], tree: TreeNode[]): boolean {
   const childrenIds = getDirectChildrenIds(nodeId, tree);
   if (childrenIds.length === 0) {
@@ -277,7 +357,14 @@ export function areAllChildrenSelected(nodeId: string, selectedIds: string[], tr
   return childrenIds.every(childId => selectedIds.includes(childId));
 }
 
-// Helper to check if some (but not all) children are selected
+/**
+ * Checks if some (but not all) children of a node are selected
+ *
+ * @param nodeId - The ID of the parent node
+ * @param selectedIds - Array of currently selected node IDs
+ * @param tree - The tree structure to search
+ * @returns True if at least one but not all children are selected
+ */
 export function areSomeChildrenSelected(nodeId: string, selectedIds: string[], tree: TreeNode[]): boolean {
   const childrenIds = getDirectChildrenIds(nodeId, tree);
   if (childrenIds.length === 0) {
@@ -288,7 +375,24 @@ export function areSomeChildrenSelected(nodeId: string, selectedIds: string[], t
   return selectedCount > 0 && selectedCount < childrenIds.length;
 }
 
-// Helper to calculate checkbox state (true/false/"indeterminate")
+/**
+ * Calculates the checkbox state for a tree node
+ * Used for tri-state checkbox UI in location filter
+ *
+ * @param nodeId - The ID of the node to check
+ * @param selectedIds - Array of currently selected node IDs
+ * @param tree - The tree structure to search
+ * @returns true if selected, false if unselected, "indeterminate" if partially selected
+ *
+ * @example
+ * ```typescript
+ * getCheckboxState('usa', ['ca', 'ny'], HIERARCHY_TREE);
+ * // Returns: 'indeterminate' (some children selected)
+ *
+ * getCheckboxState('usa', ['ca', 'ny', 'tx', 'fl'], HIERARCHY_TREE);
+ * // Returns: true (all children selected)
+ * ```
+ */
 export function getCheckboxState(
   nodeId: string,
   selectedIds: string[],
@@ -315,7 +419,19 @@ export function getCheckboxState(
   }
 }
 
-// Helper to find a node by ID in the tree
+/**
+ * Finds a node by ID in the tree structure
+ *
+ * @param id - The ID of the node to find
+ * @param tree - The tree structure to search
+ * @returns The TreeNode if found, null otherwise
+ *
+ * @example
+ * ```typescript
+ * const node = findNodeById('usa', HIERARCHY_TREE);
+ * // Returns: { id: 'usa', label: 'United States', children: [...] }
+ * ```
+ */
 export function findNodeById(id: string, tree: TreeNode[]): TreeNode | null {
   for (const node of tree) {
     if (node.id === id) {
@@ -331,12 +447,19 @@ export function findNodeById(id: string, tree: TreeNode[]): TreeNode | null {
   return null;
 }
 
+/**
+ * Available keyword categories for filtering satellite imagery
+ */
 export const KEYWORDS = [
-  "Vegetation", "Water", "Urban", "Agriculture", "Disaster", 
+  "Vegetation", "Water", "Urban", "Agriculture", "Disaster",
   "Snow/Ice", "Clouds", "Desert", "Forest", "Ocean",
   "Infrastructure", "Mining", "Oil & Gas", "Renewable Energy"
 ];
 
+/**
+ * IDs of all leaf nodes (nodes without children) in the location hierarchy
+ * Used for random location assignment in mock data
+ */
 export const LEAF_IDS = [
   "ca", "ny", "tx", "fl", "can", "mex",
   "eng", "sct", "wls", "fr", "de", "it", "es",
@@ -345,6 +468,18 @@ export const LEAF_IDS = [
   "eg", "za", "ng", "ke"
 ];
 
+/**
+ * Generates mock satellite imagery search results for development/testing
+ *
+ * @param count - Number of mock results to generate
+ * @returns Array of SearchResult objects with randomized data
+ *
+ * @example
+ * ```typescript
+ * const results = generateMockResults(50);
+ * console.log(results[0].title); // "Sentinel-2 MSI Level-1C"
+ * ```
+ */
 export const generateMockResults = (count: number): SearchResult[] => {
   return Array.from({ length: count }, (_, i) => {
     const platform = PLATFORMS[i % PLATFORMS.length];
@@ -395,4 +530,8 @@ export const generateMockResults = (count: number): SearchResult[] => {
   });
 };
 
+/**
+ * Pre-generated set of 100 mock satellite imagery search results
+ * Used for development and testing without API calls
+ */
 export const MOCK_RESULTS = generateMockResults(100);

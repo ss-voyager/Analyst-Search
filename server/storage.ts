@@ -1,118 +1,18 @@
 /**
- * @fileoverview Storage layer for database and Voyager API operations
+ * @fileoverview Storage layer for Voyager API operations
  * @module server/storage
  */
 
 import {
-  users,
-  satelliteItems,
-  relatedItems,
-  provenanceEvents,
-  type User,
-  type UpsertUser,
-  type SatelliteItem,
-  type InsertSatelliteItem,
-  type RelatedItem,
-  type InsertRelatedItem,
-  type ProvenanceEvent,
-  type InsertProvenanceEvent,
   type SavedSearch,
   type InsertSavedSearch
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, and, gte, lte, or, inArray, sql, desc, asc, isNull } from "drizzle-orm";
 
 /**
- * Storage interface defining all data access methods
- * Implementations can use different backends (database, API, etc.)
+ * Storage interface defining saved search methods
+ * Uses Voyager API for data persistence
  */
 export interface IStorage {
-  /**
-   * Retrieves a user by their unique identifier
-   * @param id - User ID
-   * @returns Promise resolving to User object or undefined if not found
-   */
-  getUser(id: string): Promise<User | undefined>;
-
-  /**
-   * Creates or updates a user record
-   * @param user - User data to upsert
-   * @returns Promise resolving to the created/updated User
-   */
-  upsertUser(user: UpsertUser): Promise<User>;
-
-  /**
-   * Searches satellite items with various filter criteria
-   * @param filters - Search filter parameters
-   * @param filters.keyword - Text search keyword
-   * @param filters.location - Location name filter
-   * @param filters.locationIds - Array of location hierarchy IDs
-   * @param filters.keywords - Array of keyword category filters
-   * @param filters.properties - Array of property filters (has_spatial, has_thumbnail, etc.)
-   * @param filters.dateFrom - Start date for date range
-   * @param filters.dateTo - End date for date range
-   * @param filters.platform - Satellite platform filter
-   * @param filters.sortBy - Sort order (date_desc, date_asc, name_asc)
-   * @param filters.limit - Maximum results to return
-   * @param filters.offset - Pagination offset
-   * @returns Promise resolving to array of SatelliteItem objects
-   */
-  searchSatelliteItems(filters: {
-    keyword?: string;
-    location?: string;
-    locationIds?: string[];
-    keywords?: string[];
-    properties?: string[];
-    dateFrom?: Date;
-    dateTo?: Date;
-    platform?: string;
-    sortBy?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<SatelliteItem[]>;
-
-  /**
-   * Retrieves a single satellite item by ID
-   * @param id - Satellite item ID
-   * @returns Promise resolving to SatelliteItem or undefined if not found
-   */
-  getSatelliteItem(id: number): Promise<SatelliteItem | undefined>;
-
-  /**
-   * Creates a new satellite item
-   * @param item - Satellite item data
-   * @returns Promise resolving to the created SatelliteItem
-   */
-  createSatelliteItem(item: InsertSatelliteItem): Promise<SatelliteItem>;
-
-  /**
-   * Retrieves related items for data lineage tracking
-   * @param itemId - Source item ID
-   * @returns Promise resolving to array of RelatedItem objects
-   */
-  getRelatedItems(itemId: number): Promise<RelatedItem[]>;
-
-  /**
-   * Creates a relationship between two items
-   * @param relatedItem - Related item data
-   * @returns Promise resolving to the created RelatedItem
-   */
-  createRelatedItem(relatedItem: InsertRelatedItem): Promise<RelatedItem>;
-
-  /**
-   * Retrieves provenance events (processing history) for an item
-   * @param itemId - Satellite item ID
-   * @returns Promise resolving to array of ProvenanceEvent objects
-   */
-  getProvenanceEvents(itemId: number): Promise<ProvenanceEvent[]>;
-
-  /**
-   * Creates a new provenance event
-   * @param event - Provenance event data
-   * @returns Promise resolving to the created ProvenanceEvent
-   */
-  createProvenanceEvent(event: InsertProvenanceEvent): Promise<ProvenanceEvent>;
-
   /**
    * Retrieves saved searches for a user from Voyager
    * @param userId - User ID to fetch searches for
@@ -146,174 +46,30 @@ export interface IStorage {
 }
 
 /**
- * Database storage implementation using Drizzle ORM
- * Handles PostgreSQL database operations and Voyager API integration
+ * Gets the Voyager base URL from environment
+ * @throws Error if VOYAGER_BASE_URL is not set
  */
-export class DatabaseStorage implements IStorage {
-  /**
-   * Retrieves a user by ID from the database
-   * @param id - User ID
-   * @returns Promise resolving to User or undefined
-   */
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+function getVoyagerBaseUrl(): string {
+  const baseUrl = process.env.VOYAGER_BASE_URL;
+  if (!baseUrl) {
+    throw new Error('VOYAGER_BASE_URL environment variable is required');
   }
+  return baseUrl;
+}
 
+/**
+ * Voyager API storage implementation
+ * Handles saved search operations via Voyager REST API
+ */
+export class VoyagerStorage implements IStorage {
   /**
-   * Creates or updates a user record (upsert operation)
-   * @param userData - User data to upsert
-   * @returns Promise resolving to the upserted User
+   * Retrieves saved searches for a user from Voyager
+   * @param userId - User ID to fetch searches for
+   * @param cookie - Browser cookies for Voyager authentication
+   * @returns Promise resolving to array of SavedSearch objects
    */
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
-  }
-
-  /**
-   * Searches satellite items with dynamic filtering
-   * Supports text search, location filtering, date ranges, and pagination
-   * @param filters - Search filter parameters
-   * @returns Promise resolving to matching SatelliteItem array
-   */
-  async searchSatelliteItems(filters: {
-    keyword?: string;
-    location?: string;
-    locationIds?: string[];
-    keywords?: string[];
-    properties?: string[];
-    dateFrom?: Date;
-    dateTo?: Date;
-    platform?: string;
-    sortBy?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<SatelliteItem[]> {
-    let query = db.select().from(satelliteItems);
-    
-    const conditions = [];
-    
-    // Location filter
-    if (filters.locationIds && filters.locationIds.length > 0) {
-      conditions.push(inArray(satelliteItems.locationId, filters.locationIds));
-    }
-    
-    // Keyword filter (search in title or keywords array)
-    if (filters.keyword) {
-      conditions.push(
-        or(
-          sql`${satelliteItems.title} ILIKE ${'%' + filters.keyword + '%'}`,
-          sql`${filters.keyword} = ANY(${satelliteItems.keywords})`
-        )
-      );
-    }
-    
-    // Keywords array filter (must have all)
-    if (filters.keywords && filters.keywords.length > 0) {
-      for (const kw of filters.keywords) {
-        conditions.push(sql`${kw} = ANY(${satelliteItems.keywords})`);
-      }
-    }
-    
-    // Properties array filter (must have all)
-    if (filters.properties && filters.properties.length > 0) {
-      for (const prop of filters.properties) {
-        conditions.push(sql`${prop} = ANY(${satelliteItems.properties})`);
-      }
-    }
-    
-    // Date range filter
-    if (filters.dateFrom) {
-      conditions.push(gte(satelliteItems.acquisitionDate, filters.dateFrom));
-    }
-    if (filters.dateTo) {
-      conditions.push(lte(satelliteItems.acquisitionDate, filters.dateTo));
-    }
-    
-    // Platform filter
-    if (filters.platform) {
-      conditions.push(eq(satelliteItems.platform, filters.platform));
-    }
-    
-    // Apply all conditions
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
-    }
-    
-    // Sorting
-    if (filters.sortBy === 'date_desc') {
-      query = query.orderBy(desc(satelliteItems.acquisitionDate)) as any;
-    } else if (filters.sortBy === 'date_asc') {
-      query = query.orderBy(asc(satelliteItems.acquisitionDate)) as any;
-    } else if (filters.sortBy === 'name_asc') {
-      query = query.orderBy(asc(satelliteItems.title)) as any;
-    }
-    
-    // Pagination
-    if (filters.limit) {
-      query = query.limit(filters.limit) as any;
-    }
-    if (filters.offset) {
-      query = query.offset(filters.offset) as any;
-    }
-    
-    return await query;
-  }
-  
-  async getSatelliteItem(id: number): Promise<SatelliteItem | undefined> {
-    const [item] = await db.select().from(satelliteItems).where(eq(satelliteItems.id, id));
-    return item || undefined;
-  }
-  
-  async createSatelliteItem(item: InsertSatelliteItem): Promise<SatelliteItem> {
-    const [newItem] = await db
-      .insert(satelliteItems)
-      .values(item)
-      .returning();
-    return newItem;
-  }
-  
-  // Related Items methods
-  async getRelatedItems(itemId: number): Promise<RelatedItem[]> {
-    return await db.select().from(relatedItems).where(eq(relatedItems.itemId, itemId));
-  }
-  
-  async createRelatedItem(relatedItem: InsertRelatedItem): Promise<RelatedItem> {
-    const [item] = await db
-      .insert(relatedItems)
-      .values(relatedItem)
-      .returning();
-    return item;
-  }
-  
-  // Provenance methods
-  async getProvenanceEvents(itemId: number): Promise<ProvenanceEvent[]> {
-    return await db.select().from(provenanceEvents)
-      .where(eq(provenanceEvents.itemId, itemId))
-      .orderBy(asc(provenanceEvents.sortOrder));
-  }
-  
-  async createProvenanceEvent(event: InsertProvenanceEvent): Promise<ProvenanceEvent> {
-    const [newEvent] = await db
-      .insert(provenanceEvents)
-      .values(event)
-      .returning();
-    return newEvent;
-  }
-  
-  // Saved Searches methods - Using Voyager API
   async getSavedSearches(userId?: string, cookie?: string): Promise<SavedSearch[]> {
-    const voyagerBaseUrl = process.env.VOYAGER_BASE_URL || 'http://172.22.1.25:8888';
+    const voyagerBaseUrl = getVoyagerBaseUrl();
 
     try {
       console.log('getSavedSearches called for userId:', userId);
@@ -379,8 +135,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Retrieves a single saved search by ID from Voyager
+   * @param id - Saved search ID
+   * @param cookie - Browser cookies for Voyager authentication
+   * @returns Promise resolving to SavedSearch or undefined if not found
+   */
   async getSavedSearch(id: string, cookie?: string): Promise<SavedSearch | undefined> {
-    const voyagerBaseUrl = process.env.VOYAGER_BASE_URL || 'http://172.22.1.25:8888';
+    const voyagerBaseUrl = getVoyagerBaseUrl();
 
     try {
       console.log('getSavedSearch called for id:', id);
@@ -485,8 +247,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Creates a new saved search in Voyager
+   * @param search - Saved search data
+   * @param cookie - Browser cookies for Voyager authentication
+   * @returns Promise resolving to the created SavedSearch
+   */
   async createSavedSearch(search: InsertSavedSearch, cookie?: string): Promise<SavedSearch> {
-    const voyagerBaseUrl = process.env.VOYAGER_BASE_URL || 'http://172.22.1.25:8888';
+    const voyagerBaseUrl = getVoyagerBaseUrl();
 
     console.log('createSavedSearch called with:', JSON.stringify(search, null, 2));
     console.log('Cookie:', cookie);
@@ -614,8 +382,13 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  /**
+   * Deletes a saved search from Voyager
+   * @param id - Saved search ID to delete
+   * @param cookie - Browser cookies for Voyager authentication
+   */
   async deleteSavedSearch(id: string, cookie?: string): Promise<void> {
-    const voyagerBaseUrl = process.env.VOYAGER_BASE_URL || 'http://172.22.1.25:8888';
+    const voyagerBaseUrl = getVoyagerBaseUrl();
 
     console.log('deleteSavedSearch called for id:', id);
     console.log('Voyager DELETE URL:', `${voyagerBaseUrl}/api/rest/display/ssearch/${id}`);
@@ -649,4 +422,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new VoyagerStorage();

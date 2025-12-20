@@ -123,7 +123,7 @@ export const DEFAULT_CONFIG: AppConfig = {
       id: "location",
       label: "Location Hierarchy",
       type: "tree",
-      enabled: true,
+      enabled: false,
       order: 2,
       defaultExpanded: true,
       maxHeight: 300,

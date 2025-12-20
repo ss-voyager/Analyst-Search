@@ -120,12 +120,14 @@ export function groupKeywords(keywords: string[]): Map<string, string[]> {
   }
 
   // Sort groups by number of keywords (largest first)
-  const sortedGroups = new Map([...groups.entries()].sort((a, b) => {
-    // Keep "Other" at the end
-    if (a[0] === "Other") return 1;
-    if (b[0] === "Other") return -1;
-    return b[1].length - a[1].length;
-  }));
+  const sortedGroups = new Map<string, string[]>(
+    Array.from(groups.entries()).sort((a, b) => {
+      // Keep "Other" at the end
+      if (a[0] === "Other") return 1;
+      if (b[0] === "Other") return -1;
+      return b[1].length - a[1].length;
+    })
+  );
 
   return sortedGroups;
 }

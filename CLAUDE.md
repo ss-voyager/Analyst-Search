@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Analyst-Search is a full-stack TypeScript application for searching and analyzing satellite imagery and geospatial data. It features a React frontend with Vite, Express backend, PostgreSQL database with Drizzle ORM, and integrates with an external Voyager search API.
+Analyst-Search is a full-stack TypeScript application for searching and analyzing satellite imagery and geospatial data. It features a React frontend with Vite, Express backend, and integrates with the Voyager search API for all data operations.
 
 ## Development Commands
 
@@ -37,12 +37,6 @@ npm test           # Run tests in watch mode
 npm run test:run   # Run tests once
 ```
 
-### Database Operations
-
-```bash
-npm run db:push    # Push schema changes to PostgreSQL
-```
-
 ## Architecture
 
 ### Monorepo Structure
@@ -66,10 +60,9 @@ project/
 ├── server/          # Express backend
 │   ├── index.ts     # Server entry point
 │   ├── routes.ts    # API route definitions
-│   ├── storage.ts   # Database abstraction layer
-│   └── db.ts        # Drizzle database connection
+│   └── storage.ts   # Voyager API abstraction layer
 ├── shared/          # Code shared between client and server
-│   └── schema.ts    # Drizzle schema and Zod validators
+│   └── schema.ts    # TypeScript interfaces and Zod validators
 └── docs/            # Documentation
 ```
 
@@ -112,26 +105,26 @@ Always use these aliases for imports to ensure consistency.
 **Environment variable:**
 - `VITE_VOYAGER_BASE_URL` - Base URL for Navigo authentication (required)
 
-### Database Layer
+### Storage Layer
 
-**Drizzle ORM** with PostgreSQL:
-- Schema defined in `shared/schema.ts` (tables: users, satelliteItems, relatedItems, provenanceEvents, savedSearches)
+**Voyager API Integration:**
 - Storage abstraction in `server/storage.ts` implements `IStorage` interface
-- Zod validators auto-generated from schema using `drizzle-zod`
+- All saved search operations go through Voyager REST API
+- Zod validators in `shared/schema.ts` for runtime validation
 
 **Key patterns:**
-- All database operations go through `storage` instance
-- Use `createInsertSchema()` for validation
-- Return types are inferred from schema (`$inferSelect`, `$inferInsert`)
+- All data operations go through `storage` instance
+- Cookies are forwarded to Voyager API for authentication
+- TypeScript interfaces define data contracts
 
 ### External API Integration
 
 **Voyager Search API:**
-- Base URL: `http://ec2-3-232-18-200.compute-1.amazonaws.com/solr/v0/select`
+- Base URL configured via `VOYAGER_BASE_URL` environment variable
 - Implemented in `client/src/features/search/voyager-api.ts`
 - Uses `useInfiniteQuery` for pagination
 - Complex faceting and filter building
-- Transforms Voyager responses to app's SearchResult type
+- Transforms Voyager responses to app's VoyagerSearchResult type
 
 **Key patterns:**
 - Build filter queries using helper functions (buildLocationFilterQueries, buildKeywordFilterQuery)
@@ -220,7 +213,7 @@ This is critical for Navigo authentication to work correctly.
 - Scripts use `SET` instead of inline environment variables
 
 **Environment variables:**
-- Server: `DATABASE_URL`, `SESSION_SECRET`, `PORT`
+- Server: `VOYAGER_BASE_URL`, `SESSION_SECRET`, `PORT`
 - Client: `VITE_VOYAGER_BASE_URL` (required for auth)
 - Set in `.env` (root) and `client/.env` (client-specific)
 
@@ -232,12 +225,10 @@ This is critical for Navigo authentication to work correctly.
 
 ## Important Constraints
 
-1. **Authentication**: The app now uses Navigo popup-based authentication. Do not revert to Replit OIDC patterns.
+1. **Authentication**: The app uses Navigo popup-based authentication.
 
 2. **Backward Compatibility**: The `useAuth()` hook interface must remain stable as it's used throughout the application.
 
 3. **Feature Isolation**: Keep feature-specific code in `features/` directories. Don't pollute global scope.
 
-4. **Database Migrations**: Use `drizzle-kit push` carefully in development. Production migrations should be planned.
-
-5. **Voyager API**: This is an external service. Do not modify Voyager-specific configuration without understanding impact.
+4. **Voyager API**: This is an external service. All data operations go through the Voyager API. The `VOYAGER_BASE_URL` environment variable is required.

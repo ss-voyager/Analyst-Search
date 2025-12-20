@@ -132,7 +132,7 @@ export interface VoyagerConfig {
 // ============================================================================
 
 export const voyagerConfig: VoyagerConfig = {
-  baseUrl: process.env.VOYAGER_BASE_URL || "http://ec2-3-232-18-200.compute-1.amazonaws.com/solr/v0/select",
+  baseUrl: "http://ec2-3-232-18-200.compute-1.amazonaws.com",
 
   displayId: "D187992491DF",
 
@@ -192,7 +192,7 @@ export const voyagerConfig: VoyagerConfig = {
       id: "location",
       label: "Location Hierarchy",
       type: "tree",
-      enabled: true,
+      enabled: false,
       order: 2,
       defaultExpanded: true,
       maxHeight: 300,
