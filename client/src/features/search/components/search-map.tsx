@@ -60,8 +60,14 @@ const MapEffect = ({ bounds }: { bounds: LatLngBounds | null }) => {
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
         if (isFinite(sw.lat) && isFinite(sw.lng) && isFinite(ne.lat) && isFinite(ne.lng)) {
-          // Use fitBounds without animation to avoid NaN errors during animation
-          map.fitBounds(bounds, { padding: [50, 50], animate: false });
+          // Expand bounds by 3x the extent for more context
+          const latSpan = ne.lat - sw.lat;
+          const lngSpan = ne.lng - sw.lng;
+          const expandedBounds = new LatLngBounds(
+            [Math.max(-90, sw.lat - latSpan), Math.max(-180, sw.lng - lngSpan)],
+            [Math.min(90, ne.lat + latSpan), Math.min(180, ne.lng + lngSpan)]
+          );
+          map.fitBounds(expandedBounds, { padding: [20, 20], animate: false });
         }
       }
     } catch (e) {
@@ -266,10 +272,10 @@ export function SearchMap({
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-12 rounded-full bg-muted-foreground/30 group-hover:bg-primary transition-colors" />
       </div>
       <div className="absolute inset-0">
-        <MapContainer 
-          center={[20, 0]} 
-          zoom={2} 
-          minZoom={2}
+        <MapContainer
+          center={[20, 0]}
+          zoom={1}
+          minZoom={1}
           maxBounds={[[-90, -180], [90, 180]]}
           maxBoundsViscosity={1.0}
           style={{ height: '100%', width: '100%' }}

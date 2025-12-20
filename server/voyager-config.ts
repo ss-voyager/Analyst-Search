@@ -192,7 +192,7 @@ export const voyagerConfig: VoyagerConfig = {
       id: "location",
       label: "Location Hierarchy",
       type: "tree",
-      enabled: false,
+      enabled: true,
       order: 2,
       defaultExpanded: true,
       maxHeight: 300,

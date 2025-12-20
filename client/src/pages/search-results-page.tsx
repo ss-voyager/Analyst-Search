@@ -90,6 +90,8 @@ export default function SearchResultsPage() {
   const [isSaveSearchOpen, setIsSaveSearchOpen] = useState(false);
   const [saveSearchName, setSaveSearchName] = useState("");
   const [saveSearchNotify, setSaveSearchNotify] = useState(false);
+  const [saveSearchEmail, setSaveSearchEmail] = useState("");
+  const [saveSearchFrequency, setSaveSearchFrequency] = useState<"hourly" | "daily" | "weekly">("daily");
   const [isSearchSaved, setIsSearchSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [savedSearchLink, setSavedSearchLink] = useState("https://voyager.ai/s/a8XkD4");
@@ -1165,12 +1167,48 @@ export default function SearchResultsPage() {
                      </div>
                   </div>
 
-                  <div className="flex items-center justify-between space-x-2 border rounded-lg p-3 bg-muted/10">
-                    <div className="flex flex-col gap-1">
-                      <Label htmlFor="notify" className="font-medium cursor-pointer">Email Notifications</Label>
-                      <span className="text-xs text-muted-foreground">Get notified when new results appear</span>
+                  <div className="border rounded-lg p-3 bg-muted/10 space-y-3">
+                    <div className="flex items-center justify-between space-x-2">
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="notify" className="font-medium cursor-pointer">Email Notifications</Label>
+                        <span className="text-xs text-muted-foreground">Get notified when new results appear</span>
+                      </div>
+                      <Switch id="notify" checked={saveSearchNotify} onCheckedChange={setSaveSearchNotify} />
                     </div>
-                    <Switch id="notify" checked={saveSearchNotify} onCheckedChange={setSaveSearchNotify} />
+
+                    {saveSearchNotify && (
+                      <div className="space-y-3 pt-2 border-t border-border/50">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Info className="w-4 h-4" />
+                          <span>Email notifications have not been enabled.</span>
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="notify-email" className="text-sm text-muted-foreground">Email when new content is indexed:</Label>
+                          <Input
+                            id="notify-email"
+                            type="email"
+                            placeholder="your@email.com"
+                            value={saveSearchEmail}
+                            onChange={(e) => setSaveSearchEmail(e.target.value)}
+                          />
+                        </div>
+
+                        <div className="grid gap-2">
+                          <Label htmlFor="notify-frequency" className="text-sm text-muted-foreground">Frequency:</Label>
+                          <Select value={saveSearchFrequency} onValueChange={(v) => setSaveSearchFrequency(v as "hourly" | "daily" | "weekly")}>
+                            <SelectTrigger id="notify-frequency">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="hourly">Hourly</SelectItem>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 

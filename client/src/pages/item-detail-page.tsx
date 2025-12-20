@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Calendar, Layers, Download, Share2, ExternalLink, Info, Globe, Cloud, Clock, Database, Tag, Check, Map as MapIcon, X, PanelRightOpen, PanelRightClose, Loader2, Copy, ChevronDown, ChevronUp } from "lucide-react";
@@ -10,8 +10,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { LatLngBoundsExpression } from "leaflet";
-import { MapContainer, TileLayer, Rectangle, ImageOverlay } from 'react-leaflet';
+import { LatLngBoundsExpression, LatLngBounds } from "leaflet";
+import { MapContainer, TileLayer, Rectangle, ImageOverlay, useMap } from 'react-leaflet';
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
@@ -24,6 +24,33 @@ function stripHtml(html: string): string {
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
   return tmp.textContent || tmp.innerText || '';
+}
+
+// Component to fit map to item bounds with 3x extent
+function FitBoundsEffect({ bounds }: { bounds: [[number, number], [number, number]] | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (bounds) {
+      try {
+        const leafletBounds = new LatLngBounds(bounds[0], bounds[1]);
+        if (leafletBounds.isValid()) {
+          // Expand bounds by 3x for context
+          const sw = leafletBounds.getSouthWest();
+          const ne = leafletBounds.getNorthEast();
+          const latSpan = ne.lat - sw.lat;
+          const lngSpan = ne.lng - sw.lng;
+          const expandedBounds = new LatLngBounds(
+            [Math.max(-90, sw.lat - latSpan), Math.max(-180, sw.lng - lngSpan)],
+            [Math.min(90, ne.lat + latSpan), Math.min(180, ne.lng + lngSpan)]
+          );
+          map.fitBounds(expandedBounds, { padding: [20, 20], animate: false });
+        }
+      } catch (e) {
+        console.error("Error fitting bounds", e);
+      }
+    }
+  }, [bounds, map]);
+  return null;
 }
 
 export default function ItemDetailPage() {
@@ -336,14 +363,13 @@ export default function ItemDetailPage() {
         {showMap && (
             <div className="w-[400px] hidden xl:block border-l border-border bg-muted/10 relative">
                 <MapContainer
-                    center={item.bounds ? [
-                      ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
-                      ((item.bounds as any)[0][1] + (item.bounds as any)[1][1]) / 2
-                    ] : [20, 0]}
-                    zoom={item.bounds ? 10 : 2}
+                    center={[20, 0]}
+                    zoom={1}
+                    minZoom={1}
                     style={{ height: '100%', width: '100%' }}
                     className="z-0 bg-muted/20"
                 >
+                    <FitBoundsEffect bounds={item.bounds as [[number, number], [number, number]] | null} />
                     <TileLayer
                         attribution={mapStyle === 'streets'
                         ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -421,14 +447,13 @@ export default function ItemDetailPage() {
              </div>
              <div className="flex-1 relative bg-muted/20">
                 <MapContainer
-                     center={item.bounds ? [
-                       ((item.bounds as any)[0][0] + (item.bounds as any)[1][0]) / 2,
-                       ((item.bounds as any)[0][1] + (item.bounds as any)[1][1]) / 2
-                     ] : [20, 0]}
-                     zoom={item.bounds ? 10 : 2}
+                    center={[20, 0]}
+                    zoom={1}
+                    minZoom={1}
                      style={{ height: '100%', width: '100%' }}
                      className="z-0 bg-muted/20"
                    >
+                     <FitBoundsEffect bounds={item.bounds as [[number, number], [number, number]] | null} />
                      <TileLayer
                        attribution={mapStyle === 'streets'
                          ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
