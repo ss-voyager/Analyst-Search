@@ -55,29 +55,63 @@ export default function SearchResultsPage() {
   const [keyword, setKeyword] = useState(params.get("q") || "");
   const [place, setPlace] = useState(params.get("loc") || "");
   
-  // UI State
-  const [showMap, setShowMap] = useState(true);
-  const [showFacets, setShowFacets] = useState(true);
-  const [sortBy, setSortBy] = useState("relevance");
+  // UI State - initialize from URL params
+  const [showMap, setShowMap] = useState(() => params.get("showMap") !== "false");
+  const [showFacets, setShowFacets] = useState(() => params.get("showFacets") !== "false");
+  const [sortBy, setSortBy] = useState(() => params.get("sort") || "relevance");
   const [isLoading, setIsLoading] = useState(true);
   const [isLocationFocused, setIsLocationFocused] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
 
-  // Filter States
+  // Track current search URL for back navigation from detail page
+  const [currentSearchUrl, setCurrentSearchUrl] = useState(() => window.location.search);
+
+  // Filter States - initialize from URL params
   const [activeFilters, setActiveFilters] = useState<{type: string, value: string, id: string}[]>([]);
-  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  const [topLevelSelectionIds, setTopLevelSelectionIds] = useState<string[]>([]); // Track which items were directly clicked
-  const [date, setDate] = useState<DateRange | undefined>();
-  const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>(config.filters.date.defaultMode);
-  const [sinceValue, setSinceValue] = useState<number>(config.filters.date.defaultSinceValue);
-  const [sinceUnit, setSinceUnit] = useState<SinceUnit>(config.filters.date.defaultSinceUnit);
-  const [dateField, setDateField] = useState<string>(config.filters.date.fields.defaultField);
-  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>(() => {
+    const locIds = params.get("locationIds");
+    return locIds ? locIds.split(",") : [];
+  });
+  const [topLevelSelectionIds, setTopLevelSelectionIds] = useState<string[]>(() => {
+    const topIds = params.get("topLocationIds");
+    return topIds ? topIds.split(",") : [];
+  });
+  const [date, setDate] = useState<DateRange | undefined>(() => {
+    const dateFrom = params.get("dateFrom");
+    const dateTo = params.get("dateTo");
+    if (dateFrom || dateTo) {
+      return {
+        from: dateFrom ? new Date(dateFrom) : undefined,
+        to: dateTo ? new Date(dateTo) : undefined,
+      };
+    }
+    return undefined;
+  });
+  const [dateFilterMode, setDateFilterMode] = useState<DateFilterMode>(() =>
+    (params.get("dateMode") as DateFilterMode) || config.filters.date.defaultMode
+  );
+  const [sinceValue, setSinceValue] = useState<number>(() => {
+    const sv = params.get("sinceValue");
+    return sv ? parseInt(sv, 10) : config.filters.date.defaultSinceValue;
+  });
+  const [sinceUnit, setSinceUnit] = useState<SinceUnit>(() =>
+    (params.get("sinceUnit") as SinceUnit) || config.filters.date.defaultSinceUnit
+  );
+  const [dateField, setDateField] = useState<string>(() =>
+    params.get("dateField") || config.filters.date.fields.defaultField
+  );
+  const [selectedProperties, setSelectedProperties] = useState<string[]>(() => {
+    const props = params.get("properties");
+    return props ? props.split(",") : [];
+  });
   const [selectedKeywords, setSelectedKeywords] = useState<string[]>(() => {
     const keywordsParam = params.get("keywords");
-    return keywordsParam ? [keywordsParam] : [];
+    return keywordsParam ? keywordsParam.split(",") : [];
   });
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(() => {
+    const platforms = params.get("platforms");
+    return platforms ? platforms.split(",") : [];
+  });
   const [keywordSearch, setKeywordSearch] = useState("");
   const [hoveredResultId, setHoveredResultId] = useState<number | string | null>(null);
   const [previewedResultId, setPreviewedResultId] = useState<number | string | null>(null);
@@ -316,17 +350,53 @@ export default function SearchResultsPage() {
     setSelectedIndex(-1);
   }, [place]);
 
-  // Handle URL param changes (e.g., when navigating from item detail page with keyword filter)
+  // Sync filter state to URL whenever it changes
   useEffect(() => {
-    const currentParams = new URLSearchParams(searchString);
-    const keywordsParam = currentParams.get("keywords");
-    if (keywordsParam) {
-      // Set the keyword from URL (replacing any existing URL-based keywords)
-      setSelectedKeywords([keywordsParam]);
-      // Clear the URL param after applying to avoid it persisting
-      setLocation("/search", { replace: true });
+    const newParams = new URLSearchParams();
+
+    // Search criteria
+    if (keyword) newParams.set("q", keyword);
+    if (place) newParams.set("loc", place);
+
+    // Sort
+    if (sortBy !== "relevance") newParams.set("sort", sortBy);
+
+    // UI state
+    if (!showMap) newParams.set("showMap", "false");
+    if (!showFacets) newParams.set("showFacets", "false");
+
+    // Filter selections
+    if (selectedKeywords.length > 0) newParams.set("keywords", selectedKeywords.join(","));
+    if (selectedProperties.length > 0) newParams.set("properties", selectedProperties.join(","));
+    if (selectedPlatforms.length > 0) newParams.set("platforms", selectedPlatforms.join(","));
+    if (selectedLocationIds.length > 0) newParams.set("locationIds", selectedLocationIds.join(","));
+    if (topLevelSelectionIds.length > 0) newParams.set("topLocationIds", topLevelSelectionIds.join(","));
+
+    // Date filters
+    if (dateFilterMode !== config.filters.date.defaultMode) newParams.set("dateMode", dateFilterMode);
+    if (date?.from) newParams.set("dateFrom", date.from.toISOString().split("T")[0]);
+    if (date?.to) newParams.set("dateTo", date.to.toISOString().split("T")[0]);
+    if (dateFilterMode === "since") {
+      if (sinceValue !== config.filters.date.defaultSinceValue) newParams.set("sinceValue", String(sinceValue));
+      if (sinceUnit !== config.filters.date.defaultSinceUnit) newParams.set("sinceUnit", sinceUnit);
     }
-  }, [searchString, setLocation]);
+    if (dateField !== config.filters.date.fields.defaultField) newParams.set("dateField", dateField);
+
+    // Update URL without triggering navigation
+    const searchQuery = newParams.toString() ? `?${newParams.toString()}` : "";
+    const newUrl = `/search${searchQuery}`;
+    window.history.replaceState(null, "", newUrl);
+
+    // Update currentSearchUrl state for back navigation from detail page
+    setCurrentSearchUrl(searchQuery);
+  }, [
+    keyword, place, sortBy, showMap, showFacets,
+    selectedKeywords, selectedProperties, selectedPlatforms,
+    selectedLocationIds, topLevelSelectionIds,
+    dateFilterMode, date, sinceValue, sinceUnit, dateField,
+    config.filters.date.defaultMode, config.filters.date.defaultSinceValue,
+    config.filters.date.defaultSinceUnit, config.filters.date.fields.defaultField
+  ]);
 
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(true);
@@ -1441,6 +1511,7 @@ export default function SearchResultsPage() {
           onLoadMore={fetchNextPage}
           hasMore={hasNextPage}
           isLoadingMore={isFetchingNextPage}
+          searchUrl={currentSearchUrl}
         />
 
         {/* Right Panel - Map (Refactored) */}

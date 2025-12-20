@@ -8,10 +8,15 @@
     "dev": "tsx --env-file=.env server/index.ts",
     "build": "tsx script/build.ts",
     "build:iis": "vite build",
+    "build:iis-full": "npm run build && node script/copy-iis-config.js",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
-    "test": "cd client/src && vitest",
-    "test:run": "cd client/src && vitest run"
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:client": "vitest --config vitest.config.ts",
+    "test:server": "vitest --config server/vitest.config.ts",
+    "test:server:run": "vitest run --config server/vitest.config.ts",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -77,6 +82,7 @@
     "@tailwindcss/vite": "^4.1.14",
     "@testing-library/react": "^16.3.1",
     "@types/express": "4.17.21",
+    "@types/supertest": "^6.0.2",
     "@types/node": "^20.19.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
@@ -90,6 +96,7 @@
     "jsdom": "^27.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.14",
+    "supertest": "^7.0.0",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
     "vite": "^7.1.9",

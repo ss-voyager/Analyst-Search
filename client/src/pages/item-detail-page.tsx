@@ -64,6 +64,35 @@ export default function ItemDetailPage() {
   const { theme } = useTheme();
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
+  // Preserve the search URL from where we came, so back navigation restores filters
+  const [searchUrl] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // First try history state (set by search results navigation)
+      const historyState = window.history.state;
+      if (historyState?.searchUrl) {
+        return historyState.searchUrl;
+      }
+      // Fallback: check referrer
+      try {
+        const referrer = document.referrer;
+        if (referrer) {
+          const url = new URL(referrer);
+          if (url.pathname === '/search' || url.pathname.startsWith('/search')) {
+            return url.search || '';
+          }
+        }
+      } catch (e) {
+        // Invalid referrer URL, ignore
+      }
+    }
+    return '';
+  });
+
+  // Helper to navigate back to search with preserved params
+  const goBackToSearch = () => {
+    setLocation(`/search${searchUrl}`);
+  };
+
   const id = params?.id || null;
 
   // Fetch item data from API
@@ -75,7 +104,7 @@ export default function ItemDetailPage() {
       <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
         <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0">
           <button
-            onClick={() => setLocation("/search")}
+            onClick={goBackToSearch}
             className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -98,7 +127,7 @@ export default function ItemDetailPage() {
       <div className="flex flex-col h-screen w-full bg-background text-foreground overflow-hidden">
         <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0">
           <button
-            onClick={() => setLocation("/search")}
+            onClick={goBackToSearch}
             className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -112,7 +141,7 @@ export default function ItemDetailPage() {
             <p className="text-muted-foreground max-w-md">
               The item you're looking for doesn't exist or couldn't be loaded.
             </p>
-            <Button onClick={() => setLocation("/search")}>Back to Search</Button>
+            <Button onClick={goBackToSearch}>Back to Search</Button>
           </div>
         </div>
       </div>
@@ -158,7 +187,7 @@ export default function ItemDetailPage() {
       <header className="h-16 border-b border-border bg-background/80 backdrop-blur-md flex items-center px-4 gap-4 z-20 shrink-0 justify-between">
         <div className="flex items-center gap-4 min-w-0">
           <button
-            onClick={() => setLocation("/search")}
+            onClick={goBackToSearch}
             className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />

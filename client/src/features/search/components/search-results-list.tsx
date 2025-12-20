@@ -26,6 +26,8 @@ interface SearchResultsListProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   isLoadingMore?: boolean;
+  /** Current search URL params to preserve for back navigation */
+  searchUrl?: string;
 }
 
 export function SearchResultsList({
@@ -40,10 +42,19 @@ export function SearchResultsList({
   showMap = true,
   onLoadMore,
   hasMore: hasMoreFromServer = false,
-  isLoadingMore: isLoadingMoreFromServer = false
+  isLoadingMore: isLoadingMoreFromServer = false,
+  searchUrl = ""
 }: SearchResultsListProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  // Navigate to item detail page while preserving search state for back navigation
+  const navigateToItem = (itemId: string | number) => {
+    const itemPath = `/item/${itemId}`;
+    // Use pushState with searchUrl, then dispatch popstate to notify wouter
+    window.history.pushState({ searchUrl }, "", itemPath);
+    window.dispatchEvent(new PopStateEvent('popstate', { state: { searchUrl } }));
+  };
 
   // Store latest values in refs so observer callback always has current values
   const hasMoreRef = useRef(hasMoreFromServer);
@@ -139,7 +150,7 @@ export function SearchResultsList({
                      className="group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden hover:shadow-xl hover:border-primary/50 transition-all duration-300 cursor-pointer h-[320px]"
                      onMouseEnter={() => setHoveredResultId(result.id)}
                      onMouseLeave={() => setHoveredResultId(null)}
-                     onClick={() => setLocation(`/item/${result.id}`)}
+                     onClick={() => navigateToItem(result.id)}
                    >
                      {/* Image Thumbnail */}
                      <div className="relative h-[160px] overflow-hidden bg-muted">
@@ -160,7 +171,7 @@ export function SearchResultsList({
                          title={result.title}
                          onClick={(e) => {
                            e.stopPropagation();
-                           setLocation(`/item/${result.id}`);
+                           navigateToItem(result.id);
                          }}
                        >
                          {result.title}
