@@ -287,6 +287,8 @@ export async function registerRoutes(
           params.append(key, String(value));
         }
       }
+      // Ensure JSON response format
+      params.set("wt", "json");
       const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
@@ -350,6 +352,8 @@ export async function registerRoutes(
           params.append(key, String(value));
         }
       }
+      // Ensure JSON response format
+      params.set("wt", "json");
       const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
@@ -420,6 +424,8 @@ export async function registerRoutes(
           params.append(key, String(value));
         }
       }
+      // Ensure JSON response format
+      params.set("wt", "json");
       const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
@@ -477,6 +483,8 @@ export async function registerRoutes(
           params.append(key, String(value));
         }
       }
+      // Ensure JSON response format
+      params.set("wt", "json");
       const queryString = params.toString();
       const url = `${VOYAGER_BASE_URL}?${queryString}`;
 
