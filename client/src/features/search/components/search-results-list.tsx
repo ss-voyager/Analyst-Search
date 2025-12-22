@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { getFormatDisplayName } from "../format-utils";
 import { DEFAULT_THUMBNAIL } from "../voyager-api";
 
+// Get base path from environment variable (e.g., "/analyst-search")
+const basePath = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || '';
+
 // Generic result type that works with both local and Voyager results
 type GenericResult = SearchResult | VoyagerSearchResult;
 
@@ -50,10 +53,12 @@ export function SearchResultsList({
 
   // Navigate to item detail page while preserving search state for back navigation
   const navigateToItem = (itemId: string | number) => {
-    const itemPath = `/item/${itemId}`;
-    // Use pushState with searchUrl, then dispatch popstate to notify wouter
-    window.history.pushState({ searchUrl }, "", itemPath);
-    window.dispatchEvent(new PopStateEvent('popstate', { state: { searchUrl } }));
+    // Store searchUrl in sessionStorage as a backup before navigating
+    if (searchUrl) {
+      sessionStorage.setItem('lastSearchUrl', searchUrl);
+    }
+    // Use setLocation which respects wouter's base path configuration
+    setLocation(`/item/${itemId}`);
   };
 
   // Store latest values in refs so observer callback always has current values
@@ -231,7 +236,7 @@ export function SearchResultsList({
                              <DropdownMenuItem
                                className="gap-2 cursor-pointer"
                                onClick={() => {
-                                 const shareUrl = 'fullpath' in result ? result.fullpath : `${window.location.origin}/item/${result.id}`;
+                                 const shareUrl = 'fullpath' in result ? result.fullpath : `${window.location.origin}${basePath}/item/${result.id}`;
                                  if (shareUrl) {
                                    navigator.clipboard.writeText(shareUrl);
                                    toast.success("Link copied to clipboard");

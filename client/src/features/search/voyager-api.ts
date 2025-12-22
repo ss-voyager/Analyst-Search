@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
+import { getApiUrl } from "@/lib/queryClient";
 
 /**
  * Voyager API configuration parameters
@@ -311,7 +312,7 @@ export function parseFacetFields(
  * @internal
  */
 function buildSearchUrl(filters: VoyagerSearchFilters): string {
-  const url = new URL("/api/voyager/search", window.location.origin);
+  const url = new URL(getApiUrl("/api/voyager/search"), window.location.origin);
 
   // Add base config
   Object.entries(VOYAGER_CONFIG).forEach(([key, value]) => {
@@ -394,7 +395,7 @@ function buildSearchUrl(filters: VoyagerSearchFilters): string {
  * @internal
  */
 function buildFacetUrl(filters: VoyagerSearchFilters): string {
-  const url = new URL("/api/voyager/facets", window.location.origin);
+  const url = new URL(getApiUrl("/api/voyager/facets"), window.location.origin);
 
   // Add base config
   Object.entries(VOYAGER_CONFIG).forEach(([key, value]) => {
@@ -463,7 +464,7 @@ async function fetchVoyagerSearch(
 
   // Use POST if URL is too long
   if (url.length > 2000) {
-    const response = await fetch("/api/voyager/search", {
+    const response = await fetch(getApiUrl("/api/voyager/search"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
@@ -497,7 +498,7 @@ async function fetchVoyagerFacets(
 
   // Use POST if URL is too long
   if (url.length > 2000) {
-    const response = await fetch("/api/voyager/facets", {
+    const response = await fetch(getApiUrl("/api/voyager/facets"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
@@ -843,7 +844,7 @@ async function fetchVoyagerItem(id: string): Promise<VoyagerDoc | null> {
     fl: "*,thumb:[thumbURL],fullpath:[absolute],download:[downloadURL],geo:[geo]",
   });
 
-  const response = await fetch(`/api/voyager/search?${params.toString()}`);
+  const response = await fetch(getApiUrl(`/api/voyager/search?${params.toString()}`));
   if (!response.ok) {
     throw new Error("Failed to fetch item");
   }

@@ -17,6 +17,8 @@ const allowlist = [
   "nodemailer",
   "openai",
   "stripe",
+  "swagger-jsdoc",
+  "swagger-ui-express",
   "uuid",
   "xlsx",
   "zod",

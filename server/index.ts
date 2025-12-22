@@ -1,5 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import swaggerUi from "swagger-ui-express";
+import path from "path";
+import fs from "fs";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
@@ -7,6 +9,20 @@ import { swaggerSpec } from "./swagger";
 
 const app = express();
 const httpServer = createServer(app);
+
+// Load base path from client env (e.g., "/analyst-search")
+// Read manually to avoid Vite dependency in production
+let basePath = process.env.VITE_BASE_PATH?.replace(/\/$/, '') || '';
+if (!basePath) {
+  const clientEnvPath = path.resolve(__dirname, "..", "client", ".env");
+  if (fs.existsSync(clientEnvPath)) {
+    const envContent = fs.readFileSync(clientEnvPath, "utf-8");
+    const match = envContent.match(/VITE_BASE_PATH=(.+)/);
+    if (match) {
+      basePath = match[1].trim().replace(/\/$/, '');
+    }
+  }
+}
 
 declare module "http" {
   interface IncomingMessage {
@@ -25,16 +41,25 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 
 // Swagger API documentation
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+const swaggerSetup = swaggerUi.setup(swaggerSpec, {
   customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: "Analyst Search API Documentation",
-}));
+});
+
+app.use("/api/docs", swaggerUi.serve, swaggerSetup);
+if (basePath) {
+  app.use(`${basePath}/api/docs`, swaggerUi.serve, swaggerSetup);
+}
 
 // Serve OpenAPI spec as JSON
-app.get("/api/docs.json", (_req, res) => {
+const serveOpenApiSpec = (_req: Request, res: Response) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
-});
+};
+app.get("/api/docs.json", serveOpenApiSpec);
+if (basePath) {
+  app.get(`${basePath}/api/docs.json`, serveOpenApiSpec);
+}
 
 /**
  * Logs a message with timestamp and source label
@@ -65,7 +90,8 @@ app.use((req, res, next) => {
 
   res.on("finish", () => {
     const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
+    // Log API requests from both /api and basePath/api
+    if (path.includes("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
@@ -79,7 +105,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await registerRoutes(httpServer, app);
+  await registerRoutes(httpServer, app, basePath);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

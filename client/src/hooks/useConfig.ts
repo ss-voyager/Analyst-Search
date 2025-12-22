@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getApiUrl } from "@/lib/queryClient";
 
 // ============================================================================
 // TYPE DEFINITIONS (must match server/voyager-config.ts)
@@ -75,7 +76,7 @@ export interface AppConfig {
 // ============================================================================
 
 async function fetchConfig(): Promise<AppConfig> {
-  const response = await fetch("/api/config");
+  const response = await fetch(getApiUrl("/api/config"));
   if (!response.ok) {
     throw new Error("Failed to fetch config");
   }

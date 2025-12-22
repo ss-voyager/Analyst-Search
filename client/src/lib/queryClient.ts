@@ -1,5 +1,21 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Get base path from environment variable (e.g., "/analyst-search")
+const basePath = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || '';
+
+/**
+ * Get the full API URL with the correct base path
+ * @param path - The API path (e.g., "/api/config")
+ * @returns The full URL with base path (e.g., "/analyst-search/api/config")
+ */
+export function getApiUrl(path: string): string {
+  // If path already starts with basePath, return as-is
+  if (basePath && path.startsWith(basePath)) {
+    return path;
+  }
+  return `${basePath}${path}`;
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;

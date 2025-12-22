@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Search, Copy, Check, ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getApiUrl } from "@/lib/queryClient";
 
 // Voyager API configuration
 const VOYAGER_CONFIG = {
@@ -205,7 +206,7 @@ export default function VoyagerSearchPage() {
       const params = { ...baseParams, ...additionalParams };
 
       // Build URL with multiple facet.field params
-      const url = new URL("/api/voyager/facets", window.location.origin);
+      const url = new URL(getApiUrl("/api/voyager/facets"), window.location.origin);
       for (const [key, value] of Object.entries(params)) {
         if (key !== "facet.field") {
           url.searchParams.append(key, value);
@@ -218,7 +219,7 @@ export default function VoyagerSearchPage() {
 
       // If URL is too long, use POST
       if (url.toString().length > 2000) {
-        const response = await fetch("/api/voyager/facets", {
+        const response = await fetch(getApiUrl("/api/voyager/facets"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(Object.fromEntries(url.searchParams)),
@@ -252,14 +253,14 @@ export default function VoyagerSearchPage() {
     try {
       const params = buildSearchQueryParams();
 
-      const url = new URL("/api/voyager/search", window.location.origin);
+      const url = new URL(getApiUrl("/api/voyager/search"), window.location.origin);
       for (const [key, value] of Object.entries(params)) {
         url.searchParams.append(key, value);
       }
 
       // If URL is too long, use POST
       if (url.toString().length > 2000) {
-        const response = await fetch("/api/voyager/search", {
+        const response = await fetch(getApiUrl("/api/voyager/search"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(params),

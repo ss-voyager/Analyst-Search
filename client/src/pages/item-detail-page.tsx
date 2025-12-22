@@ -67,17 +67,22 @@ export default function ItemDetailPage() {
   // Preserve the search URL from where we came, so back navigation restores filters
   const [searchUrl] = useState(() => {
     if (typeof window !== 'undefined') {
-      // First try history state (set by search results navigation)
+      // First try sessionStorage (set by search results navigation)
+      const storedUrl = sessionStorage.getItem('lastSearchUrl');
+      if (storedUrl) {
+        return storedUrl;
+      }
+      // Fallback: check history state
       const historyState = window.history.state;
       if (historyState?.searchUrl) {
         return historyState.searchUrl;
       }
-      // Fallback: check referrer
+      // Fallback: check referrer (works with base path)
       try {
         const referrer = document.referrer;
         if (referrer) {
           const url = new URL(referrer);
-          if (url.pathname === '/search' || url.pathname.startsWith('/search')) {
+          if (url.pathname.includes('/search')) {
             return url.search || '';
           }
         }

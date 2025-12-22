@@ -11,9 +11,12 @@ export async function setupVite(server: Server, app: Express) {
   const clientDir = path.resolve(import.meta.dirname, "..", "client");
   const env = loadEnv("development", clientDir, "");
 
+  // Get base path from client env (e.g., "/analyst-search/")
+  const basePath = env.VITE_BASE_PATH?.replace(/\/$/, '') || '';
+
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server, path: "/vite-hmr" },
+    hmr: { server, path: `${basePath}/vite-hmr` },
     allowedHosts: true as const,
   };
 
@@ -30,13 +33,18 @@ export async function setupVite(server: Server, app: Express) {
     appType: "custom",
   });
 
-  app.use(vite.middlewares);
-
-  app.use("*", async (req, res, next) => {
+  // Handle SPA fallback for routes under the base path
+  const spaHandler = async (req: any, res: any, next: any) => {
     const url = req.originalUrl;
 
     // Skip API routes - they should be handled by Express routes
-    if (url.startsWith("/api")) {
+    if (url.includes("/api")) {
+      return next();
+    }
+
+    // Skip Vite's special paths and source files - let Vite middleware handle them
+    const vitePatterns = ['/@', '/src/', '/node_modules/', '.tsx', '.ts', '.js', '.css', '.json', '.png', '.jpg', '.svg', '.woff', '.woff2', '/vite-hmr'];
+    if (vitePatterns.some(pattern => url.includes(pattern))) {
       return next();
     }
 
@@ -60,5 +68,26 @@ export async function setupVite(server: Server, app: Express) {
       vite.ssrFixStacktrace(e as Error);
       next(e);
     }
-  });
+  };
+
+  if (basePath) {
+    // Redirect root to base path
+    app.get("/", (_req, res) => {
+      res.redirect(302, basePath);
+    });
+
+    // Handle all routes under the base path as SPA
+    // These must be registered BEFORE Vite middlewares
+    app.get(basePath, spaHandler);
+    app.get(`${basePath}/*`, spaHandler);
+  }
+
+  // Mount Vite middlewares AFTER SPA routes so they handle asset requests
+  // Vite's base config handles the URL prefixing in transformed HTML
+  app.use(vite.middlewares);
+
+  // Fallback for root when no base path configured
+  if (!basePath) {
+    app.use("*", spaHandler);
+  }
 }

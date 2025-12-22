@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getApiUrl } from "@/lib/queryClient";
 import type { SavedSearch } from "@shared/schema";
 
 // Fetch saved searches for a user (proxied through Express to forward cookies)
@@ -7,7 +8,7 @@ async function fetchSavedSearches(userId?: string): Promise<SavedSearch[]> {
     return [];
   }
 
-  const response = await fetch(`/api/saved-searches?userId=${encodeURIComponent(userId)}`, {
+  const response = await fetch(getApiUrl(`/api/saved-searches?userId=${encodeURIComponent(userId)}`), {
     credentials: 'include', // Send cookies to our Express server
   });
 
@@ -20,7 +21,7 @@ async function fetchSavedSearches(userId?: string): Promise<SavedSearch[]> {
 
 // Delete saved search (proxied through Express to forward cookies)
 async function deleteSavedSearch(id: string): Promise<void> {
-  const response = await fetch(`/api/saved-searches/${id}`, {
+  const response = await fetch(getApiUrl(`/api/saved-searches/${id}`), {
     method: 'DELETE',
     credentials: 'include', // Send cookies to our Express server
   });
@@ -31,7 +32,7 @@ async function deleteSavedSearch(id: string): Promise<void> {
 
 // Fetch single saved search by ID (proxied through Express to forward cookies)
 async function fetchSavedSearchById(id: string): Promise<SavedSearch> {
-  const response = await fetch(`/api/saved-searches/${id}`, {
+  const response = await fetch(getApiUrl(`/api/saved-searches/${id}`), {
     credentials: 'include', // Send cookies to our Express server
   });
 
@@ -56,7 +57,7 @@ async function createSavedSearch(data: {
   spatialFilter?: any;
   notifyOnNewResults?: number;
 }): Promise<SavedSearch> {
-  const response = await fetch('/api/saved-searches', {
+  const response = await fetch(getApiUrl('/api/saved-searches'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include', // Send cookies to our Express server

@@ -1,5 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLocation, useSearch } from "wouter";
+
+// Get base path from environment variable (e.g., "/analyst-search")
+const basePath = import.meta.env.VITE_BASE_PATH?.replace(/\/$/, '') || '';
 import {
   Search, MapPin, Filter, Clock, Star, Share2, Mail, Copy, Info, ArrowUpDown, PanelRightOpen, PanelRightClose, PanelLeftOpen, PanelLeftClose, Map, User, LogIn, Check, Tag, X, Bookmark, Settings, LogOut
 } from "lucide-react";
@@ -384,7 +387,7 @@ export default function SearchResultsPage() {
 
     // Update URL without triggering navigation
     const searchQuery = newParams.toString() ? `?${newParams.toString()}` : "";
-    const newUrl = `/search${searchQuery}`;
+    const newUrl = `${basePath}/search${searchQuery}`;
     window.history.replaceState(null, "", newUrl);
 
     // Update currentSearchUrl state for back navigation from detail page

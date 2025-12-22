@@ -1,4 +1,5 @@
-import type { Express } from "express";
+import type { Express, Router as ExpressRouter } from "express";
+import { Router } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
 import { insertSavedSearchSchema } from "@shared/schema";
@@ -9,15 +10,10 @@ import { voyagerConfig } from "./voyager-config";
 const VOYAGER_BASE_URL = `${voyagerConfig.baseUrl}/solr/v0/select`;
 
 /**
- * Registers all API routes with the Express application
- * @param httpServer - The HTTP server instance
- * @param app - The Express application instance
- * @returns The HTTP server instance
+ * Creates and returns the API router with all routes
  */
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
+export function createApiRouter(): ExpressRouter {
+  const router = Router();
 
   /**
    * @openapi
@@ -30,7 +26,7 @@ export async function registerRoutes(
    *       200:
    *         description: Application configuration
    */
-  app.get("/api/config", (_req, res) => {
+  router.get("/config", (_req, res) => {
     res.json({
       filters: voyagerConfig.filters,
       pagination: voyagerConfig.pagination,
@@ -64,7 +60,7 @@ export async function registerRoutes(
    *       500:
    *         description: Server error
    */
-  app.get("/api/saved-searches", async (req, res) => {
+  router.get("/saved-searches", async (req, res) => {
     try {
       const userId = req.query.userId as string | undefined;
 
@@ -123,7 +119,7 @@ export async function registerRoutes(
    *       500:
    *         description: Server error
    */
-  app.post("/api/saved-searches", async (req, res) => {
+  router.post("/saved-searches", async (req, res) => {
     try {
       const validationResult = insertSavedSearchSchema.safeParse(req.body);
 
@@ -169,7 +165,7 @@ export async function registerRoutes(
    *       500:
    *         description: Server error
    */
-  app.get("/api/saved-searches/:id", async (req, res) => {
+  router.get("/saved-searches/:id", async (req, res) => {
     try {
       const id = req.params.id;
       const cookie = req.headers.cookie;
@@ -206,7 +202,7 @@ export async function registerRoutes(
    *       500:
    *         description: Server error
    */
-  app.delete("/api/saved-searches/:id", async (req, res) => {
+  router.delete("/saved-searches/:id", async (req, res) => {
     try {
       const id = req.params.id;
       const cookie = req.headers.cookie;
@@ -275,7 +271,7 @@ export async function registerRoutes(
    *       500:
    *         description: Voyager API error
    */
-  app.get("/api/voyager/search", async (req, res) => {
+  router.get("/voyager/search", async (req, res) => {
     try {
       // Handle array parameters correctly (e.g., multiple fq values)
       const params = new URLSearchParams();
@@ -341,7 +337,7 @@ export async function registerRoutes(
    *       500:
    *         description: Voyager API error
    */
-  app.post("/api/voyager/search", async (req, res) => {
+  router.post("/voyager/search", async (req, res) => {
     try {
       // Handle array parameters correctly (e.g., multiple fq values)
       const params = new URLSearchParams();
@@ -413,7 +409,7 @@ export async function registerRoutes(
    *       500:
    *         description: Voyager API error
    */
-  app.get("/api/voyager/facets", async (req, res) => {
+  router.get("/voyager/facets", async (req, res) => {
     try {
       // Handle array parameters correctly (e.g., multiple fq values)
       const params = new URLSearchParams();
@@ -472,7 +468,7 @@ export async function registerRoutes(
    *       500:
    *         description: Voyager API error
    */
-  app.post("/api/voyager/facets", async (req, res) => {
+  router.post("/voyager/facets", async (req, res) => {
     try {
       // Handle array parameters correctly (e.g., multiple fq values)
       const params = new URLSearchParams();
@@ -502,6 +498,31 @@ export async function registerRoutes(
       res.status(500).json({ error: "Failed to fetch facets from Voyager API" });
     }
   });
+
+  return router;
+}
+
+/**
+ * Registers all API routes with the Express application
+ * @param httpServer - The HTTP server instance
+ * @param app - The Express application instance
+ * @param basePath - Optional base path (e.g., "/analyst-search")
+ * @returns The HTTP server instance
+ */
+export async function registerRoutes(
+  httpServer: Server,
+  app: Express,
+  basePath: string = ""
+): Promise<Server> {
+  const apiRouter = createApiRouter();
+
+  // Mount API router at /api (always)
+  app.use("/api", apiRouter);
+
+  // Also mount at basePath/api if basePath is set
+  if (basePath) {
+    app.use(`${basePath}/api`, apiRouter);
+  }
 
   return httpServer;
 }
