@@ -4,6 +4,7 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+*.zip
 .env
 coverage/
 nul
@@ -13,3 +14,6 @@ iisnode/
 
 # Runtime config (keep example tracked)
 config/voyager.json
+
+# Duplicate config folder (accidental copy)
+config/
