@@ -5,7 +5,7 @@ import { Search, Map as MapIcon, LogOut, ArrowRight } from "lucide-react";
 import { LocationPicker } from "@/components/location-picker";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/useAuth";
-import wavePattern from "@assets/wave-pattern.png";
+import wavePattern from "@assets/wave-pattern-clean.jpg";
 import voyagerLogo from "@assets/voyager-logo.svg";
 
 export default function LandingPage() {
@@ -162,14 +162,16 @@ export default function LandingPage() {
       {/* Wave Pattern Background with Ebb and Flow Animation */}
       <div className="absolute bottom-0 left-0 right-0 h-[50%] pointer-events-none overflow-hidden">
         <div
-          className="absolute inset-0 animate-ebb-flow dark:opacity-100 opacity-100 dark:invert-0 invert"
+          className="absolute inset-0 animate-ebb-flow opacity-100"
           style={{
             backgroundImage: `url(${wavePattern})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'bottom center',
+            backgroundSize: '100% auto',
+            backgroundPosition: 'center center',
             backgroundRepeat: 'no-repeat',
           }}
         />
+        {/* Tall gradient overlay to blend with page background */}
+        <div className="absolute inset-x-0 top-0 h-[60%] bg-gradient-to-b from-white dark:from-black via-white/80 dark:via-black/80 to-transparent" />
       </div>
 
       <style>{`
